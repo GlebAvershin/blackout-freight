@@ -100,22 +100,26 @@ end
 function Depot.build()
 	Lighting.ClockTime = 0
 	Lighting.Brightness = 2
-	Lighting.Ambient = Color3.fromRGB(86, 96, 121)
-	Lighting.OutdoorAmbient = Color3.fromRGB(113, 126, 151)
+	Lighting.ExposureCompensation = 0.22
+	Lighting.Ambient = Color3.fromRGB(100, 112, 132)
+	Lighting.OutdoorAmbient = Color3.fromRGB(122, 137, 155)
 	Lighting.FogColor = ink
 	Lighting.FogStart = 90
 	Lighting.FogEnd = 300
 	local grade = Instance.new("ColorCorrectionEffect")
-	grade.Contrast = 0.04
-	grade.Saturation = -0.10
+	grade.Contrast = 0.02
+	grade.Saturation = -0.06
 	grade.Parent = Lighting
+	local bloom = Instance.new("BloomEffect")
+	bloom.Intensity, bloom.Size, bloom.Threshold = 0.16, 18, 0.94
+	bloom.Parent = Lighting
 
 	local world = Instance.new("Model")
 	world.Name = "Blackout Freight • Depot 07"
 	local function box(name, x, y, z, w, h, d, color, material, solid)
 		return Depot.part(world, name, Vector3.new(w, h, d), CFrame.new(x, y, z), color, material, solid)
 	end
-	box("Warehouse foundation", 0, -1, 0, 140, 2, 152, ink, Enum.Material.Concrete, true)
+	box("Warehouse foundation", 0, -1, 0, 140, 2, 152, Color3.fromRGB(37, 47, 61), Enum.Material.Concrete, true)
 	for _, x in {-1.6, 1.6} do
 		box("Guide rail", x, 0.04, -7, 0.13, 0.08, 119, Color3.fromRGB(108, 130, 147), Enum.Material.Metal)
 	end
@@ -159,11 +163,25 @@ function Depot.build()
 			box("Lane dash", x, 0.05, z, 0.16, 0.05, 2.7, Color3.fromRGB(113, 133, 148))
 		end
 	end
-	for _, z in {-55, -27, 5, 36} do
-		box("Service gantry", 0, 12, z, 136, 0.7, 0.9, ink)
+	local sectors = {
+		{z = 36, title = "01 / RECEIVING", color = Color3.fromRGB(116, 199, 214)},
+		{z = 5, title = "02 / SWITCHYARD", color = Color3.fromRGB(234, 163, 102)},
+		{z = -27, title = "03 / COLD STORAGE", color = Color3.fromRGB(147, 173, 237)},
+		{z = -55, title = "04 / RELAY CORE", color = Color3.fromRGB(168, 207, 182)},
+	}
+	for _, sector in sectors do
+		local z, accent = sector.z, sector.color
+		box("Service gantry", 0, 12, z, 136, 0.9, 1.4, steel, Enum.Material.Metal)
+		for _, x in {-53, 53} do
+			box("Overhead service duct", x, 12.2, z + 11, 4.1, 1.2, 19, ink, Enum.Material.Metal)
+			box("Gantry edge", x, 11.5, z, 16, 0.1, 0.24, accent, neon)
+		end
+		local board = box("Sector wayfinding", 0, 10.6, z, 17, 1.8, 0.36, ink, Enum.Material.Metal)
+		sign(board, sector.title, accent, Enum.NormalId.Back)
+		sign(board, sector.title, accent)
 		for _, x in {-42, 0, 42} do
-			local fixture = box("Aisle light", x, 11.56, z, 4.5, 0.18, 0.5, Color3.fromRGB(158, 191, 231), neon)
-			light(fixture, fixture.Color, 25, 1.1)
+			local fixture = box("Aisle light", x, 11.45, z, 4.5, 0.18, 0.5, accent, neon)
+			light(fixture, accent, 24, 0.85)
 		end
 	end
 
@@ -174,6 +192,14 @@ function Depot.build()
 		box("Gate pier", x, 4, 54, 1.5, 8, 1.5, steel, Enum.Material.Metal, true)
 		local strip = box("Gate light", x * 0.944, 4, 54, 0.2, 7.6, 1.3, Depot.Amber, neon)
 		light(strip, Depot.Amber, 23, 0.95)
+	end
+	box("Airlock header", 0, 8.3, 54, 31.5, 0.78, 1.5, steel, Enum.Material.Metal)
+	local archSign = box("Airlock direction sign", 0, 8.3, 53.2, 13, 0.72, 0.1, ink)
+	sign(archSign, "07  /  SAFE ZONE", Depot.Amber)
+	for _, x in {-5.4, 5.4} do
+		for z = 55, 63, 2 do
+			box("Return lane light", x, 0.061, z, 0.26, 0.09, 0.84, Depot.Amber, neon)
+		end
 	end
 	sign(box("Airlock sign", 0, 5.3, 72.8, 13, 1.4, 0.6, ink), "07  /  AIRLOCK", Depot.Amber)
 	sign(box("Back wall sign", 0, 8.4, 72.8, 37, 4, 0.6, ink), "BLACKOUT FREIGHT", Depot.Cyan)
@@ -197,6 +223,12 @@ function Depot.build()
 		sign(box("Power routing board", route.x, 5.4, 72.7, 8.5, 0.9, 0.48, ink), route.title, route.color)
 	end
 	local mast = box("Relay mast", 0, 14, -66, 2.5, 28, 2.5, steel, Enum.Material.Metal, true)
+	for _, x in {-4.2, 4.2} do
+		box("Relay cooling tower", x, 7.5, -67, 3, 15, 3, steel, Enum.Material.Metal)
+		for y = 2.8, 12, 2.3 do
+			box("Cooling fins", x, y, -65.44, 2.7, 0.16, 0.18, Depot.Cyan)
+		end
+	end
 	for _, y in {15, 20, 25} do
 		box("Antenna crossbar", 0, y, -66, 14 - (y - 15) * 0.45, 0.42, 1.2, steel, Enum.Material.Metal)
 	end
@@ -238,10 +270,12 @@ function Depot.build()
 	for _, x in {-2.75, 2.75} do
 		Depot.part(drone, "Thruster", Vector3.new(1.1, 0.8, 2.6), CFrame.new(x, -0.45, 0), steel)
 		Depot.part(drone, "Thruster flare", Vector3.new(0.78, 0.16, 1.75), CFrame.new(x, -0.91, 0), Depot.Red, neon)
+		Depot.part(drone, "Armored wing", Vector3.new(1.6, 0.34, 2.4), CFrame.new(x * 1.1, 0.42, 0.22), steel, Enum.Material.Metal)
 	end
 	light(core, Depot.Red, 19, 1.25)
 	local scan = Instance.new("SpotLight")
-	scan.Color = Depot.Red
+	scan.Name = "Scanner"
+	scan.Color = Depot.Amber
 	scan.Face = Enum.NormalId.Bottom
 	scan.Angle = 72
 	scan.Range = 15

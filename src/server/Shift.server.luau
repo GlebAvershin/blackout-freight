@@ -18,6 +18,7 @@ game:BindToClose(function()
 end)
 
 local world, terminal, positions, drone, consoles, showPower = Depot.build()
+local scanner = drone.PrimaryPart.Scanner
 local searchBeam = Instance.new("Beam")
 searchBeam.Name = "TrackingBeam"
 searchBeam.Attachment0 = Instance.new("Attachment", drone.PrimaryPart)
@@ -43,6 +44,7 @@ local random = Random.new()
 local round
 local cells = {}
 local carried = {}
+local trackedPlayer
 local players = {}
 local roundGuid
 local roundStartedAt
@@ -115,6 +117,12 @@ local function clearCargo(player)
 		carried[player] = nil
 	end
 	player:SetAttribute("Carrying", false)
+	if trackedPlayer == player then
+		trackedPlayer = nil
+		searchBeam.Attachment1 = nil
+		scanner.Color = Depot.Amber
+		player:SetAttribute("Tracked", false)
+	end
 end
 
 local function recover(player)
@@ -171,6 +179,7 @@ deliver.Triggered:Connect(function(player)
 	end
 	if round:deposit(player.UserId, now()) then
 		clearCargo(player)
+		player:SetAttribute("ShiftDeliveries", (player:GetAttribute("ShiftDeliveries") or 0) + 1)
 		state:SetAttribute("Delivered", round.delivered)
 		local routing = round.outcome == "routing"
 		showPower(round.delivered, routing)
@@ -228,7 +237,9 @@ local function join(player)
 	end
 	players[player] = {onboard = 0, picked = false, delivered = false, activeShifts = 0, startedAt = now()}
 	player:SetAttribute("Carrying", false)
+	player:SetAttribute("Tracked", false)
 	player:SetAttribute("Wins", 0)
+	player:SetAttribute("ShiftDeliveries", 0)
 	player:SetAttribute("Aurora", false)
 	player:SetAttribute("Caught", 0)
 	player:SetAttribute("FirstDelivery", false)
@@ -290,7 +301,17 @@ local function moveDrone(dt)
 		end
 	end
 	local goal = patrol[patrolIndex]
-	searchBeam.Attachment1 = target and carried[target].PrimaryPart.TrackingTarget or nil
+	if target ~= trackedPlayer then
+		if trackedPlayer then
+			trackedPlayer:SetAttribute("Tracked", false)
+		end
+		trackedPlayer = target
+		searchBeam.Attachment1 = target and carried[target].PrimaryPart.TrackingTarget or nil
+		scanner.Color = target and Depot.Red or Depot.Amber
+		if target then
+			target:SetAttribute("Tracked", true)
+		end
+	end
 	if targetRoot then
 		local pos = targetRoot.Position
 		goal = Vector3.new(math.clamp(pos.X, -65, 65), dronePoint.Y, math.clamp(pos.Z, -70, 52.5))
@@ -396,6 +417,7 @@ local function startShift()
 	end
 	for player, data in players do
 		data.picked, data.delivered, data.choseRoute = false, false, false
+		player:SetAttribute("ShiftDeliveries", 0)
 		player:SetAttribute("ArchiveUnlockedThisShift", false)
 		funnel(player, 1, "Shift started")
 	end

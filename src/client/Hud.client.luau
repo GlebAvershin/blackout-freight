@@ -8,6 +8,7 @@ local SocialService = game:GetService("SocialService")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local shared = ReplicatedStorage:WaitForChild("Freight")
@@ -63,7 +64,26 @@ local card = add("Frame", gui, {
 })
 local cardLimit = add("UISizeConstraint", card, {MaxSize = Vector2.new(402, 146)})
 add("UICorner", card, {CornerRadius = UDim.new(0, 5)})
-add("UIStroke", card, {Color = colors.slate, Thickness = 1})
+local cardStroke = add("UIStroke", card, {Color = colors.slate, Thickness = 1})
+local pulse = add("Frame", card, {
+	Name = "DeliveryPulse", Position = UDim2.new(0, 5, 0, 0), Size = UDim2.new(1, -10, 0, 2),
+	BackgroundColor3 = colors.cyan, BackgroundTransparency = 1, BorderSizePixel = 0,
+})
+local deliverySound = add("Sound", gui, {
+	SoundId = "rbxasset://sounds/volume_slider.ogg", Volume = 0.28, PlaybackSpeed = 0.92,
+})
+local fade = TweenService:Create(pulse, TweenInfo.new(0.65, Enum.EasingStyle.Quad), {BackgroundTransparency = 1})
+local previousDeliveries = player:GetAttribute("ShiftDeliveries") or 0
+player:GetAttributeChangedSignal("ShiftDeliveries"):Connect(function()
+	local deliveries = player:GetAttribute("ShiftDeliveries") or 0
+	if deliveries > previousDeliveries then
+		fade:Cancel()
+		pulse.BackgroundTransparency = 0
+		fade:Play()
+		deliverySound:Play()
+	end
+	previousDeliveries = deliveries
+end)
 
 local function label(parent, name, x, y, width, height, px, color, heavy)
 	return add("TextLabel", parent, {
@@ -169,15 +189,21 @@ for _, line in {westRecord, eastRecord} do
 	line.TextWrapped = true
 	line.TextTruncate = Enum.TextTruncate.None
 end
-journalButton.Activated:Connect(function()
+local function toggleJournal()
 	journalPanel.Visible = not journalPanel.Visible
 	if journalPanel.Visible then
 		journalPanel.CanvasPosition = Vector2.zero
 	end
+end
+journalButton.Activated:Connect(toggleJournal)
+UserInputService.InputBegan:Connect(function(input, handled)
+	if not handled and input.KeyCode == Enum.KeyCode.J then
+		toggleJournal()
+	end
 end)
 
 local function drawGuide(phase, carrying, route)
-	if phase ~= "live" or player:GetAttribute("FirstDelivery") then
+	if phase ~= "live" or (not carrying and player:GetAttribute("FirstDelivery")) then
 		marker.Enabled = false
 		return
 	end
@@ -204,6 +230,16 @@ local function drawGuide(phase, carrying, route)
 	markerText.Text = passage and t("▼  PASSAGE", "▼  ПРОХОД")
 		or carrying and t("▼  AIRLOCK", "▼  ШЛЮЗ") or t("▼  BATTERY", "▼  БАТАРЕЯ")
 end
+
+local nextObjectives = {
+	bothEndings = {"Find both endings to unlock Mira's archive.", "Открой обе концовки, чтобы найти архив Миры."},
+	broadcast = {"Next: send the recording from BROADCAST.", "Дальше: передай запись с консоли «Эфир»."},
+	shelter = {"Next: power the SHELTER console.", "Дальше: запитай консоль «Укрытие»."},
+	bothRecords = {"Next: win each special route to recover a recording.", "Дальше: найди записи в обеих особых сменах."},
+	west = {"Next: recover Mira's West Bypass recording.", "Дальше: найди запись на западном обходе."},
+	east = {"Next: recover Mira's East Service recording.", "Дальше: найди запись на восточной ветке."},
+	complete = {"Archive complete. Gold battery casing unlocked.", "Архив собран. Золотой корпус батареи открыт."},
+}
 
 local function drawJournal()
 	local broadcast = player:GetAttribute("EndingBroadcast") == true
@@ -300,9 +336,10 @@ local function draw()
 	local phase = state:GetAttribute("Phase")
 	local count = state:GetAttribute("Delivered") or 0
 	local target = state:GetAttribute("Target") or Config.Target
-	local winCount = player:GetAttribute("Wins") or 0
+	local deliveries = player:GetAttribute("ShiftDeliveries") or 0
 	local remaining = math.max(0, math.ceil((state:GetAttribute("EndsAt") or 0) - workspace:GetServerTimeNow()))
 	local carrying = player:GetAttribute("Carrying")
+	local tracked = phase == "live" and player:GetAttribute("Tracked") == true
 	local aurora = player:GetAttribute("Aurora")
 	local ending = state:GetAttribute("Ending")
 	local route = Operations.Routes[state:GetAttribute("Operation")]
@@ -316,6 +353,7 @@ local function draw()
 	brand.Text = route and string.upper(localized(route.name)) or t("DEPOT 07   /   THE LAST SIGNAL", "ДЕПО 07   /   ПОСЛЕДНИЙ СИГНАЛ")
 	timer.Text = phase == "waiting" and "—" or string.format("%d:%02d", remaining // 60, remaining % 60)
 	timer.TextColor3 = (phase == "routing" or (phase == "live" and remaining <= 20)) and colors.amber or colors.cyan
+	cardStroke.Color = tracked and colors.red or colors.slate
 	for i, segment in segments do
 		segment.BackgroundColor3 = i <= count and colors.cyan or colors.slate
 	end
@@ -323,8 +361,9 @@ local function draw()
 	if phase == "live" then
 		objective.Text = string.format(t("Power  %d/%d", "Питание  %d/%d"), count, target)
 		if carrying then
-			hint.TextColor3 = aurora and colors.aurora or colors.amber
-			hint.Text = t("The drone tracks the battery. Run to the amber airlock!", "Дрон засёк батарею. Беги в янтарный шлюз!")
+			hint.TextColor3 = tracked and colors.red or colors.amber
+			hint.Text = tracked and t("Sentinel has a lock. Run to the amber airlock!", "Sentinel засёк тебя. Беги в янтарный шлюз!")
+				or t("Battery secured. Bring it to the airlock console.", "Батарея у тебя. Отнеси её к консоли шлюза.")
 		elseif os.clock() < caughtUntil then
 			hint.TextColor3 = colors.red
 			hint.Text = t("Caught. The cell is back in its socket.", "Дрон поймал тебя. Батарея на постаменте.")
@@ -338,7 +377,7 @@ local function draw()
 		elseif count >= 1 then
 			radio.Text = t("Mira: One line is back. The archive is waking up.", "Мира: Первая линия ожила. Архив включается.")
 		else
-			radio.Text = t("Mira: The drone only chases people carrying a battery.", "Мира: Дрон преследует только тех, кто несёт батарею.")
+			radio.Text = t("Mira: Someone killed the lights. Get a cell before the relay dies.", "Мира: Кто-то вырубил свет. Возьми батарею, пока реле живо.")
 		end
 	elseif phase == "routing" then
 		objective.Text = t("Route the power", "Куда подать ток?")
@@ -347,7 +386,9 @@ local function draw()
 	elseif phase == "won" then
 		local broadcast = ending == "broadcast"
 		objective.Text = broadcast and t("Signal sent", "Сигнал передан") or t("Shelter powered", "Укрытие под светом")
-		hint.Text = string.format(t("Shifts cleared this session: %d", "Смен завершено за сеанс: %d"), winCount)
+		local nextObjective = Operations.nextObjective(player:GetAttribute("EndingBroadcast"), player:GetAttribute("EndingShelter"),
+			player:GetAttribute("ArchiveWest"), player:GetAttribute("ArchiveEast"))
+		hint.Text = localized(nextObjectives[nextObjective])
 		if state:GetAttribute("RouteSource") == "automatic" then
 			radio.Text = t("Mira: Time ran out. The relay powered the shelter.", "Мира: Время вышло. Реле запитало укрытие.")
 		else
@@ -355,18 +396,21 @@ local function draw()
 				or t("Mira: The shelter is lit. Everyone inside is safe.", "Мира: В укрытии свет. Люди в безопасности.")
 		end
 		if player:GetAttribute("ArchiveUnlockedThisShift") then
-			hint.Text = t("New recording recovered. Open the log.", "Новая запись найдена. Открой журнал.")
+			radio.Text = t("New recording recovered. Open the log.", "Новая запись найдена. Открой журнал.")
+		end
+		if not compact then
+			brand.Text = string.format(t("SHIFT COMPLETE   /   YOUR DELIVERIES %d", "СМЕНА ЗАВЕРШЕНА   /   ТВОИ ДОСТАВКИ %d"), deliveries)
 		end
 	elseif phase == "lost" then
 		objective.Text = t("Signal lost", "Сигнал потерян")
-		hint.Text = t("The relay ran out of time. Another shift is starting.", "Время вышло. Скоро новая смена.")
+		hint.Text = string.format(t("Crew charge %d/%d. You delivered %d.", "Заряд команды %d/%d. Твои доставки: %d."), count, target, deliveries)
 		radio.Text = t("Mira: Depot 07 to city control… do you read?", "Мира: Депо 07 вызывает город… Кто-нибудь слышит?")
 	else
 		objective.Text = t("Night shift", "Ночная смена")
 		hint.Text = t("Restore the relay. Start with a blue cell.", "Верни связь. Начни с синей батареи.")
 		radio.Text = t("Mira: I’m at dispatch. Follow the amber lights home.", "Мира: Я в диспетчерской. Янтарный свет ведёт обратно.")
 	end
-	shop.Visible = (phase == "won" or phase == "lost") and available and winCount > 0 and not aurora and not journalPanel.Visible
+	shop.Visible = (phase == "won" or phase == "lost") and available and (player:GetAttribute("Wins") or 0) > 0 and not aurora and not journalPanel.Visible
 	shop.Text = pending and t("Opening Roblox…", "Открываем Roblox…") or (price and ("AURORA LENS  /  " .. price .. " R$") or "AURORA LENS")
 end
 

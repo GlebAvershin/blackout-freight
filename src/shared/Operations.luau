@@ -24,6 +24,19 @@ function Operations.next(eligible, current, last)
 	return nil
 end
 
+function Operations.nextObjective(broadcast, shelter, west, east)
+	if not broadcast then
+		return shelter and "broadcast" or "bothEndings"
+	end
+	if not shelter then
+		return "shelter"
+	end
+	if not west then
+		return east and "west" or "bothRecords"
+	end
+	return east and "complete" or "east"
+end
+
 function Operations.waypoint(route, x, z, goalX, goalZ)
 	local divider = Operations.DividerZ
 	local side = z >= divider and 1 or -1

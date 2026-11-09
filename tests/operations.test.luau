@@ -6,6 +6,13 @@ assert(Operations.next(true, nil, nil) == "west")
 assert(Operations.next(true, "west", "west") == nil)
 assert(Operations.next(true, nil, "west") == "east")
 assert(Operations.next(true, nil, "east") == "west")
+assert(Operations.nextObjective(false, false, false, false) == "bothEndings")
+assert(Operations.nextObjective(true, false, false, false) == "shelter")
+assert(Operations.nextObjective(false, true, false, false) == "broadcast")
+assert(Operations.nextObjective(true, true, false, false) == "bothRecords")
+assert(Operations.nextObjective(true, true, true, false) == "east")
+assert(Operations.nextObjective(true, true, false, true) == "west")
+assert(Operations.nextObjective(true, true, true, true) == "complete")
 for key, route in Operations.Routes do
 	local seen = {}
 	for _, id in route.cells do

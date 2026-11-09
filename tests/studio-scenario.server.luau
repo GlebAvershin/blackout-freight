@@ -92,6 +92,9 @@ else
 end
 deposit(winner, 1)
 assert(winner:GetAttribute("FirstDelivery") == true)
+assert(winner:GetAttribute("ShiftDeliveries") == 1 and (not other or other:GetAttribute("ShiftDeliveries") == 0))
+press(winner, deliver)
+assert(winner:GetAttribute("ShiftDeliveries") == 1, "empty delivery changed the personal total")
 if other then
 	carry(other)
 	local corpse = other.Character
@@ -111,12 +114,14 @@ press(winner, broadcast)
 phase("won")
 assert(state:GetAttribute("Ending") == "broadcast")
 assert(state:GetAttribute("RouteSource") == "chosen")
+assert(winner:GetAttribute("ShiftDeliveries") == 5 and not winner:GetAttribute("Tracked"))
 assert(winner:GetAttribute("EndingBroadcast") and (not other or other:GetAttribute("EndingBroadcast")))
 assert(world:FindFirstChild("Relay beacon").Material == Enum.Material.Neon)
 assert(world:FindFirstChild("Shelter light").Material ~= Enum.Material.Neon)
 print("LAST SIGNAL QA PASS: five deliveries and broadcast")
 phase("live")
 assert(state:GetAttribute("Delivered") == 0 and state:GetAttribute("Ending") == "")
+assert(winner:GetAttribute("ShiftDeliveries") == 0, "next shift retained the personal total")
 for i = 1, 5 do
 	carry(winner)
 	deposit(winner, i)
