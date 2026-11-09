@@ -1,0 +1,4 @@
+.tools/
+.DS_Store
+*.rbxl.lock
+/dist/Blackout Freight.rbxl

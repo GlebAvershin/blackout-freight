@@ -1,0 +1,25 @@
+{
+  "name": "Blackout Freight",
+  "tree": {
+    "$className": "DataModel",
+    "Workspace": {
+      "$className": "Workspace",
+      "$properties": { "StreamingEnabled": false }
+    },
+    "Lighting": {
+      "$className": "Lighting",
+      "$properties": { "Technology": "Voxel" }
+    },
+    "ReplicatedStorage": {
+      "Freight": { "$path": "src/shared" }
+    },
+    "ServerScriptService": {
+      "Freight": { "$path": "src/server" }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Freight": { "$path": "src/client" }
+      }
+    }
+  }
+}
