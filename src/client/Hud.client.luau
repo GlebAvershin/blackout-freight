@@ -6,6 +6,8 @@ local ProximityPromptService = game:GetService("ProximityPromptService")
 local CollectionService = game:GetService("CollectionService")
 local SocialService = game:GetService("SocialService")
 local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local shared = ReplicatedStorage:WaitForChild("Freight")
@@ -46,6 +48,15 @@ end
 local gui = add("ScreenGui", player:WaitForChild("PlayerGui"), {
 	Name = "FreightHUD", ResetOnSpawn = false, DisplayOrder = 3, ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets,
 })
+-- Start with the objective unobstructed and keep Roblox's chat toggle available.
+task.spawn(function()
+	for _ = 1, 10 do
+		if pcall(StarterGui.SetCore, StarterGui, "ChatActive", false) then
+			break
+		end
+		task.wait(0.25)
+	end
+end)
 local card = add("Frame", gui, {
 	Name = "ShiftCard", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 8),
 	Size = UDim2.new(0.94, 0, 0, 146), BackgroundColor3 = colors.ink, BackgroundTransparency = 0.07, BorderSizePixel = 0,
@@ -152,6 +163,8 @@ local archiveTitle = label(journalPanel, "ArchiveTitle", 12, 97, nil, 20, 13, co
 local westRecord = label(journalPanel, "WestRecord", 12, 117, nil, 39, 12, colors.cyan, false)
 local eastRecord = label(journalPanel, "EastRecord", 12, 157, nil, 39, 12, colors.cyan, false)
 local archiveReward = label(journalPanel, "ArchiveReward", 12, 198, nil, 22, 12, colors.amber, true)
+local compact = false
+local dockBottom = 40
 for _, line in {westRecord, eastRecord} do
 	line.TextWrapped = true
 	line.TextTruncate = Enum.TextTruncate.None
@@ -223,9 +236,10 @@ local function drawJournal()
 		or t("Both recordings unlock a gold casing.", "За две записи откроется золотой корпус.")
 	westRecord.Visible, eastRecord.Visible, archiveReward.Visible = count == 2, count == 2, count == 2
 	local top = journalPanel.Position.Y.Offset
-	local height = count == 2 and 224 or 122
+	local height = count == 2 and (compact and 174 or 224) or (compact and 96 or 122)
 	journalPanel.CanvasSize = UDim2.fromOffset(0, height)
-	journalPanel.Size = UDim2.new(0.92, 0, 0, math.clamp(gui.AbsoluteSize.Y - top - 8, 42, height))
+	local bottomInset = compact and (dockBottom + 8) or 8
+	journalPanel.Size = UDim2.new(0.92, 0, 0, math.clamp(gui.AbsoluteSize.Y - top - bottomInset, 42, height))
 end
 
 if russian then
@@ -248,7 +262,8 @@ local shop = add("TextButton", gui, {
 add("UICorner", shop, {CornerRadius = UDim.new(0, 8)})
 add("UIStroke", shop, {Color = colors.aurora, Transparency = 0.45})
 local function layout()
-	local compact = gui.AbsoluteSize.Y < 420
+	compact = UserInputService.TouchEnabled or gui.AbsoluteSize.Y < 420
+	dockBottom = gui.AbsoluteSize.X < gui.AbsoluteSize.Y and 126 or 40
 	local height = compact and 112 or 146
 	card.Size = UDim2.new(0.94, 0, 0, height)
 	cardLimit.MaxSize = Vector2.new(compact and 374 or 402, height)
@@ -259,9 +274,17 @@ local function layout()
 	hint.Position = UDim2.fromOffset(14, compact and 43 or 70)
 	divider.Position = UDim2.fromOffset(14, compact and 72 or 100)
 	radio.Position = UDim2.fromOffset(14, compact and 74 or 103)
-	journalButton.Position = UDim2.new(0.5, -69, 0, height + 13)
-	invite.Position = UDim2.new(0.5, 69, 0, height + 13)
-	journalPanel.Position = UDim2.new(0.5, 0, 0, height + 53)
+	local dockY = compact and UDim.new(1, -dockBottom) or UDim.new(0, height + 13)
+	journalButton.Position = UDim2.new(UDim.new(0.5, -69), dockY)
+	invite.Position = UDim2.new(UDim.new(0.5, 69), dockY)
+	journalPanel.Position = UDim2.new(0.5, 0, 0, height + (compact and 13 or 53))
+	broadcastLine.Position, broadcastLine.Size = UDim2.fromOffset(12, compact and 4 or 6), UDim2.new(1, -24, 0, compact and 20 or 25)
+	shelterLine.Position, shelterLine.Size = UDim2.fromOffset(12, compact and 25 or 32), UDim2.new(1, -24, 0, compact and 20 or 25)
+	journalStatus.Position, journalStatus.Size = UDim2.fromOffset(12, compact and 47 or 58), UDim2.new(1, -24, 0, compact and 26 or 38)
+	archiveTitle.Position = UDim2.fromOffset(12, compact and 74 or 97)
+	westRecord.Position, westRecord.Size = UDim2.fromOffset(12, compact and 93 or 117), UDim2.new(1, -24, 0, compact and 29 or 39)
+	eastRecord.Position, eastRecord.Size = UDim2.fromOffset(12, compact and 122 or 157), UDim2.new(1, -24, 0, compact and 29 or 39)
+	archiveReward.Position = UDim2.fromOffset(12, compact and 150 or 198)
 	shop.Position = journalPanel.Position
 end
 gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(layout)
@@ -319,7 +342,7 @@ local function draw()
 		end
 	elseif phase == "routing" then
 		objective.Text = t("Route the power", "Куда подать ток?")
-		hint.Text = t("At the airlock: broadcast left, shelter right.", "В шлюзе: эфир слева, укрытие справа.")
+		hint.Text = t("Choose BROADCAST or SHELTER at the airlock.", "В шлюзе выбери консоль «Эфир» или «Укрытие».")
 		radio.Text = t("Mira: Only one circuit. We can send the proof or light the shelter.", "Мира: Хватит на одну линию. Передадим запись или спасём укрытие.")
 	elseif phase == "won" then
 		local broadcast = ending == "broadcast"
