@@ -291,12 +291,51 @@ if russian then
 end
 
 local shop = add("TextButton", gui, {
-	Name = "AuroraLens", Position = UDim2.new(0.5, 0, 0, 156), AnchorPoint = Vector2.new(0.5, 0),
-	Size = UDim2.fromOffset(240, 43), BackgroundColor3 = colors.ink, TextColor3 = colors.aurora,
-	TextSize = 14, Font = Enum.Font.GothamBold, Text = "", AutoLocalize = false, Visible = false,
+	Name = "AuroraLens", AnchorPoint = Vector2.new(0.5, 0),
+	Size = UDim2.fromOffset(240, 44), BackgroundColor3 = colors.ink, TextColor3 = colors.aurora,
+	TextSize = 14, Font = Enum.Font.GothamBold, Text = t("PREVIEW AURORA LENS", "ПОСМОТРЕТЬ AURORA LENS"),
+	AutoLocalize = false, Visible = false,
 })
 add("UICorner", shop, {CornerRadius = UDim.new(0, 8)})
 add("UIStroke", shop, {Color = colors.aurora, Transparency = 0.45})
+local preview = add("Frame", gui, {
+	Name = "AuroraPreview", AnchorPoint = Vector2.new(0.5, 0), Size = UDim2.new(0.92, 0, 0, 140),
+	BackgroundColor3 = colors.ink, Visible = false,
+})
+add("UISizeConstraint", preview, {MaxSize = Vector2.new(326, 140)})
+add("UICorner", preview, {CornerRadius = UDim.new(0, 8)})
+add("UIStroke", preview, {Color = colors.aurora, Transparency = 0.45})
+label(preview, "Title", 12, 7, nil, 19, 15, colors.aurora, true).Text = "AURORA LENS"
+label(preview, "Description", 12, 28, nil, 18, 12, colors.paper, false).Text =
+	t("Permanent battery lighting", "Постоянная подсветка батареи")
+for index, swatch in {
+	{t("Standard", "Стандарт"), colors.cyan},
+	{"Aurora", colors.aurora},
+} do
+	local sample = add("Frame", preview, {
+		Name = index == 1 and "Standard" or "Aurora", Position = UDim2.new((index - 1) * 0.5, 12, 0, 51),
+		Size = UDim2.new(0.5, -18, 0, 28), BackgroundColor3 = colors.slate, BorderSizePixel = 0,
+	})
+	add("Frame", sample, {
+		Position = UDim2.fromOffset(4, 4), Size = UDim2.fromOffset(4, 20),
+		BackgroundColor3 = swatch[2], BorderSizePixel = 0,
+	})
+	label(sample, "Style", 15, 0, nil, 28, 13, swatch[2], true).Text = swatch[1]
+end
+local function previewButton(name, position, size, color)
+	local button = add("TextButton", preview, {
+		Name = name, Position = position, Size = size, BackgroundColor3 = colors.slate,
+		Text = "", TextColor3 = color, TextSize = 14, Font = Enum.Font.GothamBold, AutoLocalize = false,
+	})
+	add("UICorner", button, {CornerRadius = UDim.new(0, 5)})
+	return button
+end
+local closePreview = previewButton("Close", UDim2.fromOffset(12, 87), UDim2.new(0.4, -16, 0, 44), colors.paper)
+closePreview.Text = t("Close", "Закрыть")
+local buy = previewButton("Buy", UDim2.new(0.4, 4, 0, 87), UDim2.new(0.6, -16, 0, 44), colors.aurora)
+closePreview.Activated:Connect(function()
+	preview.Visible = false
+end)
 local function layout()
 	compact = UserInputService.TouchEnabled or gui.AbsoluteSize.Y < 420
 	dockBottom = gui.AbsoluteSize.X < gui.AbsoluteSize.Y and 126 or 40
@@ -322,6 +361,7 @@ local function layout()
 	eastRecord.Position, eastRecord.Size = UDim2.fromOffset(12, compact and 122 or 157), UDim2.new(1, -24, 0, compact and 29 or 39)
 	archiveReward.Position = UDim2.fromOffset(12, compact and 150 or 198)
 	shop.Position = journalPanel.Position
+	preview.Position = shop.Position
 end
 gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(layout)
 layout()
@@ -331,6 +371,8 @@ local price
 local lastCaught = player:GetAttribute("Caught") or 0
 local caughtUntil = 0
 local pending = false
+local offered = false
+local commerce = Config.CosmeticPassId > 0 and shared:WaitForChild("Commerce")
 
 local function draw()
 	local phase = state:GetAttribute("Phase")
@@ -410,25 +452,49 @@ local function draw()
 		hint.Text = t("Restore the relay. Start with a blue cell.", "Верни связь. Начни с синей батареи.")
 		radio.Text = t("Mira: I’m at dispatch. Follow the amber lights home.", "Мира: Я в диспетчерской. Янтарный свет ведёт обратно.")
 	end
-	shop.Visible = (phase == "won" or phase == "lost") and available and (player:GetAttribute("Wins") or 0) > 0 and not aurora and not journalPanel.Visible
-	shop.Text = pending and t("Opening Roblox…", "Открываем Roblox…") or (price and ("AURORA LENS  /  " .. price .. " R$") or "AURORA LENS")
+	if aurora or carrying or phase == "routing" or journalPanel.Visible then
+		preview.Visible = false
+	end
+	local wonBefore = (player:GetAttribute("Wins") or 0) > 0
+		or player:GetAttribute("EndingBroadcast") or player:GetAttribute("EndingShelter")
+	shop.Visible = (phase == "won" or phase == "lost") and available and wonBefore
+		and aurora == false and not journalPanel.Visible and not preview.Visible
+	if shop.Visible and not offered then
+		offered = true
+		commerce:FireServer(1)
+	end
+	buy.Text = pending and t("Opening Roblox…", "Открываем Roblox…")
+		or (price and string.format(t("Buy · %d R$", "Купить · %d R$"), price) or t("Buy", "Купить"))
 end
 
-if Config.CosmeticPassId > 0 then
+if commerce then
 	task.spawn(function()
-		local ok, info = pcall(MarketplaceService.GetProductInfoAsync, MarketplaceService, Config.CosmeticPassId, Enum.InfoType.GamePass)
-		if ok and info.IsForSale then
-			price = info.PriceInRobux
-			available = true
+		for attempt = 1, 3 do
+			local ok, info = pcall(MarketplaceService.GetProductInfoAsync, MarketplaceService, Config.CosmeticPassId, Enum.InfoType.GamePass)
+			if ok then
+				price = info.PriceInRobux
+				available = info.IsForSale and type(price) == "number"
+				break
+			end
+			task.wait(attempt)
 		end
 	end)
 	shop.Activated:Connect(function()
-		if pending or not shop.Visible then
+		if shop.Visible then
+			preview.Visible = true
+			shop.Visible = false
+			commerce:FireServer(2)
+		end
+	end)
+	buy.Activated:Connect(function()
+		if pending or not preview.Visible or player:GetAttribute("Aurora") or player:GetAttribute("Carrying") then
 			return
 		end
 		pending = true
 		local ok = pcall(MarketplaceService.PromptGamePassPurchase, MarketplaceService, player, Config.CosmeticPassId)
-		if not ok then
+		if ok then
+			commerce:FireServer(3)
+		else
 			pending = false
 		end
 	end)

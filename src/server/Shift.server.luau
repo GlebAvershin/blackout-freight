@@ -240,7 +240,6 @@ local function join(player)
 	player:SetAttribute("Tracked", false)
 	player:SetAttribute("Wins", 0)
 	player:SetAttribute("ShiftDeliveries", 0)
-	player:SetAttribute("Aurora", false)
 	player:SetAttribute("Caught", 0)
 	player:SetAttribute("FirstDelivery", false)
 	journal:join(player)
@@ -259,8 +258,8 @@ local function join(player)
 			for attempt = 1, 3 do
 				local ok, owned = pcall(MarketplaceService.UserOwnsGamePassAsync, MarketplaceService, player.UserId, Config.CosmeticPassId)
 				if ok then
-					if owned and players[player] then
-						player:SetAttribute("Aurora", true)
+					if players[player] and player:GetAttribute("Aurora") == nil then
+						player:SetAttribute("Aurora", owned)
 					end
 					break
 				end
@@ -276,9 +275,33 @@ Players.PlayerRemoving:Connect(function(player)
 	journal:leave(player)
 	players[player] = nil
 end)
+if Config.CosmeticPassId > 0 then
+	local steps = {"Offer shown", "Preview opened", "Purchase prompt opened"}
+	local commerce = Instance.new("RemoteEvent")
+	commerce.Name = "Commerce"
+	commerce.OnServerEvent:Connect(function(player, step)
+		local data = players[player]
+		if not data or step ~= (data.commerceStep or 0) + 1 or not steps[step] then
+			return
+		end
+		if step == 1 then
+			local wonBefore = player:GetAttribute("Wins") > 0
+				or player:GetAttribute("EndingBroadcast") or player:GetAttribute("EndingShelter")
+			if not wonBefore or player:GetAttribute("Aurora") ~= false then
+				return
+			end
+			data.commerceSession = HttpService:GenerateGUID(false)
+		end
+		data.commerceStep = step
+		log(AnalyticsService.LogFunnelStepEvent, player, "Aurora Lens", data.commerceSession, step, steps[step])
+	end)
+	commerce.Parent = shared
+end
+
 MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passId, bought)
 	if bought and passId == Config.CosmeticPassId and passId > 0 and players[player] then
 		player:SetAttribute("Aurora", true)
+		log(AnalyticsService.LogCustomEvent, player, "AuroraPassPurchased")
 	end
 end)
 for _, player in Players:GetPlayers() do
