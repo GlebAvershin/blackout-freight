@@ -3,6 +3,7 @@ local shared = game:GetService("ReplicatedStorage"):WaitForChild("Freight")
 local invite = require(shared:WaitForChild("FriendInvite"))
 local operations = require(shared:WaitForChild("Operations"))
 local state = shared:WaitForChild("Shift")
+local collection = game:GetService("CollectionService")
 local gui = player:WaitForChild("PlayerGui"):WaitForChild("FreightHUD")
 assert(gui:WaitForChild("InviteFriends"):IsA("TextButton"))
 assert(gui:WaitForChild("EndingJournal"):WaitForChild("ArchiveReward"):IsA("TextLabel"))
@@ -16,13 +17,39 @@ assert(invite.open(platform, player, false) == "local" and prompted == 0)
 assert(invite.open(platform, player, true) == "opened" and prompted == 1)
 print("LAST SIGNAL QA PASS: invite UI and platform adapter in Studio client")
 
+task.spawn(function()
+	local beacon = collection:GetTagged("FreightDecoy")[1]
+		or collection:GetInstanceAddedSignal("FreightDecoy"):Wait()
+	local prompt = beacon:FindFirstChildWhichIsA("ProximityPrompt", true)
+	local offer = gui:WaitForChild("AuroraLens")
+	local checkedBeacon = false
+	while gui.Parent do
+		if not checkedBeacon and player:GetAttribute("Carrying") and state:GetAttribute("DecoyReady") then
+			task.wait(0.25)
+			if player:GetAttribute("Carrying") and state:GetAttribute("DecoyReady") then
+				assert(not prompt.Enabled, "carrier received a beacon prompt")
+				checkedBeacon = true
+				print("LAST SIGNAL QA PASS: beacon prompt hidden from carrier")
+			end
+		end
+		if state:GetAttribute("Phase") == "won" and player:GetAttribute("ShiftDeliveries") == 5 then
+			task.wait(0.25)
+			assert(offer.Visible, "Aurora preview missing after first win")
+			print("LAST SIGNAL QA PASS: Aurora preview available after victory")
+			break
+		end
+		task.wait(0.05)
+	end
+end)
+
 local seen = {}
 while not (seen.west and seen.east) do
 	local key = state:GetAttribute("Operation")
 	local route = operations.Routes[key]
 	if route and not seen[key] and state:GetAttribute("Phase") == "live" then
 		local radio = gui.ShiftCard.Radio.Text
-		if radio == route.start[1] or radio == route.start[2] then
+		if radio == route.start[1] or radio == route.start[2]
+			or (key == "west" and (radio:find("red case", 1, true) or radio:find("красный кейс", 1, true))) then
 			seen[key] = true
 			print("LAST SIGNAL QA PASS: Mira radio and operation HUD " .. key)
 		end

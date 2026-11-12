@@ -1,0 +1,11 @@
+task.spawn(function()
+	local studioTest = game:GetService("StudioTestService")
+	local snapshot = studioTest:ExecuteMultiplayerTestAsync(4, "FourPlayerShift")
+	assert(type(snapshot) == "string" and snapshot:match("^FourPlayerRestore:"), tostring(snapshot))
+	-- Studio can still be closing the first test when ExecuteMultiplayerTestAsync returns.
+	task.wait(5)
+	assert(studioTest.EditModeActive, "Studio did not return to edit mode")
+	local result = studioTest:ExecuteMultiplayerTestAsync(4, snapshot)
+	print("FREIGHT FOUR PLAYER RESULT", result)
+	assert(result == "Four-player journal restore passed", tostring(result))
+end)

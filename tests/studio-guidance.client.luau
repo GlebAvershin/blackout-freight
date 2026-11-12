@@ -1,0 +1,36 @@
+assert(game:GetService("RunService"):IsStudio())
+local player = game:GetService("Players").LocalPlayer
+local state = game:GetService("ReplicatedStorage"):WaitForChild("Freight"):WaitForChild("Shift")
+local gui = player:WaitForChild("PlayerGui"):WaitForChild("FreightHUD")
+local card = gui:WaitForChild("ShiftCard")
+local guide = gui:WaitForChild("FirstDeliveryGuide")
+local function waitFor(condition, description, seconds)
+	local deadline = os.clock() + (seconds or 3)
+	repeat
+		if condition() then return end
+		task.wait(0.05)
+	until os.clock() >= deadline
+	error("GUIDANCE QA: " .. description, 2)
+end
+
+waitFor(function() return guide.Enabled end, "first pickup marker", 12)
+state:SetAttribute("Delivered", 1)
+player:SetAttribute("FirstDelivery", true)
+player:SetAttribute("ShiftDeliveries", 1)
+waitFor(function()
+	return guide.Enabled and (card.Hint.Text:find("Battery delivered", 1, true) or card.Hint.Text:find("Батарея принята", 1, true))
+end, "first delivery confirmation and next marker")
+waitFor(function() return not guide.Enabled end, "handoff expires", 6)
+player:SetAttribute("Caught", 1)
+waitFor(function() return guide.Enabled end, "marker returns after a catch")
+state:SetAttribute("Phase", "lost")
+waitFor(function()
+	return not guide.Enabled and (card.Radio.Text:find("automatically", 1, true) or card.Radio.Text:find("начнётся сама", 1, true))
+end, "loss explains auto restart and clears the marker")
+state:SetAttribute("Delivered", 0)
+player:SetAttribute("ShiftDeliveries", 0)
+state:SetAttribute("Phase", "live")
+waitFor(function() return guide.Enabled end, "next shift shows marker despite lifetime first delivery")
+assert(player:GetAttribute("FirstDelivery") == true)
+print("GUIDANCE QA PASS: pickup, handoff, recovery, loss and next shift")
+game:GetService("ReplicatedStorage"):WaitForChild("GuidanceResult"):FireServer()

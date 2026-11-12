@@ -4,20 +4,27 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MarketplaceService = game:GetService("MarketplaceService")
 local AnalyticsService = game:GetService("AnalyticsService")
 local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
 local CollectionService = game:GetService("CollectionService")
 local DataStoreService = game:GetService("DataStoreService")
 local shared = ReplicatedStorage:WaitForChild("Freight")
 local Round = require(shared.Round)
 local Config = require(shared.Config)
 local Operations = require(shared.Operations)
+local Dispatch = require(shared.Dispatch)
+local PowerCell = require(shared.PowerCell)
+local FriendInvite = require(shared.FriendInvite)
 local Depot = require(script.Parent.Depot)
 local EndingJournal = require(script.Parent.EndingJournal)
+local blackBoxId = "blackBox"
+local finishPasses = {Aurora = Config.CosmeticPassId, Crew = Config.CrewPassId}
 local journal = EndingJournal.new(not RunService:IsStudio() and DataStoreService:GetDataStore("FreightEndings_v1") or nil)
 game:BindToClose(function()
 	journal:flush()
 end)
 
-local world, terminal, positions, drone, consoles, showPower = Depot.build()
+local world, terminal, positions, drone, consoles, showPower, beacon, lightBeacon = Depot.build()
+CollectionService:AddTag(drone.PrimaryPart, "FreightSentinel")
 local scanner = drone.PrimaryPart.Scanner
 local searchBeam = Instance.new("Beam")
 searchBeam.Name = "TrackingBeam"
@@ -38,6 +45,9 @@ state:SetAttribute("RouteSource", "")
 state:SetAttribute("Operation", "")
 state:SetAttribute("Target", Config.Target)
 state:SetAttribute("EndsAt", 0)
+state:SetAttribute("DecoyUntil", 0)
+state:SetAttribute("DecoyReady", false)
+state:SetAttribute("BlackBoxStatus", "")
 state.Parent = shared
 
 local random = Random.new()
@@ -48,7 +58,11 @@ local trackedPlayer
 local players = {}
 local roundGuid
 local roundStartedAt
+local dispatchWeek
+local decoyUntil, decoyReadyAt = 0, 0
+local distracted = false
 local operation, lastOperation, layout
+local crewInviteToken, crewInviteExpires, crewReplay
 local depotSpawn = CFrame.new(0, 4, 59)
 local droneStart = Vector3.new(-19, 5.5, 12)
 local function now()
@@ -117,6 +131,7 @@ local function clearCargo(player)
 		carried[player] = nil
 	end
 	player:SetAttribute("Carrying", false)
+	player:SetAttribute("BlackBoxCarrying", false)
 	if trackedPlayer == player then
 		trackedPlayer = nil
 		searchBeam.Attachment1 = nil
@@ -131,15 +146,27 @@ local function recover(player)
 	if id and round.outcome == "live" and cells[id] then
 		cells[id].Parent = world
 		cells[id].PrimaryPart.Attachment.ProximityPrompt.Enabled = true
+		if id == blackBoxId then
+			state:SetAttribute("BlackBoxStatus", "available")
+		end
 	end
 end
 
-local function showCargo(player, root)
-	local color = player:GetAttribute("Aurora") and Depot.Aurora or Depot.Cyan
-	local model = Depot.battery(world, root.CFrame * CFrame.new(0, 0, 1.1), color)
-	if player:GetAttribute("ArchiveGold") then
+local function showCargo(player, root, isBlackBox)
+	local finish = PowerCell.equipped(player)
+	local color = PowerCell.Finishes[finish]
+	local cf = root.CFrame * CFrame.new(0, 0, 1.1)
+	local model = if isBlackBox then Depot.blackBox(world, cf) else PowerCell.build(world, cf, color, finish)
+	if not isBlackBox then
+		model:SetAttribute("CellFinish", finish)
+	end
+	if not isBlackBox and finish ~= "Crew" and player:GetAttribute("ArchiveGold") then
 		model.PrimaryPart.Color = Color3.fromRGB(185, 130, 46)
 		model.PrimaryPart.Material = Enum.Material.Metal
+	end
+	if not isBlackBox and (player:GetAttribute("DispatchWeeks") or 0) >= Dispatch.RewardWeeks then
+		model.Terminal.Color = PowerCell.Dispatch
+		model.Terminal.Material = Enum.Material.Neon
 	end
 	Instance.new("Attachment", model.PrimaryPart).Name = "TrackingTarget"
 	for _, part in model:GetChildren() do
@@ -152,6 +179,7 @@ local function showCargo(player, root)
 		part.Anchored = false
 	end
 	carried[player] = model
+	player:SetAttribute("BlackBoxCarrying", isBlackBox)
 	player:SetAttribute("Carrying", true)
 end
 
@@ -169,6 +197,72 @@ for ending, console in consoles do
 	end)
 end
 
+local decoy, decoyAnchor = promptAt(beacon, "Activate", "Decoy beacon", Vector3.new(0, 2, 0))
+decoy.RequiresLineOfSight = false
+CollectionService:AddTag(beacon, "FreightDecoy")
+
+local function setDecoyReady(ready)
+	decoy.Enabled = ready
+	state:SetAttribute("DecoyReady", ready)
+end
+
+local function resetDecoy()
+	decoyUntil, decoyReadyAt, distracted = 0, 0, false
+	setDecoyReady(false)
+	lightBeacon(false)
+	scanner.Color = Depot.Amber
+	searchBeam.Attachment1 = nil
+	searchBeam.Color = ColorSequence.new(Depot.Red)
+	state:SetAttribute("DecoyUntil", 0)
+end
+
+decoy.Triggered:Connect(function(player)
+	local time = now()
+	if not round or round.outcome ~= "live" or time >= round.deadline or time < decoyReadyAt
+		or not trackedPlayer or carried[player] or not players[player] or not within(player, decoyAnchor) then
+		return
+	end
+	decoyUntil, decoyReadyAt = time + Config.DecoySeconds, time + Config.DecoyCooldown
+	round:assistBonus(trackedPlayer.UserId, player.UserId)
+	setDecoyReady(false)
+	state:SetAttribute("DecoyUntil", decoyUntil)
+	log(AnalyticsService.LogCustomEvent, player, "DecoyActivated")
+end)
+
+local function showDeliveryEffect(player, isBlackBox)
+	local cargo = carried[player]
+	local finish = (cargo and cargo:GetAttribute("CellFinish")) or PowerCell.equipped(player)
+	if not isBlackBox and finish == "Crew" then
+		local ring = PowerCell.crewRing(world, CFrame.new(terminal.Position.X, 3.65, terminal.Position.Z), 1.35)
+		local tween = TweenInfo.new(0.55, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		local center = ring:GetPivot().Position
+		for _, segment in ring:GetChildren() do
+			local offset = segment.Position - center
+			TweenService:Create(segment, tween, {
+				Position = segment.Position + offset * 2.5,
+				Size = Vector3.new(segment.Size.X * 3.5, segment.Size.Y, segment.Size.Z),
+				Transparency = 1,
+			}):Play()
+		end
+		task.delay(0.6, function() ring:Destroy() end)
+		return
+	end
+	local color = if isBlackBox then Depot.Red else PowerCell.Finishes[finish]
+	local pulse = Depot.part(world, "Delivery pulse", Vector3.new(0.08, 2, 2),
+		CFrame.new(terminal.Position.X, 3.65, terminal.Position.Z) * CFrame.Angles(0, 0, math.pi / 2),
+		color, Enum.Material.Neon)
+	pulse.Shape = Enum.PartType.Cylinder
+	pulse.CanQuery = false
+	pulse.Transparency = 0.35
+	local fade = TweenService:Create(pulse, TweenInfo.new(0.48, Enum.EasingStyle.Quad), {
+		Size = Vector3.new(0.08, 10, 10), Transparency = 1,
+	})
+	fade.Completed:Once(function()
+		pulse:Destroy()
+	end)
+	fade:Play()
+end
+
 local deliver, deliveryAnchor = promptAt(terminal, "Deliver", "Airlock", Vector3.new(0, 2.4, -1.6))
 CollectionService:AddTag(terminal, "FreightDelivery")
 -- The camera may sit behind the console while the player stands in front of it.
@@ -177,7 +271,29 @@ deliver.Triggered:Connect(function(player)
 	if not round or not deliver.Enabled or not within(player, deliveryAnchor) then
 		return
 	end
-	if round:deposit(player.UserId, now()) then
+	local time = now()
+	local accepted, isBlackBox, helperId, boxSeconds = round:deposit(player.UserId, time)
+	if accepted then
+		if isBlackBox then
+			showDeliveryEffect(player, true)
+			clearCargo(player)
+			state:SetAttribute("BlackBoxStatus", "secured")
+			local helper = helperId and Players:GetPlayerByUserId(helperId)
+			local assisted = helper ~= nil and players[helper] ~= nil
+			journal:recoverBlackBox(player, if assisted then boxSeconds else nil)
+			if assisted then
+				journal:recoverBlackBox(helper, boxSeconds)
+				log(AnalyticsService.LogCustomEvent, helper, "BlackBoxAssist", boxSeconds)
+			end
+			log(AnalyticsService.LogCustomEvent, player, "BlackBoxDelivered", boxSeconds, {
+				[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = assisted and "crew" or "solo",
+			})
+			return
+		end
+		if time < decoyUntil then
+			log(AnalyticsService.LogCustomEvent, player, "DeliveryDuringDecoy")
+		end
+		showDeliveryEffect(player)
 		clearCargo(player)
 		player:SetAttribute("ShiftDeliveries", (player:GetAttribute("ShiftDeliveries") or 0) + 1)
 		state:SetAttribute("Delivered", round.delivered)
@@ -185,6 +301,10 @@ deliver.Triggered:Connect(function(player)
 		showPower(round.delivered, routing)
 		if routing then
 			deliver.Enabled = false
+			resetDecoy()
+			if state:GetAttribute("BlackBoxStatus") ~= "secured" then
+				state:SetAttribute("BlackBoxStatus", "")
+			end
 			for _, cell in cells do
 				cell.PrimaryPart.Attachment.ProximityPrompt.Enabled = false
 				cell.Parent = nil
@@ -206,10 +326,42 @@ deliver.Triggered:Connect(function(player)
 		if data and data.onboard < 3 then
 			onboard(player, 3, "First cell delivered")
 			player:SetAttribute("FirstDelivery", true)
-			log(AnalyticsService.LogCustomEvent, player, "SecondsToFirstDelivery", math.max(0, now() - data.startedAt))
+			local seconds = math.max(0, now() - data.startedAt)
+			log(AnalyticsService.LogCustomEvent, player, "SecondsToFirstDelivery", seconds, {
+				[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = if seconds <= 90 then "Within 90s" else "Over 90s",
+			})
 		end
 	end
 end)
+
+local function updateCrewPatch(player, character)
+	local existing = character:FindFirstChild("Depot 07 patch")
+	if PowerCell.equipped(player) ~= "Crew" then
+		if existing then existing:Destroy() end
+		return
+	end
+	local arm = character:FindFirstChild("RightUpperArm") or character:FindFirstChild("Right Arm")
+	if existing or not arm or not arm:IsA("BasePart") then
+		return
+	end
+	local patch = PowerCell.crewPatch(character, arm.CFrame * CFrame.new(0, 0.15, -arm.Size.Z / 2 - 0.025))
+	patch.Massless = true
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0, weld.Part1, weld.Parent = arm, patch, patch
+	patch.Anchored = false
+end
+
+local function restoreCellFinish(player)
+	if not players[player] or carried[player] then
+		return
+	end
+	local preferred = player:GetAttribute("PreferredCellFinish")
+	local finish = if preferred then (if PowerCell.canEquip(player, preferred) then preferred else "Standard") else nil
+	player:SetAttribute("CellFinish", finish)
+	if player.Character then
+		updateCrewPatch(player, player.Character)
+	end
+end
 
 local function readyCharacter(player, character)
 	local root = character:WaitForChild("HumanoidRootPart", 10)
@@ -219,6 +371,7 @@ local function readyCharacter(player, character)
 	end
 	local offset = random:NextNumber(-6, 6)
 	character:PivotTo(depotSpawn * CFrame.new(offset, 0, 0))
+	updateCrewPatch(player, character)
 	local data = players[player]
 	if data and not data.spawned then
 		data.spawned = true
@@ -235,13 +388,19 @@ local function join(player)
 	if players[player] then
 		return
 	end
-	players[player] = {onboard = 0, picked = false, delivered = false, activeShifts = 0, startedAt = now()}
+	players[player] = {onboard = 0, picked = false, delivered = false, activeShifts = 0, startedAt = now(), shiftCatches = 0}
 	player:SetAttribute("Carrying", false)
+	player:SetAttribute("BlackBoxCarrying", false)
 	player:SetAttribute("Tracked", false)
 	player:SetAttribute("Wins", 0)
 	player:SetAttribute("ShiftDeliveries", 0)
 	player:SetAttribute("Caught", 0)
 	player:SetAttribute("FirstDelivery", false)
+	for _, attribute in {"PreferredCellFinish", "EndingBroadcast", "EndingShelter", "Aurora", "Crew", "Carrying"} do
+		player:GetAttributeChangedSignal(attribute):Connect(function()
+			restoreCellFinish(player)
+		end)
+	end
 	journal:join(player)
 	player.CharacterAdded:Connect(function(character)
 		readyCharacter(player, character)
@@ -253,13 +412,41 @@ local function join(player)
 	if round and round.outcome == "live" then
 		funnel(player, 1, "Shift started")
 	end
-	if Config.CosmeticPassId > 0 then
+	if not RunService:IsStudio() then
+		task.spawn(function()
+			for _ = 1, 8 do
+				if not players[player] then
+					return
+				end
+				local data = player:GetJoinData()
+				local referrerId = data.ReferredByPlayerId
+				if data.LaunchData and data.LaunchData ~= "" and type(referrerId) == "number" and referrerId > 0 then
+					if not crewInviteExpires or now() >= crewInviteExpires or not FriendInvite.crewJoin(data, crewInviteToken) then
+						return
+					end
+					local inviter = Players:GetPlayerByUserId(referrerId)
+					if inviter and inviter ~= player and players[inviter] then
+						local status = state:GetAttribute("BlackBoxStatus")
+						local canStartNow = operation == "west" and round and round.outcome == "live"
+							and round.deadline - now() >= 30 and (status == "available" or status == "carried")
+						if not canStartNow then
+							crewReplay = {inviter, player}
+						end
+					end
+					return
+				end
+				task.wait(1)
+			end
+		end)
+	end
+	for finish, passId in finishPasses do
+		if passId <= 0 then continue end
 		task.spawn(function()
 			for attempt = 1, 3 do
-				local ok, owned = pcall(MarketplaceService.UserOwnsGamePassAsync, MarketplaceService, player.UserId, Config.CosmeticPassId)
+				local ok, owned = pcall(MarketplaceService.UserOwnsGamePassAsync, MarketplaceService, player.UserId, passId)
 				if ok then
-					if players[player] and player:GetAttribute("Aurora") == nil then
-						player:SetAttribute("Aurora", owned)
+					if players[player] and player:GetAttribute(finish) == nil then
+						player:SetAttribute(finish, owned)
 					end
 					break
 				end
@@ -275,8 +462,36 @@ Players.PlayerRemoving:Connect(function(player)
 	journal:leave(player)
 	players[player] = nil
 end)
+local equipFinish = Instance.new("RemoteEvent")
+equipFinish.Name = "EquipCellFinish"
+equipFinish.OnServerEvent:Connect(function(player, finish)
+	local data, root = players[player], rootOf(player)
+	if not data or not root or carried[player] or not round or type(finish) ~= "string" then
+		return
+	end
+	if round.outcome ~= "won" and round.outcome ~= "lost"
+		and (round.outcome ~= "live" or root.Position.Z < Config.AirlockSafeZ) then
+		return
+	end
+	if not PowerCell.canEquip(player, finish) or finish == PowerCell.equipped(player) then
+		return
+	end
+	local time = now()
+	if time < (data.nextFinishChange or 0) then
+		return
+	end
+	data.nextFinishChange = time + 0.4
+	if not journal:setFinish(player, finish, DateTime.now().UnixTimestampMillis) then
+		return
+	end
+	restoreCellFinish(player)
+	log(AnalyticsService.LogCustomEvent, player, "CellFinishEquipped", 1, {
+		[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = finish,
+	})
+end)
+equipFinish.Parent = shared
 if Config.CosmeticPassId > 0 then
-	local steps = {"Offer shown", "Preview opened", "Purchase prompt opened"}
+	local steps = {"Locker shown", "Aurora selected", "Purchase prompt opened"}
 	local commerce = Instance.new("RemoteEvent")
 	commerce.Name = "Commerce"
 	commerce.OnServerEvent:Connect(function(player, step)
@@ -293,15 +508,21 @@ if Config.CosmeticPassId > 0 then
 			data.commerceSession = HttpService:GenerateGUID(false)
 		end
 		data.commerceStep = step
-		log(AnalyticsService.LogFunnelStepEvent, player, "Aurora Lens", data.commerceSession, step, steps[step])
+		log(AnalyticsService.LogFunnelStepEvent, player, "Aurora Lens Locker", data.commerceSession, step, steps[step])
 	end)
 	commerce.Parent = shared
 end
 
 MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passId, bought)
-	if bought and passId == Config.CosmeticPassId and passId > 0 and players[player] then
-		player:SetAttribute("Aurora", true)
-		log(AnalyticsService.LogCustomEvent, player, "AuroraPassPurchased")
+	if not bought or passId <= 0 or not players[player] then
+		return
+	end
+	for finish, configuredId in finishPasses do
+		if passId == configuredId then
+			player:SetAttribute(finish, true)
+			log(AnalyticsService.LogCustomEvent, player, finish .. "PassPurchased")
+			return
+		end
 	end
 end)
 for _, player in Players:GetPlayers() do
@@ -312,30 +533,41 @@ local dronePoint = droneStart
 local patrol = {Vector3.new(-31, 5.5, 10), Vector3.new(0, 5.5, -38), Vector3.new(31, 5.5, 17)}
 local patrolIndex = 1
 local function moveDrone(dt)
+	local time = now()
+	local pulseActive = time < decoyUntil
 	local target, targetRoot, nearest
-	for player in carried do
-		local root = rootOf(player)
-		if root then
-			local pos = root.Position
-			local distance = (Vector3.new(pos.X, dronePoint.Y, pos.Z) - dronePoint).Magnitude
-			if pos.Z < 54 and (not nearest or distance < nearest) then
-				target, targetRoot, nearest = player, root, distance
+	if not pulseActive then
+		for player in carried do
+			local root = rootOf(player)
+			if root then
+				local pos = root.Position
+				local distance = (Vector3.new(pos.X, dronePoint.Y, pos.Z) - dronePoint).Magnitude
+				local priority = if round.carrying[player.UserId] == blackBoxId then distance * 0.45 else distance
+				if pos.Z < Config.AirlockSafeZ and (not nearest or priority < nearest) then
+					target, targetRoot, nearest = player, root, priority
+				end
 			end
 		end
 	end
+	setDecoyReady(target ~= nil and time >= decoyReadyAt)
 	local goal = patrol[patrolIndex]
-	if target ~= trackedPlayer then
+	if target ~= trackedPlayer or pulseActive ~= distracted then
 		if trackedPlayer then
 			trackedPlayer:SetAttribute("Tracked", false)
 		end
 		trackedPlayer = target
-		searchBeam.Attachment1 = target and carried[target].PrimaryPart.TrackingTarget or nil
-		scanner.Color = target and Depot.Red or Depot.Amber
+		distracted = pulseActive
+		lightBeacon(pulseActive)
+		searchBeam.Attachment1 = pulseActive and decoyAnchor or (target and carried[target].PrimaryPart.TrackingTarget or nil)
+		scanner.Color = pulseActive and Depot.Cyan or (target and Depot.Red or Depot.Amber)
+		searchBeam.Color = ColorSequence.new(pulseActive and Depot.Cyan or Depot.Red)
 		if target then
 			target:SetAttribute("Tracked", true)
 		end
 	end
-	if targetRoot then
+	if pulseActive then
+		goal = Vector3.new(beacon.Position.X, dronePoint.Y, beacon.Position.Z)
+	elseif targetRoot then
 		local pos = targetRoot.Position
 		goal = Vector3.new(math.clamp(pos.X, -65, 65), dronePoint.Y, math.clamp(pos.Z, -70, 52.5))
 	elseif (goal - dronePoint).Magnitude < 2 then
@@ -348,13 +580,15 @@ local function moveDrone(dt)
 	local delta = goal - dronePoint
 	if delta.Magnitude > 0.05 then
 		local dir = delta.Unit
-		dronePoint += dir * math.min(delta.Magnitude, dt * (target and 13.7 or 8))
+		local speed = if target and round.carrying[target.UserId] == blackBoxId then 15.3 elseif target or pulseActive then 13.7 else 8
+		dronePoint += dir * math.min(delta.Magnitude, dt * speed)
 		drone:PivotTo(CFrame.lookAt(dronePoint, dronePoint + dir))
 	end
 	if targetRoot and (targetRoot.Position - dronePoint).Magnitude < 5.05
 		and clearPath(dronePoint, targetRoot.Position) then
 		recover(target)
 		target:SetAttribute("Caught", target:GetAttribute("Caught") + 1)
+		players[target].shiftCatches += 1
 		target.Character:PivotTo(depotSpawn)
 		log(AnalyticsService.LogCustomEvent, target, "Caught")
 	end
@@ -369,7 +603,9 @@ local function startShift()
 		end
 	end
 	local previousOperation = operation
-	operation = Operations.next(eligible, operation, lastOperation)
+	local replayWest = crewReplay and players[crewReplay[1]] and players[crewReplay[2]]
+	crewReplay = nil
+	operation = Operations.next(eligible, operation, lastOperation, replayWest)
 	if layout then
 		layout:Destroy()
 		layout = nil
@@ -399,18 +635,26 @@ local function startShift()
 		end
 	end
 	roundStartedAt = now()
-	round = Round.new(Config.Target, roundStartedAt + Config.ShiftSeconds, ids, Config.RoutingSeconds)
+	dispatchWeek = Dispatch.week(os.time())
+	state:SetAttribute("DispatchWeek", dispatchWeek)
+	local hasBlackBox = operation == "west"
+	round = Round.new(Config.Target, roundStartedAt + Config.ShiftSeconds, ids, Config.RoutingSeconds,
+		if hasBlackBox then blackBoxId else nil)
 	showPower(0, false)
 	roundGuid = HttpService:GenerateGUID(false)
+	if hasBlackBox then
+		crewInviteToken = roundGuid
+		crewInviteExpires = now() + 360
+	end
+	state:SetAttribute("CrewInviteToken", if hasBlackBox then crewInviteToken else nil)
 	dronePoint = droneStart
 	patrolIndex = 1
 	drone:PivotTo(CFrame.new(dronePoint))
-	for _, id in ids do
-		local pos = positions[id]
-		local model = Depot.battery(world, CFrame.new(pos + Vector3.new(0, 2.14, 0)), Depot.Cyan)
+	local function spawnCargo(id, model, isBlackBox)
 		cells[id] = model
-		local prompt, anchor = promptAt(model.PrimaryPart, "Take cell", "Power cell", Vector3.new(0, 1, 0))
-		CollectionService:AddTag(model.PrimaryPart, "FreightPickup")
+		local prompt, anchor = promptAt(model.PrimaryPart, isBlackBox and "Recover" or "Take cell",
+			isBlackBox and "Black box" or "Power cell", Vector3.new(0, 1, 0))
+		CollectionService:AddTag(model.PrimaryPart, isBlackBox and "FreightBlackBox" or "FreightPickup")
 		prompt.Enabled = true
 		prompt.Triggered:Connect(function(player)
 			if not round or cells[id] ~= model or not prompt.Enabled then
@@ -422,7 +666,15 @@ local function startShift()
 				and round:pickup(player.UserId, id, now()) then
 				prompt.Enabled = false
 				model.Parent = nil
-				showCargo(player, root)
+				showCargo(player, root, isBlackBox)
+				if isBlackBox then
+					state:SetAttribute("BlackBoxStatus", "carried")
+					if not data.tookBlackBox then
+						data.tookBlackBox = true
+						log(AnalyticsService.LogCustomEvent, player, "BlackBoxPickedUp")
+					end
+					return
+				end
 				if not data.picked then
 					data.picked = true
 					data.activeShifts += 1
@@ -433,21 +685,42 @@ local function startShift()
 				end
 				if data.onboard < 2 then
 					onboard(player, 2, "First cell picked up")
-					log(AnalyticsService.LogCustomEvent, player, "SecondsToFirstPickup", math.max(0, now() - data.startedAt))
+					local seconds = math.max(0, now() - data.startedAt)
+					log(AnalyticsService.LogCustomEvent, player, "SecondsToFirstPickup", seconds, {
+						[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = if seconds <= 45 then "Within 45s" else "Over 45s",
+					})
 				end
 			end
 		end)
 	end
+	for _, id in ids do
+		local cf = CFrame.new(positions[id] + Vector3.new(0, 2.14, 0))
+		spawnCargo(id, PowerCell.build(world, cf, Depot.Cyan), false)
+	end
+	if hasBlackBox then
+		local model = Depot.blackBox(world, CFrame.new(-35, 0.72, -34))
+		local light = Instance.new("PointLight")
+		light.Color, light.Range, light.Brightness = Depot.Red, 9, 1.35
+		light.Parent = model.PrimaryPart
+		spawnCargo(blackBoxId, model, true)
+	end
 	for player, data in players do
 		data.picked, data.delivered, data.choseRoute = false, false, false
+		data.tookBlackBox = false
+		data.shiftCatches = 0
+		player:SetAttribute("DispatchCompletedThisShift", false)
+		player:SetAttribute("NewBestThisShift", false)
+		player:SetAttribute("SignalUnlockedThisShift", false)
 		player:SetAttribute("ShiftDeliveries", 0)
 		player:SetAttribute("ArchiveUnlockedThisShift", false)
 		funnel(player, 1, "Shift started")
 	end
 	deliver.Enabled = true
+	resetDecoy()
 	state:SetAttribute("Ending", "")
 	state:SetAttribute("RouteSource", "")
 	state:SetAttribute("Operation", operation or "")
+	state:SetAttribute("BlackBoxStatus", hasBlackBox and "available" or "")
 	state:SetAttribute("Delivered", 0)
 	state:SetAttribute("EndsAt", round.deadline)
 	state:SetAttribute("Phase", "live")
@@ -455,10 +728,12 @@ end
 
 local function finishShift()
 	deliver.Enabled = false
+	resetDecoy()
 	for _, prompt in routePrompts do
 		prompt.Enabled = false
 	end
 	showPower(round.delivered, false, round.ending)
+	local elapsed = math.max(0, now() - roundStartedAt)
 	for player, data in players do
 		clearCargo(player)
 		if round.outcome == "lost" and rootOf(player) then
@@ -468,7 +743,24 @@ local function finishShift()
 			player:SetAttribute("Wins", player:GetAttribute("Wins") + 1)
 		end
 		if round.outcome == "won" and (data.picked or data.choseRoute) then
-			if journal:award(player, round.ending, data.delivered and operation or nil) then
+			local hadSignal = PowerCell.canEquip(player, "Signal")
+			local qualifies = Dispatch.qualifies(dispatchWeek, player:GetAttribute("ShiftDeliveries"), data.shiftCatches, elapsed)
+			local clearSeconds = if data.delivered and round.routeSource == "chosen" then math.max(1, math.ceil(elapsed)) else nil
+			local record, dispatch, newBest = journal:award(player, round.ending, data.delivered and operation or nil,
+				qualifies and dispatchWeek or nil, clearSeconds)
+			if newBest then
+				player:SetAttribute("NewBestThisShift", true)
+			end
+			if not hadSignal then
+				player:SetAttribute("SignalUnlockedThisShift", true)
+			end
+			if dispatch then
+				player:SetAttribute("DispatchCompletedThisShift", true)
+				log(AnalyticsService.LogCustomEvent, player, "DispatchCompleted", 1, {
+					[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = tostring(Dispatch.objective(dispatchWeek)),
+				})
+			end
+			if record then
 				player:SetAttribute("ArchiveUnlockedThisShift", true)
 				log(AnalyticsService.LogCustomEvent, player, "ArchiveRecovered", 1, {
 					[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = operation,
@@ -480,7 +772,7 @@ local function finishShift()
 				[Enum.AnalyticsCustomFieldKeys.CustomField03.Name] = operation or "standard",
 			})
 		end
-		log(AnalyticsService.LogCustomEvent, player, "Shift_" .. round.outcome, math.max(0, now() - roundStartedAt))
+		log(AnalyticsService.LogCustomEvent, player, "Shift_" .. round.outcome, elapsed)
 	end
 	for _, cell in cells do
 		cell:Destroy()

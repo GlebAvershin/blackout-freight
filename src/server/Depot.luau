@@ -1,8 +1,8 @@
 local Lighting = game:GetService("Lighting")
+local PowerCell = require(game:GetService("ReplicatedStorage"):WaitForChild("Freight").PowerCell)
 
 local Depot = {}
-Depot.Cyan = Color3.fromRGB(46, 230, 233)
-Depot.Aurora = Color3.fromRGB(215, 127, 255)
+Depot.Cyan = PowerCell.Cyan
 Depot.Amber = Color3.fromRGB(255, 191, 74)
 Depot.Red = Color3.fromRGB(255, 76, 72)
 Depot.Shelter = Color3.fromRGB(255, 176, 111)
@@ -25,15 +25,15 @@ function Depot.part(parent, name, size, cf, color, material, solid)
 	return p
 end
 
-function Depot.battery(parent, cf, color)
+function Depot.blackBox(parent, cf)
 	local model = Instance.new("Model")
-	model.Name = "Power Cell"
-	local body = Depot.part(model, "Shell", Vector3.new(1.85, 1.55, 1.05), cf, ink)
-	for i = -1, 1 do
-		Depot.part(model, "Charge", Vector3.new(0.33, 0.91, 1.11), cf * CFrame.new(i * 0.48, 0, 0), color, neon)
+	model.Name = "Black Box"
+	model.PrimaryPart = Depot.part(model, "Armored shell", Vector3.new(2.35, 1.1, 1.36), cf, ink, Enum.Material.Metal)
+	for _, x in {-0.9, 0.9} do
+		Depot.part(model, "Reinforced band", Vector3.new(0.24, 1.17, 1.45), cf * CFrame.new(x, 0, 0), steel, Enum.Material.Metal)
 	end
-	Depot.part(model, "Terminal", Vector3.new(0.85, 0.19, 0.69), cf * CFrame.new(0, 0.85, 0), steel)
-	model.PrimaryPart = body
+	Depot.part(model, "Distress strip", Vector3.new(1.34, 0.13, 0.12), cf * CFrame.new(0, 0.18, 0.7), Depot.Red, neon)
+	Depot.part(model, "Distress beacon", Vector3.new(0.44, 0.12, 0.44), cf * CFrame.new(0, 0.6, 0), Depot.Red, neon)
 	model.Parent = parent
 	return model
 end
@@ -203,6 +203,10 @@ function Depot.build()
 	end
 	sign(box("Airlock sign", 0, 5.3, 72.8, 13, 1.4, 0.6, ink), "07  /  AIRLOCK", Depot.Amber)
 	sign(box("Back wall sign", 0, 8.4, 72.8, 37, 4, 0.6, ink), "BLACKOUT FREIGHT", Depot.Cyan)
+	local decoyBeacon = box("Decoy beacon", 8, 1.5, 45, 2.2, 3, 2.2, steel, Enum.Material.Metal, true)
+	local beaconLamp = box("Decoy lamp", 8, 3.2, 45, 1.8, 0.45, 1.8, Depot.Cyan)
+	local beaconLight = light(beaconLamp, Depot.Cyan, 22, 0)
+	sign(decoyBeacon, "DECOY", Depot.Cyan, Enum.NormalId.Back)
 	local terminal = box("Delivery console", 0, 1.65, 65, 8.4, 3.3, 2.6, steel, Enum.Material.Metal, true)
 	box("Console rim", 0, 3.38, 65, 8.5, 0.24, 2.8, ink, Enum.Material.Metal)
 	local chargeLights = {}
@@ -297,6 +301,9 @@ function Depot.build()
 			output.beacon.Material = selected and neon or Enum.Material.SmoothPlastic
 			output.relay.Brightness = selected and 2.1 or 0
 		end
+	end, decoyBeacon, function(active)
+		beaconLamp.Material = active and neon or Enum.Material.SmoothPlastic
+		beaconLight.Brightness = active and 2 or 0
 	end
 end
 

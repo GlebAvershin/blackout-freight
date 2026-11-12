@@ -16,6 +16,10 @@
     "ServerScriptService": {
       "Freight": { "$path": "src/server" }
     },
+    "StarterGui": {
+      "$className": "StarterGui",
+      "$properties": { "ScreenOrientation": "Sensor" }
+    },
     "StarterPlayer": {
       "StarterPlayerScripts": {
         "Freight": { "$path": "src/client" }

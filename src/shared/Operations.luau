@@ -17,7 +17,10 @@ Operations.Routes = {
 	},
 }
 
-function Operations.next(eligible, current, last)
+function Operations.next(eligible, current, last, replayWest)
+	if replayWest then
+		return "west"
+	end
 	if eligible and not current then
 		return last == "west" and "east" or "west"
 	end
