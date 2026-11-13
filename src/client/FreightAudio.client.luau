@@ -157,3 +157,11 @@ state:GetAttributeChangedSignal("Phase"):Connect(function()
 end)
 
 refreshMix()
+
+local crossingBell = sound("FreightCrossingBell", "rbxasset://sounds/volume_slider.ogg", effects, 0.4, SoundService)
+crossingBell.PlaybackSpeed = 0.8
+state:GetAttributeChangedSignal("TrainStatus"):Connect(function()
+	if state:GetAttribute("Map") == "yard" and state:GetAttribute("TrainStatus") == "warning" then
+		crossingBell:Play()
+	end
+end)

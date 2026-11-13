@@ -11,6 +11,7 @@ work = root / ".tools"
 work.mkdir(exist_ok=True)
 rojo = sys.argv[1] if len(sys.argv) > 1 else "rojo"
 output = work / "Blackout Freight Server QA.rbxl"
+yard = "--yard" in sys.argv[2:]
 roles = "--roles" in sys.argv[2:]
 progression = "--progression" in sys.argv[2:]
 solo = "--solo" in sys.argv[2:]
@@ -83,7 +84,7 @@ test.Parent = game:GetService("ServerStorage")
 
 '''
     script = script.replace("local routePrompts = {}", hook + "local routePrompts = {}", 1)
-    if roles:
+    if roles or yard:
         script = script.replace("preparation.OnServerEvent:Connect(function(player, action, value)", "connectPreparation(preparation, function(player, action, value)")
         script = script.replace('local preparation = Instance.new("RemoteEvent")', '''local function connectPreparation(remote, callback)
     remote.OnServerEvent:Connect(callback)
@@ -93,6 +94,8 @@ test.Parent = game:GetService("ServerStorage")
     bridge.Parent = game:GetService("ServerStorage")
 end
 local preparation = Instance.new("RemoteEvent")''')
+    if yard:
+        script = script.replace('journal:join(player)', 'journal:join(player)\n journal:award(player, "broadcast")\n journal:award(player, "shelter")\n player:SetAttribute("MapVote", "yard")', 1)
     server.write_text(script)
     project = json.loads((root / "default.project.json").read_text())
     tree = project["tree"]
@@ -115,15 +118,15 @@ task.delay(30, function()
 	studio:EndTest("GUIDANCE QA TIMEOUT")
 end)
 ''')
-    if progression or roles:
-        output = work / ("Blackout Freight Roles QA.rbxl" if roles else "Blackout Freight Progression Gameplay QA.rbxl")
-        shutil.copyfile(root / ("tests/studio-roles.server.luau" if roles else "tests/studio-progression.server.luau"), qa / "server/Scenario.server.luau")
+    if progression or roles or yard:
+        output = work / ("Blackout Freight Yard QA.rbxl" if yard else "Blackout Freight Roles QA.rbxl" if roles else "Blackout Freight Progression Gameplay QA.rbxl")
+        shutil.copyfile(root / ("tests/studio-yard.server.luau" if yard else "tests/studio-roles.server.luau" if roles else "tests/studio-progression.server.luau"), qa / "server/Scenario.server.luau")
         (qa / "client/OperationsScenario.client.luau").unlink()
         shutil.copytree(root / "src/shared", qa / "shared")
         config = qa / "shared/Config.luau"
         config.write_text(config.read_text().replace("Target = 5,", "Target = 1,"))
     tree["ServerScriptService"]["Freight"]["$path"] = str(qa / "server")
-    tree["ReplicatedStorage"]["Freight"]["$path"] = str(qa / "shared" if progression or roles else root / "src/shared")
+    tree["ReplicatedStorage"]["Freight"]["$path"] = str(qa / "shared" if progression or roles or yard else root / "src/shared")
     tree["StarterPlayer"]["StarterPlayerScripts"]["Freight"]["$path"] = str(qa / "client")
     manifest = qa / "qa.project.json"
     manifest.write_text(json.dumps(project))

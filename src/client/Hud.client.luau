@@ -211,6 +211,9 @@ clearRecord.TextTruncate = Enum.TextTruncate.None
 local blackBoxRecord = label(journalPanel, "BlackBoxRecord", 12, 0, nil, 54, 12, colors.amber, true)
 blackBoxRecord.TextWrapped = true
 blackBoxRecord.TextTruncate = Enum.TextTruncate.None
+local yardRecord = label(journalPanel, "YardRecord", 12, 0, nil, 54, 12, colors.amber, true)
+yardRecord.TextWrapped = true
+yardRecord.TextTruncate = Enum.TextTruncate.None
 local function soundToggle(name, attribute, enabledText, disabledText)
 	local button = add("TextButton", journalPanel, {
 		Name = name, Size = UDim2.new(0.5, -18, 0, 44),
@@ -377,6 +380,12 @@ local function drawJournal()
 		blackBoxRecord.Text = t("BLACK BOX\nFind the red case in West Bypass.", "ЧЁРНЫЙ ЯЩИК\nНайди красный кейс на Западном обходе.")
 	end
 	local contentHeight = contentEnd + (blackBoxRecord.Visible and 160 or 102)
+	yardRecord.Visible = player:GetAttribute("ArchiveYard") == true
+	if yardRecord.Visible then
+		yardRecord.Position = UDim2.fromOffset(12, contentHeight)
+		yardRecord.Text = t("FREIGHT YARD\nMira: The relay key is on train 07. Its destination was erased.", "ГРУЗОВОЙ ДВОР\nМира: Ключ на составе 07. Его пункт назначения стёрли.")
+		contentHeight += 60
+	end
 	contentHeight = progressionPanel.draw(contentHeight + 8)
 	if compact then
 		journalPanel.CanvasSize = UDim2.fromOffset(0, contentHeight)
@@ -644,7 +653,7 @@ local function draw()
 	end
 	drawGuide(phase, carrying, route, deliveries == 0 or needsRecoveryGuide or justDelivered)
 	drawJournal()
-	brand.Text = route and string.upper(localized(route.name)) or t("DEPOT 07   /   THE LAST SIGNAL", "ДЕПО 07   /   ПОСЛЕДНИЙ СИГНАЛ")
+	brand.Text = state:GetAttribute("Map") == "yard" and t("07 / FREIGHT YARD", "07 / ГРУЗОВОЙ ДВОР") or route and string.upper(localized(route.name)) or t("DEPOT 07   /   THE LAST SIGNAL", "ДЕПО 07   /   ПОСЛЕДНИЙ СИГНАЛ")
 	timer.Text = phase == "waiting" and "—" or string.format("%d:%02d", remaining // 60, remaining % 60)
 	timer.TextColor3 = (phase == "routing" or (phase == "live" and remaining <= 20)) and colors.amber or colors.cyan
 	cardStroke.Color = tracked and colors.red or colors.slate
@@ -748,6 +757,16 @@ local function draw()
 		objective.Text = t("Night shift", "Ночная смена")
 		hint.Text = t("Restore the relay. Start with a blue cell.", "Верни связь. Начни с синей батареи.")
 		radio.Text = t("Mira: I’m at dispatch. Follow the amber lights home.", "Мира: Я в диспетчерской. Янтарный свет ведёт обратно.")
+	end
+	if phase == "live" and state:GetAttribute("Map") == "yard" then
+		local train = state:GetAttribute("TrainStatus")
+		radio.Text = train == "warning" and t("Mira: Train approaching. Stay behind the red signals!", "Мира: Приближается состав. Жди за красными сигналами!")
+			or train == "passing" and t("Train crossing. Wait for cyan signals.", "Идёт состав. Дождись бирюзового сигнала.")
+			or t("Mira: Crossing clear. The far cells are beyond the tracks.", "Мира: Переезд свободен. Дальние батареи за путями.")
+		if compact and train ~= "clear" then
+			objective.Text = train == "warning" and t("TRAIN SOON", "СКОРО ПОЕЗД") or t("WAIT", "ПОДОЖДИ")
+			objective.TextColor3 = colors.amber
+		end
 	end
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 	local safeToBrowse = phase == "won" or phase == "lost" or phase == "briefing"

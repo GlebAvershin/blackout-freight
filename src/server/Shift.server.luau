@@ -11,6 +11,8 @@ local Round = require(shared.Round)
 local MovementGuard = require(shared.MovementGuard)
 local Progression = require(shared.Progression)
 local Roles = require(shared.Roles)
+local RailCycle = require(shared.RailCycle)
+local FreightYard = require(script.Parent.FreightYard)
 local Config = require(shared.Config)
 local Operations = require(shared.Operations)
 local Dispatch = require(shared.Dispatch)
@@ -31,6 +33,9 @@ end)
 
 local world, terminal, positions, drone, consoles, showPower, beacon, lightBeacon = Depot.build()
 CollectionService:AddTag(drone.PrimaryPart, "FreightSentinel")
+local depotPositions = positions
+local yard
+local currentMap = "depot"
 local scanner = drone.PrimaryPart.Scanner
 local searchBeam = Instance.new("Beam")
 searchBeam.Name = "TrackingBeam"
@@ -613,6 +618,10 @@ preparation.OnServerEvent:Connect(function(player, action, value)
 		log(AnalyticsService.LogCustomEvent, player, "RoleAbility", 1, {
 			[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = role,
 		})
+	elseif action == "map" then
+		if not between or (value ~= "depot" and value ~= "yard") then return end
+		if value == "yard" and not journal:eligible(player) then return end
+		player:SetAttribute("MapVote", value)
 	elseif action == "role" then
 		if not between or type(value) ~= "string" or not Roles.Catalog[value] then return end
 		player:SetAttribute("NextCrewRole", value)
@@ -710,8 +719,11 @@ end
 
 local function startShift()
 	local votes, novice = {}, false
+	local mapVotes, yardEligible = {}, true
 	for player in players do
 		table.insert(votes, player:GetAttribute("HeatVote") or 1)
+		table.insert(mapVotes, player:GetAttribute("MapVote") or "depot")
+		if not journal:eligible(player) then yardEligible = false end
 		if not player:GetAttribute("FirstDelivery") and not player:GetAttribute("EndingBroadcast")
 			and not player:GetAttribute("EndingShelter") then novice = true end
 	end
@@ -728,12 +740,19 @@ local function startShift()
 	local previousOperation = operation
 	local replayWest = crewReplay and players[crewReplay[1]] and players[crewReplay[2]]
 	crewReplay = nil
-	operation = Operations.next(eligible, operation, lastOperation, replayWest)
+	local previousMap = currentMap
+	currentMap = replayWest and "depot" or RailCycle.choose(mapVotes, yardEligible)
+	if yard then yard.destroy(); yard = nil end
+	positions = depotPositions
+	if currentMap == "yard" then yard = FreightYard.build(world, Depot); positions = yard.positions end
+	state:SetAttribute("Map", currentMap)
+	state:SetAttribute("TrainStatus", "clear")
+	operation = currentMap == "depot" and Operations.next(eligible, operation, lastOperation, replayWest) or nil
 	if layout then
 		layout:Destroy()
 		layout = nil
 	end
-	if operation or previousOperation then
+	if operation or previousOperation or currentMap ~= previousMap then
 		for player in players do
 			if rootOf(player) then
 				movePlayer(player, depotSpawn * CFrame.new(random:NextNumber(-6, 6), 0, 0))
@@ -741,7 +760,9 @@ local function startShift()
 		end
 	end
 	local ids
-	if operation then
+	if yard then
+		ids = {1,2,3,4,5,6,7,8}
+	elseif operation then
 		lastOperation = operation
 		local passage
 		layout, passage = Depot.operation(world, Operations.Routes[operation], Operations.DividerZ, Operations.GapWidth)
@@ -859,6 +880,7 @@ local function startShift()
 end
 
 local function finishShift()
+	if yard then yard.step(0); state:SetAttribute("TrainStatus", "clear") end
 	deliver.Enabled = false
 	resetDecoy()
 	for _, prompt in routePrompts do
@@ -882,7 +904,7 @@ local function finishShift()
 			local hadSignal = PowerCell.canEquip(player, "Signal")
 			local qualifies = Dispatch.qualifies(dispatchWeek, player:GetAttribute("ShiftDeliveries"), data.shiftCatches, elapsed)
 			local clearSeconds = if data.delivered and round.routeSource == "chosen" then math.max(1, math.ceil(elapsed)) else nil
-			local record, dispatch, newBest = journal:award(player, round.ending, data.delivered and operation or nil,
+			local record, dispatch, newBest = journal:award(player, round.ending, data.delivered and (yard and "yard" or operation) or nil,
 				qualifies and dispatchWeek or nil, clearSeconds)
 			if newBest then
 				player:SetAttribute("NewBestThisShift", true)
@@ -899,7 +921,7 @@ local function finishShift()
 			if record then
 				player:SetAttribute("ArchiveUnlockedThisShift", true)
 				log(AnalyticsService.LogCustomEvent, player, "ArchiveRecovered", 1, {
-					[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = operation,
+					[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = yard and "yard" or operation,
 				})
 			end
 			log(AnalyticsService.LogCustomEvent, player, "EndingReached", 1, {
@@ -935,6 +957,20 @@ while true do
 			round:expire(now())
 			if round.outcome == "live" and next(players) ~= nil then
 				moveDrone(math.min(dt, 0.15))
+				if yard then
+					local phase, before, after = yard.step(now() - roundStartedAt)
+					state:SetAttribute("TrainStatus", phase)
+					for player, data in players do
+						local root = rootOf(player)
+						if root and RailCycle.hit(root.Position.X,root.Position.Y,root.Position.Z,before,after) then
+							recover(player)
+							data.shiftCatches += 1
+							player:SetAttribute("Caught", (player:GetAttribute("Caught") or 0) + 1)
+							movePlayer(player, depotSpawn)
+							log(AnalyticsService.LogCustomEvent, player, "TrainCaught")
+						end
+					end
+				end
 			end
 		end
 		if round.outcome == "live" or round.outcome == "routing" then

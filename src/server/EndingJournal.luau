@@ -60,6 +60,7 @@ function Journal.merge(left, right)
 		broadcast = left.broadcast == true or right.broadcast == true,
 		shelter = left.shelter == true or right.shelter == true,
 		west = left.west == true or right.west == true,
+		yard = left.yard == true or right.yard == true,
 		east = left.east == true or right.east == true,
 		blackBox = left.blackBox == true or right.blackBox == true,
 		dispatchWeeks = mergeWeeks(left.dispatchWeeks, right.dispatchWeeks),
@@ -92,6 +93,7 @@ local function publish(entry)
 		entry.player:SetAttribute("EndingBroadcast", entry.endings.broadcast)
 		entry.player:SetAttribute("EndingShelter", entry.endings.shelter)
 		entry.player:SetAttribute("ArchiveWest", entry.endings.west)
+		entry.player:SetAttribute("ArchiveYard", entry.endings.yard)
 		entry.player:SetAttribute("ArchiveEast", entry.endings.east)
 		entry.player:SetAttribute("ArchiveGold", entry.endings.west and entry.endings.east)
 		entry.player:SetAttribute("ArchiveBlackBox", entry.endings.blackBox)
@@ -220,7 +222,7 @@ end
 function Journal:award(player, ending, operation, week, clearSeconds)
 	local key = tostring(player.UserId)
 	local entry = self.entries[key]
-	local record = (operation == "west" or operation == "east") and self:eligible(player) and not entry.endings[operation]
+	local record = (operation == "west" or operation == "east" or operation == "yard") and self:eligible(player) and not entry.endings[operation]
 	if record then
 		entry.endings[operation] = true
 		if self.store then
