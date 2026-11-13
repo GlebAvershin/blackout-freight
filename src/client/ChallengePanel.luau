@@ -37,11 +37,14 @@ function Panel.mount(parent, player, state, shared, colors, add, label, t)
 	rankTitle.Text = t("WEEKLY RANKING · FASTEST DAILY SHIFTS", "РЕЙТИНГ НЕДЕЛИ · ЛУЧШЕЕ ВРЕМЯ")
 	local ranking = line("Ranking", 474, 0, colors.paper)
 	ranking.TextYAlignment = Enum.TextYAlignment.Top
+	rankTitle.Visible, ranking.Visible = config.WeeklyRankingEnabled, config.WeeklyRankingEnabled
 	local size = 1
+	local viewed = {}
 	local tabs = {}
 	for count = 1, 4 do
 		local tab = button("Bracket" .. count, UDim2.new((count - 1) / 4, 2, 0, 424), UDim2.new(0.25, -4, 0, 44))
 		tab.Text = tostring(count)
+		tab.Visible = config.WeeklyRankingEnabled
 		tab.Activated:Connect(function() size = count end)
 		tabs[count] = tab
 	end
@@ -74,11 +77,18 @@ function Panel.mount(parent, player, state, shared, colors, add, label, t)
 			t(role.en, role.ru), challenges.WeeklyBonus)
 		if player:GetAttribute("RoleBonusWeek") == week then weekly.Text ..= t(" · Claimed", " · Получено") end
 		local rows = {t("ROLE MASTERY · PATCH AT 5 / 15 / 30 DELIVERIES", "МАСТЕРСТВО · НАШИВКА ЗА 5 / 15 / 30 ДОСТАВОК")}
+		local lastMilestone = challenges.Milestones[#challenges.Milestones]
 		for _, id in roles.Order do
 			local count = player:GetAttribute("Mastery" .. id) or 0
-			table.insert(rows, string.format("%s · %d/30 · %d/3", t(roles.Catalog[id].en, roles.Catalog[id].ru), count, challenges.tier(count)))
+			local progress = if count < lastMilestone then count .. "/" .. lastMilestone else tostring(count)
+			table.insert(rows, string.format("%s · %s · %d/%d", t(roles.Catalog[id].en, roles.Catalog[id].ru),
+				progress, challenges.tier(count), #challenges.Milestones))
 		end
 		mastery.Text = table.concat(rows, "\n")
+		if not config.WeeklyRankingEnabled then
+			frame.Size = UDim2.new(1, -24, 0, 372)
+			return y + 372
+		end
 		for count, tab in tabs do tab.TextColor3 = count == size and colors.amber or colors.paper end
 		local top = state:GetAttribute("WeeklyCrewTop" .. size)
 		ranking.Text = if top == nil then t("Loading records…", "Загрузка рекордов…")
@@ -86,6 +96,13 @@ function Panel.mount(parent, player, state, shared, colors, add, label, t)
 		local height = if top and top ~= "" then 360 else 44
 		ranking.Size = UDim2.new(1, 0, 0, height)
 		frame.Size = UDim2.new(1, -24, 0, 482 + height)
+		local topY = ranking.AbsolutePosition.Y
+		local visibleY = parent.AbsolutePosition.Y
+		if parent.Visible and top ~= nil and not viewed[size]
+			and topY >= visibleY and topY + 18 <= visibleY + parent.AbsoluteWindowSize.Y then
+			viewed[size] = true
+			remote:FireServer("rankViewed", size)
+		end
 		return y + 482 + height
 	end
 end

@@ -100,6 +100,11 @@ local function funnel(player, n, label)
 	log(AnalyticsService.LogFunnelStepEvent, player, "Shift", roundGuid, n, label)
 end
 
+local function challengesUnlocked(player)
+	return Challenges.unlocked(player:GetAttribute("EndingBroadcast"), player:GetAttribute("EndingShelter"),
+		player:GetAttribute("Wins"))
+end
+
 local function rootOf(player)
 	local character = player.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
@@ -168,9 +173,11 @@ local function promptAt(part, action, name, offset)
 	return prompt, anchor
 end
 
+local interactionRadius = 9
 local function within(player, anchor)
 	local root = rootOf(player)
-	return root and now() >= (player:GetAttribute("RecoveryUntil") or 0) and (root.Position - anchor.WorldPosition).Magnitude <= 9 and root
+	return root and now() >= (player:GetAttribute("RecoveryUntil") or 0)
+		and (root.Position - anchor.WorldPosition).Magnitude <= interactionRadius and root
 end
 
 local geometryRay = RaycastParams.new()
@@ -311,6 +318,7 @@ for ending, console in consoles do
 	prompt.Triggered:Connect(function(player)
 		if round and player ~= pilot and players[player] and (not daily or daily.crew[player])
 			and prompt.Enabled and within(player, anchor) and round:choose(ending, now()) then
+			if daily then verifyMovement(player, rootOf(player)) end
 			players[player].choseRoute = true
 			log(AnalyticsService.LogCustomEvent, player, "Route_" .. ending)
 		end
@@ -713,12 +721,26 @@ preparation.OnServerEvent:Connect(function(player, action, value)
 		end
 		return
 	end
+	if action == "rankViewed" then
+		if Config.WeeklyRankingEnabled and challengesUnlocked(player) and type(value) == "number"
+			and value >= 1 and value <= 4 and value % 1 == 0 then
+			data.rankViews = data.rankViews or {}
+			if not data.rankViews[value] then
+				data.rankViews[value] = true
+				log(AnalyticsService.LogCustomEvent, player, "RankViewed", 1, {
+					[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = tostring(value),
+				})
+			end
+		end
+		return
+	end
 	local time = now()
 	if time < (data.nextPreparation or 0) then return end
 	data.nextPreparation = time + 0.5
 	local phase, root = state:GetAttribute("Phase"), rootOf(player)
 	if player == pilot and phase == "live" then return end
 	local between = phase == "won" or phase == "lost" or phase == "briefing"
+	if action ~= "ability" and not challengesUnlocked(player) then return end
 	if action == "ability" then
 		local role = player:GetAttribute("CrewRole")
 		if (daily and not daily.crew[player]) or value ~= nil or not root or not round
@@ -885,6 +907,15 @@ local function startShift()
 	local ids
 	if daily then
 		ids = Challenges.cells(daily.day, Config.CellCount, #positions)
+		local distances = {}
+		local airlock = deliveryAnchor.WorldPosition
+		for _, id in ids do
+			local cell = positions[id]
+			distances[#distances + 1] = Vector2.new(cell.X - airlock.X, cell.Z - airlock.Z).Magnitude
+		end
+		local spawnOffset = Vector2.new(depotSpawn.X - airlock.X, depotSpawn.Z - airlock.Z).Magnitude + 6
+		daily.minimumSeconds = Challenges.minimumTime(distances, Config.Target, daily.size,
+			Roles.speed(1, 0, true), interactionRadius, spawnOffset)
 	elseif yard then
 		ids = {1,2,3,4,5,6,7,8}
 	elseif operation then
@@ -1018,6 +1049,11 @@ local function startShift()
 		player:SetAttribute("ShiftDeliveries", 0)
 		player:SetAttribute("ArchiveUnlockedThisShift", false)
 		funnel(player, 1, "Shift started")
+		if daily and daily.crew[player] then
+			log(AnalyticsService.LogCustomEvent, player, "DailyShiftStarted", 1, {
+				[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = tostring(daily.size),
+			})
+		end
 	end
 	deliver.Enabled = true
 	resetDecoy()
@@ -1050,10 +1086,11 @@ local function finishShift()
 	local elapsed = math.max(0, now() - roundStartedAt)
 	local dailyResult
 	if daily and daily.valid and round.outcome == "won" and round.routeSource == "chosen"
-		and elapsed >= Challenges.MinimumSeconds then
+		and elapsed >= daily.minimumSeconds then
 		local verified = 0
 		for member in daily.crew do
-			local deliveries = players[member].verifiedDeliveries or 0
+			local memberData = players[member]
+			local deliveries = memberData and memberData.verifiedDeliveries or 0
 			if deliveries == 0 then
 				verified = 0
 				break
@@ -1063,7 +1100,6 @@ local function finishShift()
 		if verified == Config.Target then
 			dailyResult = {day = daily.day, crew = daily.size, seconds = math.ceil(elapsed)}
 			state:SetAttribute("DailyResultSeconds", dailyResult.seconds)
-			hallOfFame:record(daily.week, daily.crew, dailyResult.seconds)
 		end
 	end
 	if daily then
@@ -1072,16 +1108,25 @@ local function finishShift()
 	end
 	local resultReason = if round.outcome == "won" then (round.routeSource or "chosen")
 		else "shift_timeout"
+	local dailyWrites = {}
 	for player, data in players do
 		data.finishedShift = true
 		local reward = Progression.reward(data.verifiedDeliveries or 0, heat.ScrapMultiplier)
 		if reward > 0 then
-			profiles:enqueue(player, {kind = "reward", amount = reward,
+			local accepted, item = profiles:enqueue(player, {kind = "reward", amount = reward,
 				doubleScrap = player:GetAttribute("DoubleScrap") == true, club = player:GetAttribute("DepotClub") == true,
 				deliveries = math.clamp(data.verifiedDeliveries or 0, 0, 5),
 				role = player:GetAttribute("CrewRole"),
 				daily = if dailyResult and daily.crew[player] then dailyResult else nil,
 				ending = if round.outcome == "won" then round.ending else nil}, roundGuid)
+			if accepted and item.operation.daily then table.insert(dailyWrites, item) end
+		end
+		if daily and daily.crew[player] then
+			log(AnalyticsService.LogCustomEvent, player, "DailyShiftCompleted", elapsed, {
+				[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = tostring(daily.size),
+				[Enum.AnalyticsCustomFieldKeys.CustomField02.Name] = if dailyResult then "qualified"
+					elseif round.outcome == "won" then "unqualified" else "lost",
+			})
 		end
 		clearCargo(player)
 		if round.outcome == "lost" and rootOf(player) then
@@ -1123,6 +1168,10 @@ local function finishShift()
 		log(AnalyticsService.LogCustomEvent, player, "Shift_" .. round.outcome, elapsed, {
 			[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = resultReason,
 		})
+	end
+	if Config.WeeklyRankingEnabled and dailyResult and #dailyWrites == daily.size then
+		local completedShift, seconds = daily, dailyResult.seconds
+		hallOfFame:recordAfterProfiles(completedShift.week, completedShift.crew, seconds, dailyWrites)
 	end
 	for _, cell in cells do
 		cell:Destroy()

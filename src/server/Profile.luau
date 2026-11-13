@@ -100,8 +100,7 @@ function Profile:transact(userId, sequence, operation)
 			if operation.role and Roles.Catalog[operation.role] then
 				data.roleDeliveries = table.clone(data.roleDeliveries or {})
 				local deliveries = math.clamp(operation.deliveries or 0, 0, 5)
-				data.roleDeliveries[operation.role] = math.min(Challenges.Milestones[#Challenges.Milestones],
-					(data.roleDeliveries[operation.role] or 0) + deliveries)
+				data.roleDeliveries[operation.role] = (data.roleDeliveries[operation.role] or 0) + deliveries
 			end
 			if operation.daily then
 				data.daily = Challenges.dailyRecord(data.daily, operation.daily)

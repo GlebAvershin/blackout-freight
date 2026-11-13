@@ -13,6 +13,11 @@ function JournalPanel.mount(gui, journalButton, player, state, shared, colors, a
 	local Operations = require(shared:WaitForChild("Operations"))
 	local Dispatch = require(shared:WaitForChild("Dispatch"))
 	local PowerCell = require(shared:WaitForChild("PowerCell"))
+	local Challenges = require(shared:WaitForChild("CrewChallenges"))
+	local function unlocked()
+		return Challenges.unlocked(player:GetAttribute("EndingBroadcast"), player:GetAttribute("EndingShelter"),
+			player:GetAttribute("Wins"))
+	end
 	local function localized(lines)
 		return t(lines[1], lines[2])
 	end
@@ -95,7 +100,8 @@ function JournalPanel.mount(gui, journalButton, player, state, shared, colors, a
 	local function toggleJournal()
 		journalPanel.Visible = not journalPanel.Visible
 		if journalPanel.Visible then
-			local section = if (player:GetAttribute("LastSeasonUnlocked") or 0)>0 and (player:GetAttribute("LastRankUnlocked") or 0)==0 then journalPanel:FindFirstChild("Season")
+			local section = if not unlocked() then nil
+				elseif (player:GetAttribute("LastSeasonUnlocked") or 0)>0 and (player:GetAttribute("LastRankUnlocked") or 0)==0 then journalPanel:FindFirstChild("Season")
 				elseif state:GetAttribute("Phase") == "briefing" then journalPanel:FindFirstChild("OpenCrewChallenges") else nil
 			journalPanel.CanvasPosition = section and Vector2.new(0,section.Position.Y.Offset) or Vector2.zero
 		end
@@ -113,7 +119,8 @@ function JournalPanel.mount(gui, journalButton, player, state, shared, colors, a
 	local drawChallenges = require(script.Parent.ChallengePanel).mount(journalPanel, player, state, shared, colors, add, label, t)
 	local challengesButton = add("TextButton", journalPanel, {
 		Name = "OpenCrewChallenges", Size = UDim2.new(1, -24, 0, 44), BackgroundColor3 = colors.slate,
-		TextColor3 = colors.amber, Text = t("Daily shift & rankings", "Ежедневная смена и рейтинг"),
+		TextColor3 = colors.amber, Text = if config.WeeklyRankingEnabled then t("Daily shift & rankings", "Ежедневная смена и рейтинг")
+			else t("Daily shift", "Ежедневная смена"),
 		TextSize = 13, Font = Enum.Font.GothamBold, AutoLocalize = false,
 	})
 	add("UICorner", challengesButton, {CornerRadius = UDim.new(0, 5)})
@@ -125,19 +132,20 @@ function JournalPanel.mount(gui, journalButton, player, state, shared, colors, a
 		local broadcast = player:GetAttribute("EndingBroadcast") == true
 		local shelter = player:GetAttribute("EndingShelter") == true
 		local count = (broadcast and 1 or 0) + (shelter and 1 or 0)
+		local expanded = unlocked()
 		local west = player:GetAttribute("ArchiveWest") == true
 		local east = player:GetAttribute("ArchiveEast") == true
 		local records = (west and 1 or 0) + (east and 1 or 0)
 		local progress = count == 2 and (t("Archive", "Архив") .. "  " .. records .. "/2") or (t("Log", "Журнал") .. "  " .. count .. "/2")
 		local phase = state:GetAttribute("Phase")
 		local earned = player:GetAttribute("LastScrapAward") or 0
-		if phase == "briefing" then progress = t("Prepare", "Сборы")
-		elseif (phase == "won" or phase == "lost") and earned > 0 then progress = "+" .. earned .. " Scrap" end
+		if expanded and phase == "briefing" then progress = t("Prepare", "Сборы")
+		elseif expanded and (phase == "won" or phase == "lost") and earned > 0 then progress = "+" .. earned .. " Scrap" end
 		local unlockedRank = player:GetAttribute("LastRankUnlocked") or 0
-		if (player:GetAttribute("LastSeasonUnlocked") or 0)>0 and (phase=="won" or phase=="lost" or phase=="briefing") then
+		if expanded and (player:GetAttribute("LastSeasonUnlocked") or 0)>0 and (phase=="won" or phase=="lost" or phase=="briefing") then
 			progress=t("New recording!", "Новая запись!")
 		end
-		if unlockedRank > 0 and (phase == "won" or phase == "lost" or phase == "briefing") then
+		if expanded and unlockedRank > 0 and (phase == "won" or phase == "lost" or phase == "briefing") then
 			progress = t("Rank ", "Ранг ") .. unlockedRank .. "!"
 		end
 		journalButton.Text = journalPanel.Visible and t("Close log", "Закрыть журнал") or progress
@@ -163,6 +171,12 @@ function JournalPanel.mount(gui, journalButton, player, state, shared, colors, a
 			or t("Both recordings unlock a gold casing.", "За две записи откроется золотой корпус.")
 		westRecord.Visible, eastRecord.Visible, archiveReward.Visible = count == 2, count == 2, count == 2
 		local contentEnd = count == 2 and (compact and 174 or 224) or (compact and 96 or 122)
+		archiveTitle.Visible = expanded
+		dispatchTitle.Visible, dispatchDetail.Visible, clearRecord.Visible = expanded, expanded, expanded
+		journalPanel.Workshop.Visible = expanded
+		journalPanel.Season.Visible = expanded
+		journalPanel.CrewChallenges.Visible = expanded
+		challengesButton.Visible = expanded
 		local week = state:GetAttribute("DispatchWeek")
 		dispatchTitle.Position = UDim2.fromOffset(12, contentEnd)
 		dispatchDetail.Position = UDim2.fromOffset(12, contentEnd + 19)
@@ -198,14 +212,18 @@ function JournalPanel.mount(gui, journalButton, player, state, shared, colors, a
 			yardRecord.Text = t("FREIGHT YARD\nMira: The relay key is on train 07. Its destination was erased.", "ГРУЗОВОЙ ДВОР\nМира: Ключ на составе 07. Его пункт назначения стёрли.")
 			contentHeight += 60
 		end
-		local workshopTop = contentHeight + 8
-		contentHeight = progressionPanel.draw(workshopTop + 52)
-		challengesButton.Position = UDim2.fromOffset(12, workshopTop)
-		contentHeight = seasonPanel.draw(contentHeight + 8)
+		if expanded then
+			local workshopTop = contentHeight + 8
+			contentHeight = progressionPanel.draw(workshopTop + 52)
+			challengesButton.Position = UDim2.fromOffset(12, workshopTop)
+			contentHeight = seasonPanel.draw(contentHeight + 8)
+		else
+			contentHeight = 100
+		end
 		if lightsToggle then lightsToggle.Position = UDim2.fromOffset(12, contentHeight) end
 		if pingsToggle then pingsToggle.Position = UDim2.new(0.5, 6, 0, contentHeight) end
 		if lightsToggle or pingsToggle then contentHeight += 52 end
-		contentHeight = drawChallenges(contentHeight + 8)
+		if expanded then contentHeight = drawChallenges(contentHeight + 8) end
 		if compact then
 			journalPanel.CanvasSize = UDim2.fromOffset(0, contentHeight)
 		else

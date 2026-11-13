@@ -100,6 +100,13 @@ state:SetAttribute("BlackoutPhase", "warning")
 waitFor(function() return card.Objective.Text == "Power fault" or card.Objective.Text == "Сбой света" end, "collapsed blackout warning")
 assert(card.Objective.TextFits, "blackout warning clipped")
 state:SetAttribute("BlackoutPhase", nil)
+tap(dock)
+waitFor(function() return journal.Visible end, "open the introductory journal")
+assert(not journal.Workshop.Visible and not journal.Season.Visible and not journal.CrewChallenges.Visible
+	and not journal.DispatchTitle.Visible and not journal.OpenCrewChallenges.Visible, "novice sees advanced progression")
+assert(journal.CanvasSize.Y.Offset == 152 and journal.BlackoutTransitionToggle.Visible and journal.CrewPingToggle.Visible,
+	"introductory journal should only show the ending log and accessibility controls")
+tap(journal.Parent.Actions.Close)
 fixture:FireServer("seed")
 waitFor(function() return player:GetAttribute("MobileFixtureReady") end, "load the server fixture")
 state:SetAttribute("Phase", "won")
@@ -144,6 +151,7 @@ assert(journal.BlackBoxRecord.Visible and journal.BlackBoxRecord.TextFits and jo
 	"Black Box recording or crew time is missing or clipped")
 -- Scroll the workshop into view without changing the journal shell or footer.
 local workshop = journal:WaitForChild("Workshop")
+assert(workshop.Visible and journal.Season.Visible and journal.CrewChallenges.Visible, "first victory did not unlock progression")
 tap(actions.Close)
 player:SetAttribute("LastSeasonUnlocked",1)
 waitFor(function() return dock.Visible end,"season notification entry")

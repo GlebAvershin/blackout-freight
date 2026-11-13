@@ -2,11 +2,14 @@ local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Challenges = require(game:GetService("ReplicatedStorage").Freight.CrewChallenges)
+local Config = require(game:GetService("ReplicatedStorage").Freight.Config)
 
 local Hall = {}
 Hall.__index = Hall
+local storeName = "FreightDailyWeekly_v1"
 
 function Hall.new(world, depot, state)
+	if not Config.WeeklyRankingEnabled then return setmetatable({}, Hall) end
 	local board = depot.part(world, "Weekly Hall of Fame", Vector3.new(19, 7, 0.4),
 		CFrame.new(16, 5.5, 70), Color3.fromRGB(13, 21, 32), Enum.Material.Metal)
 	local surface = Instance.new("SurfaceGui")
@@ -24,7 +27,7 @@ function Hall.new(world, depot, state)
 	label.Parent = surface
 	local self = setmetatable({label = label, state = state, studio = RunService:IsStudio(), localScores = {}, names = {}, pending = 0}, Hall)
 	game:BindToClose(function()
-		local deadline = os.clock() + 12
+		local deadline = os.clock() + 28
 		while self.pending > 0 and os.clock() < deadline do task.wait(0.1) end
 	end)
 	task.spawn(function()
@@ -41,6 +44,7 @@ local function scope(week, size)
 end
 
 function Hall:record(week, members, seconds)
+	if not Config.WeeklyRankingEnabled then return end
 	local ids = {}
 	for player in members do table.insert(ids, player.UserId) end
 	table.sort(ids)
@@ -59,7 +63,7 @@ function Hall:record(week, members, seconds)
 	task.spawn(function()
 		for attempt = 1, 3 do
 			local ok = pcall(function()
-				DataStoreService:GetOrderedDataStore("FreightDailyWeekly_v1", bracket):UpdateAsync(key, function(old)
+				DataStoreService:GetOrderedDataStore(storeName, bracket):UpdateAsync(key, function(old)
 					return math.min(old or seconds, seconds)
 				end)
 			end)
@@ -68,6 +72,30 @@ function Hall:record(week, members, seconds)
 		end
 		self.pending -= 1
 		warn("Freight: weekly crew record could not be saved")
+	end)
+end
+
+function Hall:recordAfterProfiles(week, members, seconds, writes)
+	if not Config.WeeklyRankingEnabled then return end
+	self.pending += 1
+	task.spawn(function()
+		local deadline = os.clock() + 20
+		repeat
+			local committed = 0
+			for _, write in writes do
+				if write.failed then
+					self.pending -= 1
+					return
+				end
+				if write.committed then committed += 1 end
+			end
+			if committed == #writes then
+				self:record(week, members, seconds)
+				break
+			end
+			task.wait(0.2)
+		until os.clock() >= deadline
+		self.pending -= 1
 	end)
 end
 
@@ -98,7 +126,7 @@ function Hall:refresh()
 				table.sort(rows, function(a, b) return a.value < b.value or (a.value == b.value and a.key < b.key) end)
 				return rows
 			end
-			return DataStoreService:GetOrderedDataStore("FreightDailyWeekly_v1", bracket):GetSortedAsync(true, 10):GetCurrentPage()
+			return DataStoreService:GetOrderedDataStore(storeName, bracket):GetSortedAsync(true, 10):GetCurrentPage()
 		end)
 		local rows = {}
 		if ok then

@@ -15,6 +15,7 @@ return table.freeze({
 	SentinelPilotEnabled = false, -- Enable after stable population and published multiplayer QA.
 	SectorBlackoutEnabled = true,
 	DailyShiftEnabled = true,
+	WeeklyRankingEnabled = true,
 	CrewPingsEnabled = true,
 	Target = 5,
 	ShiftSeconds = 165,

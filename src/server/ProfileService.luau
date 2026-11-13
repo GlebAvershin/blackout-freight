@@ -6,6 +6,7 @@ local Profile = require(script.Parent.Profile)
 local RankTrack = require(game:GetService("ReplicatedStorage").Freight.RankTrack)
 local Season = require(game:GetService("ReplicatedStorage").Freight.Season)
 local Roles = require(game:GetService("ReplicatedStorage").Freight.Roles)
+local Challenges = require(game:GetService("ReplicatedStorage").Freight.CrewChallenges)
 local Analytics = require(script.Parent.Analytics)
 local AnalyticsService = game:GetService("AnalyticsService")
 local Service = {}
@@ -77,13 +78,18 @@ function Service:join(player)
 			local sequence, refreshedAt = data.sequence, os.clock()
 			local previousXP = data.rankXP
 			local previousTier = Season.tier(data.seasons[Season.Id])
+			local previousMastery = data.roleDeliveries or {}
 			while true do
 				local item = session.queue[1]
 				if item then
 					player:SetAttribute("ProfileStatus", "saving")
 					-- No later operation may pass an unconfirmed write.
 					local result = retry(function() return session.profile:transact(player.UserId, sequence + 1, item.operation) end)
-					if not result then session.ready = false; break end
+					if not result then
+						for _, waiting in session.queue do waiting.failed = true end
+						session.ready = false
+						break
+					end
 					sequence += 1
 					refreshedAt = os.clock()
 					table.remove(session.queue, 1)
@@ -102,6 +108,18 @@ function Service:join(player)
 						Analytics.log(AnalyticsService.LogCustomEvent, player, "RankMilestone", unlocked.rank)
 					end
 					if item.operation.kind == "reward" then
+					local role = item.operation.role
+					local mastery = result.roleDeliveries or {}
+					if role and Roles.Catalog[role] then
+						local oldTier = Challenges.tier(previousMastery[role] or 0)
+						local newTier = Challenges.tier(mastery[role] or 0)
+						for reached = oldTier + 1, newTier do
+							Analytics.log(AnalyticsService.LogCustomEvent, player, "RoleMasteryTier", reached, {
+								[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = role,
+							})
+						end
+					end
+					previousMastery = mastery
 						player:SetAttribute("LastScrapAward", result.lastAward or 0)
 						Analytics.log(AnalyticsService.LogCustomEvent, player, "ScrapAwarded", result.lastAward or 0)
 					elseif item.operation.kind == "upgrade" then

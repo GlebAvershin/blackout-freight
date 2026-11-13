@@ -7,6 +7,25 @@ Challenges.MinimumSeconds = 30
 Challenges.WeeklyBonus = 20
 Challenges.BlackoutAt = 35
 
+function Challenges.unlocked(broadcast, shelter, wins)
+	return broadcast == true or shelter == true or (wins or 0) > 0
+end
+
+-- Every delivery consumes crew time. Assume the shortest possible selection,
+-- straight lines, maximum sprint speed and the full interaction radius.
+function Challenges.minimumTime(distances, target, crewSize, maxSpeed, interactionRadius, spawnOffset)
+	local sorted = table.clone(distances)
+	table.sort(sorted)
+	local total, longest = 0, 0
+	for index = 1, target do
+		local distance = math.max(0, sorted[index] - 2 * interactionRadius)
+		-- A recovery can reset a player to the safe spawn before any pickup.
+		total += distance + math.max(0, distance - spawnOffset)
+		longest = distance
+	end
+	return math.max(Challenges.MinimumSeconds, math.floor(math.max(total / crewSize, longest) / maxSpeed))
+end
+
 function Challenges.day(timestamp)
 	return math.floor(timestamp / 86400)
 end

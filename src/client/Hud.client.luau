@@ -430,6 +430,8 @@ local function draw()
 		invite.Text = inviteLabel()
 	end
 	local phase = state:GetAttribute("Phase")
+	local wonBefore = (player:GetAttribute("Wins") or 0) > 0
+		or player:GetAttribute("EndingBroadcast") or player:GetAttribute("EndingShelter")
 	local count = state:GetAttribute("Delivered") or 0
 	local target = state:GetAttribute("Target") or Config.Target
 	local deliveries = player:GetAttribute("ShiftDeliveries") or 0
@@ -569,8 +571,10 @@ local function draw()
 		end
 	elseif phase == "briefing" then
 		objective.Text = compact and t("Next shift", "Подготовка") or t("Prepare your crew", "Подготовка экипажа")
-		hint.Text = t("Open the log: choose your role, Heat and upgrades.", "Открой журнал: выбери роль, Тревогу и улучшения.")
-		radio.Text = string.format(t("Scrap +%d · balance %d", "Scrap +%d · всего %d"), player:GetAttribute("LastScrapAward") or 0, player:GetAttribute("Scrap") or 0)
+		hint.Text = if wonBefore then t("Open the log: choose your role, Heat and upgrades.", "Открой журнал: выбери роль, Тревогу и улучшения.")
+			else t("Next shift starts automatically. Find a blue cell.", "Смена начнётся сама. Ищи синюю батарею.")
+		radio.Text = if wonBefore then string.format(t("Scrap +%d · balance %d", "Scrap +%d · всего %d"),
+			player:GetAttribute("LastScrapAward") or 0, player:GetAttribute("Scrap") or 0) else ""
 	elseif phase == "lost" then
 		objective.Text = t("Signal lost", "Сигнал потерян")
 		hint.Text = string.format(t("Crew charge %d/%d. You delivered %d.", "Заряд команды %d/%d. Твои доставки: %d."), count, target, deliveries)
@@ -593,7 +597,7 @@ local function draw()
 		end
 	end
 	local unlockedRank = player:GetAttribute("LastRankUnlocked") or 0
-	if unlockedRank > 0 and (phase == "won" or phase == "lost" or phase == "briefing") then
+	if wonBefore and unlockedRank > 0 and (phase == "won" or phase == "lost" or phase == "briefing") then
 		radio.Text = string.format(t("Rank %d! New title and sleeve badge. Open the log.", "Ранг %d! Новый позывной и знак. Открой журнал."), unlockedRank)
 	end
 	if phase == "live" and state:GetAttribute("SentinelVariant") == "Tracker" then
@@ -624,8 +628,6 @@ local function draw()
 	if carrying or not safeToBrowse or journalPanel.Visible then
 		preview.Visible = false
 	end
-	local wonBefore = (player:GetAttribute("Wins") or 0) > 0
-		or player:GetAttribute("EndingBroadcast") or player:GetAttribute("EndingShelter")
 	shop.Visible = safeToBrowse and not carrying and (wonBefore or aurora == true or player:GetAttribute("Crew") == true)
 		and not journalPanel.Visible and not preview.Visible
 	shop.Text = phase == "won" and player:GetAttribute("SignalUnlockedThisShift")
