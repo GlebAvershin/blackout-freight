@@ -2,6 +2,7 @@
 import argparse
 import csv
 import json
+import statistics
 from pathlib import Path
 EXCLUDED={11969424328,11984313673}
 def summarize(rows):
@@ -24,7 +25,11 @@ def summarize(rows):
         return {'success':sum(predicate(r[field]) for r in known),'observed':len(known),'unknown':len(players)-len(known)}
     picked=[r for r in players if r['pickup_seconds'] not in ('','never')]
     repeat_known=[r for r in picked if r['second_shift_started']!='']
+    durations=[float(r['session_seconds']) for r in players if r['session_seconds']]
     return {'externalFirstSessions':len(players),
+        'sessionSeconds':{'mean':statistics.mean(durations) if durations else None,
+                          'median':statistics.median(durations) if durations else None,
+                          'observed':len(durations),'unknown':len(players)-len(durations)},
         'pickupWithin45':ratio('pickup_seconds',lambda v:v!='never' and float(v)<=45),
         'deliveryWithin90':ratio('delivery_seconds',lambda v:v!='never' and float(v)<=90),
         'secondShiftAmongPickups':{'success':sum(r['second_shift_started']=='1' for r in repeat_known),'observed':len(repeat_known)},
