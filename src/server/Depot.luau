@@ -286,6 +286,15 @@ function Depot.build()
 	scan.Brightness = 1.5
 	scan.Parent = core
 	drone.PrimaryPart = core
+	-- One anchored assembly: moving the body also moves its seven decorative parts.
+	for _, part in drone:GetChildren() do
+		if part:IsA("BasePart") and part ~= core then
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0, weld.Part1 = core, part
+			weld.Parent = part
+			part.Anchored = false
+		end
+	end
 	drone:PivotTo(CFrame.new(0, 5, -42))
 	drone.Parent = world
 	world.Parent = workspace

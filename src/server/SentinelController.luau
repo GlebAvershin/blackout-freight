@@ -19,7 +19,8 @@ function SentinelController.new(drone, world, state, carried, shelters, callback
 	local distracted = false
 	local swarm = {}
 	local droneStart = Vector3.new(table.unpack(Config.Drone.Start))
-	local scanner = drone.PrimaryPart.Scanner
+	local body = drone.PrimaryPart
+	local scanner = body.Scanner
 	local searchBeam = Instance.new("Beam")
 	searchBeam.Name = "TrackingBeam"
 	searchBeam.Attachment0 = Instance.new("Attachment", drone.PrimaryPart)
@@ -71,12 +72,13 @@ function SentinelController.new(drone, world, state, carried, shelters, callback
 				model.PrimaryPart.TrackingBeam:Destroy()
 				model.PrimaryPart.Scanner:Destroy()
 				model:ScaleTo(0.45)
+				-- Before parenting, move every part together because the welds are not active yet.
 				model:PivotTo(CFrame.new(x, droneStart.Y, -22))
 				model.Parent = world
-				table.insert(swarm, {model = model, index = index})
+				table.insert(swarm, {model = model, body = model.PrimaryPart, index = index})
 			end
 		end
-		drone:PivotTo(CFrame.new(dronePoint))
+		body.CFrame = CFrame.new(dronePoint)
 	end
 
 	function controller.finish()
@@ -161,7 +163,7 @@ function SentinelController.new(drone, world, state, carried, shelters, callback
 			local dir = delta.Unit
 			local speed = if target and carrying[target.UserId] == blackBoxId then heat.BlackBoxSpeed elseif target or pulseActive then heat.ChaseSpeed else heat.PatrolSpeed
 			dronePoint += dir * math.min(delta.Magnitude, dt * speed)
-			drone:PivotTo(CFrame.lookAt(dronePoint, dronePoint + dir))
+			body.CFrame = CFrame.lookAt(dronePoint, dronePoint + dir)
 		end
 		if pilotRoot and not pulseActive then
 			for _, candidate in candidates do
@@ -177,7 +179,7 @@ function SentinelController.new(drone, world, state, carried, shelters, callback
 			catch(target)
 		end
 		for _, unit in swarm do
-			local point = unit.model:GetPivot().Position
+			local point = unit.body.Position
 			local nextGoal = patrol[unit.index]
 			if pulseActive then
 				nextGoal = activeDecoyAnchor.WorldPosition
@@ -191,7 +193,7 @@ function SentinelController.new(drone, world, state, carried, shelters, callback
 			local delta = Vector3.new(x, point.Y, z) - point
 			if delta.Magnitude > 0.05 then
 				local nextPoint = point + delta.Unit * math.min(delta.Magnitude, dt * 11)
-				unit.model:PivotTo(CFrame.lookAt(nextPoint, nextPoint + delta.Unit))
+				unit.body.CFrame = CFrame.lookAt(nextPoint, nextPoint + delta.Unit)
 				if not pulseActive and targetRoot and carried[target] and (targetRoot.Position - nextPoint).Magnitude < 3.5
 					and clearPath(nextPoint, targetRoot.Position) then catch(target) end
 			end
