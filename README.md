@@ -47,3 +47,7 @@ python3 scripts/run-mobile-studio-qa.py
 Обновляй существующее [стартовое место Blackout Freight](https://create.roblox.com/dashboard/creations/experiences/10775560304/places/111633787401180/configure) через Studio. После публикации проверь историю версий, доступ **Playtesters** и лимит в четыре игрока. Скрипт [publish-closed-test.py](scripts/publish-closed-test.py) без аргументов сверяет локальный файл и показывает его SHA-256. С флагом `--publish` он публикует сборку через Open Cloud после ввода ключа.
 
 [План закрытого теста](docs/closed-test.md) · [Дизайн главы](docs/last-signal.md) · [Аудио](docs/audio-design.md) · [Рынок и монетизация](docs/market-and-monetization.md)
+
+## Дальнейшая разработка
+
+[План расширения](docs/expansion-plan-2026-11.md) · [Фактическое состояние этапов](docs/expansion-status.md). Профиль прогрессии и наблюдение за перемещениями добавляются в ветке разработки; начисление Scrap, роли и Мастерская пока не включены.

@@ -1,7 +1,6 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local MarketplaceService = game:GetService("MarketplaceService")
 local AnalyticsService = game:GetService("AnalyticsService")
 local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
@@ -9,6 +8,7 @@ local CollectionService = game:GetService("CollectionService")
 local DataStoreService = game:GetService("DataStoreService")
 local shared = ReplicatedStorage:WaitForChild("Freight")
 local Round = require(shared.Round)
+local MovementGuard = require(shared.MovementGuard)
 local Config = require(shared.Config)
 local Operations = require(shared.Operations)
 local Dispatch = require(shared.Dispatch)
@@ -16,9 +16,13 @@ local PowerCell = require(shared.PowerCell)
 local FriendInvite = require(shared.FriendInvite)
 local Depot = require(script.Parent.Depot)
 local EndingJournal = require(script.Parent.EndingJournal)
+local ProfileService = require(script.Parent.ProfileService)
+local profiles = ProfileService.new()
 local blackBoxId = "blackBox"
-local finishPasses = {Aurora = Config.CosmeticPassId, Crew = Config.CrewPassId}
+local CommerceService = require(script.Parent.CommerceService)
+local log = require(script.Parent.Analytics).log
 local journal = EndingJournal.new(not RunService:IsStudio() and DataStoreService:GetDataStore("FreightEndings_v1") or nil)
+game:BindToClose(function() profiles:close() end)
 game:BindToClose(function()
 	journal:flush()
 end)
@@ -56,6 +60,7 @@ local cells = {}
 local carried = {}
 local trackedPlayer
 local players = {}
+local commerceService = CommerceService.new(Config, function(player) return players[player] ~= nil end)
 local roundGuid
 local roundStartedAt
 local dispatchWeek
@@ -64,19 +69,9 @@ local distracted = false
 local operation, lastOperation, layout
 local crewInviteToken, crewInviteExpires, crewReplay
 local depotSpawn = CFrame.new(0, 4, 59)
-local droneStart = Vector3.new(-19, 5.5, 12)
+local droneStart = Vector3.new(table.unpack(Config.Drone.Start))
 local function now()
 	return workspace:GetServerTimeNow()
-end
-
-local function log(method, ...)
-	if RunService:IsStudio() then
-		return
-	end
-	local ok, err = pcall(method, AnalyticsService, ...)
-	if not ok then
-		warn("Freight analytics:", err)
-	end
 end
 
 local function onboard(player, n, label)
@@ -95,6 +90,35 @@ local function rootOf(player)
 	local character = player.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	return humanoid and humanoid.Health > 0 and character:FindFirstChild("HumanoidRootPart") or nil
+end
+
+-- Observe first: no automatic kicks or penalties before latency testing.
+local movementElapsed = 0
+RunService.Heartbeat:Connect(function(dt)
+	movementElapsed += dt
+	if movementElapsed < 0.25 then return end
+	movementElapsed = 0
+	for player, data in players do
+		local root = rootOf(player)
+		if not root then data.movement = nil; continue end
+		local position, time = root.Position, now()
+		if not data.movement then
+			data.movement = MovementGuard.new(position.X, position.Z, time)
+		end
+		local valid = data.movement:sample(position.X, position.Z, time, 16)
+		player:SetAttribute("MovementVerified", valid)
+		if not valid and time >= (data.nextMoveLog or 0) then
+			data.nextMoveLog = time + 15
+			log(AnalyticsService.LogCustomEvent, player, "MoveFlag")
+		end
+	end
+end)
+
+local function movePlayer(player, destination)
+	player.Character:PivotTo(destination)
+	local data = players[player]
+	if data then data.movement = nil end
+	player:SetAttribute("MovementVerified", false)
 end
 
 local function promptAt(part, action, name, offset)
@@ -370,7 +394,7 @@ local function readyCharacter(player, character)
 		return
 	end
 	local offset = random:NextNumber(-6, 6)
-	character:PivotTo(depotSpawn * CFrame.new(offset, 0, 0))
+	movePlayer(player, depotSpawn * CFrame.new(offset, 0, 0))
 	updateCrewPatch(player, character)
 	local data = players[player]
 	if data and not data.spawned then
@@ -402,6 +426,7 @@ local function join(player)
 		end)
 	end
 	journal:join(player)
+	profiles:join(player)
 	player.CharacterAdded:Connect(function(character)
 		readyCharacter(player, character)
 	end)
@@ -439,27 +464,14 @@ local function join(player)
 			end
 		end)
 	end
-	for finish, passId in finishPasses do
-		if passId <= 0 then continue end
-		task.spawn(function()
-			for attempt = 1, 3 do
-				local ok, owned = pcall(MarketplaceService.UserOwnsGamePassAsync, MarketplaceService, player.UserId, passId)
-				if ok then
-					if players[player] and player:GetAttribute(finish) == nil then
-						player:SetAttribute(finish, owned)
-					end
-					break
-				end
-				task.wait(attempt)
-			end
-		end)
-	end
+	commerceService:join(player)
 end
 
 Players.PlayerAdded:Connect(join)
 Players.PlayerRemoving:Connect(function(player)
 	recover(player)
 	journal:leave(player)
+	task.spawn(function() profiles:leave(player) end)
 	players[player] = nil
 end)
 local equipFinish = Instance.new("RemoteEvent")
@@ -513,24 +525,16 @@ if Config.CosmeticPassId > 0 then
 	commerce.Parent = shared
 end
 
-MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passId, bought)
-	if not bought or passId <= 0 or not players[player] then
-		return
-	end
-	for finish, configuredId in finishPasses do
-		if passId == configuredId then
-			player:SetAttribute(finish, true)
-			log(AnalyticsService.LogCustomEvent, player, finish .. "PassPurchased")
-			return
-		end
-	end
-end)
 for _, player in Players:GetPlayers() do
 	join(player)
 end
 
 local dronePoint = droneStart
-local patrol = {Vector3.new(-31, 5.5, 10), Vector3.new(0, 5.5, -38), Vector3.new(31, 5.5, 17)}
+local patrol = {}
+for _, point in Config.Drone.Patrol do
+	table.insert(patrol, Vector3.new(table.unpack(point)))
+end
+local heat = Config.Heat[1]
 local patrolIndex = 1
 local function moveDrone(dt)
 	local time = now()
@@ -542,7 +546,7 @@ local function moveDrone(dt)
 			if root then
 				local pos = root.Position
 				local distance = (Vector3.new(pos.X, dronePoint.Y, pos.Z) - dronePoint).Magnitude
-				local priority = if round.carrying[player.UserId] == blackBoxId then distance * 0.45 else distance
+				local priority = if round.carrying[player.UserId] == blackBoxId then distance * Config.Drone.BlackBoxPriority else distance
 				if pos.Z < Config.AirlockSafeZ and (not nearest or priority < nearest) then
 					target, targetRoot, nearest = player, root, priority
 				end
@@ -580,16 +584,16 @@ local function moveDrone(dt)
 	local delta = goal - dronePoint
 	if delta.Magnitude > 0.05 then
 		local dir = delta.Unit
-		local speed = if target and round.carrying[target.UserId] == blackBoxId then 15.3 elseif target or pulseActive then 13.7 else 8
+		local speed = if target and round.carrying[target.UserId] == blackBoxId then heat.BlackBoxSpeed elseif target or pulseActive then heat.ChaseSpeed else heat.PatrolSpeed
 		dronePoint += dir * math.min(delta.Magnitude, dt * speed)
 		drone:PivotTo(CFrame.lookAt(dronePoint, dronePoint + dir))
 	end
-	if targetRoot and (targetRoot.Position - dronePoint).Magnitude < 5.05
+	if targetRoot and (targetRoot.Position - dronePoint).Magnitude < Config.Drone.CatchRadius
 		and clearPath(dronePoint, targetRoot.Position) then
 		recover(target)
 		target:SetAttribute("Caught", target:GetAttribute("Caught") + 1)
 		players[target].shiftCatches += 1
-		target.Character:PivotTo(depotSpawn)
+		movePlayer(target, depotSpawn)
 		log(AnalyticsService.LogCustomEvent, target, "Caught")
 	end
 end
@@ -613,7 +617,7 @@ local function startShift()
 	if operation or previousOperation then
 		for player in players do
 			if rootOf(player) then
-				player.Character:PivotTo(depotSpawn * CFrame.new(random:NextNumber(-6, 6), 0, 0))
+				movePlayer(player, depotSpawn * CFrame.new(random:NextNumber(-6, 6), 0, 0))
 			end
 		end
 	end
@@ -737,7 +741,7 @@ local function finishShift()
 	for player, data in players do
 		clearCargo(player)
 		if round.outcome == "lost" and rootOf(player) then
-			player.Character:PivotTo(depotSpawn * CFrame.new(random:NextNumber(-6, 6), 0, 0))
+			movePlayer(player, depotSpawn * CFrame.new(random:NextNumber(-6, 6), 0, 0))
 		end
 		if data.picked and round.outcome == "won" then
 			player:SetAttribute("Wins", player:GetAttribute("Wins") + 1)
