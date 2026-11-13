@@ -3,6 +3,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Challenges = require(game:GetService("ReplicatedStorage").Freight.CrewChallenges)
 local Config = require(game:GetService("ReplicatedStorage").Freight.Config)
+local CrewRecordCommit = require(script.Parent.CrewRecordCommit)
 
 local Hall = {}
 Hall.__index = Hall
@@ -79,22 +80,11 @@ function Hall:recordAfterProfiles(week, members, seconds, writes)
 	if not Config.WeeklyRankingEnabled then return end
 	self.pending += 1
 	task.spawn(function()
-		local deadline = os.clock() + 20
-		repeat
-			local committed = 0
-			for _, write in writes do
-				if write.failed then
-					self.pending -= 1
-					return
-				end
-				if write.committed then committed += 1 end
-			end
-			if committed == #writes then
-				self:record(week, members, seconds)
-				break
-			end
-			task.wait(0.2)
-		until os.clock() >= deadline
+		-- Profile workers settle each accepted item on commit or terminal failure.
+		-- The server's shutdown budget still bounds how long Roblox can drain writes.
+		if CrewRecordCommit.await(writes, function() task.wait(0.2) end) then
+			self:record(week, members, seconds)
+		end
 		self.pending -= 1
 	end)
 end

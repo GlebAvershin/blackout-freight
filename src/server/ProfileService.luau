@@ -86,7 +86,6 @@ function Service:join(player)
 					-- No later operation may pass an unconfirmed write.
 					local result = retry(function() return session.profile:transact(player.UserId, sequence + 1, item.operation) end)
 					if not result then
-						for _, waiting in session.queue do waiting.failed = true end
 						session.ready = false
 						break
 					end
@@ -144,6 +143,9 @@ function Service:join(player)
 			end
 		end
 		session.ready = false
+		-- A write can arrive while a lease refresh is yielding. Settle that
+		-- queue too if the worker exits before reaching it.
+		for _, waiting in session.queue do waiting.failed = true end
 		if not session.leaving and not self.closing then player:SetAttribute("ProfileStatus", "unavailable") end
 		retry(function() return session.profile:release(player.UserId) end)
 		self.sessions[player] = nil

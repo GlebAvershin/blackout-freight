@@ -75,3 +75,21 @@ waitFor(function() return againPlayer.ProfileStatus=="local" end)
 assert(againPlayer.NextCrewRole=="Technician" and againPlayer.SavedMusicMuted and againPlayer.SavedEffectsMuted)
 againService:close()
 print("EXPANSION PREFERENCES PASS role, audio and second-session restore")
+
+-- A crew result must survive a save taking longer than the former 20s timeout.
+local hall = require(game:GetService("ServerScriptService").Freight.HallOfFame)
+local crewHall = setmetatable({studio = true, localScores = {}, pending = 0, refresh = function() end}, hall)
+local members = {[{UserId = 40004}] = true, [{UserId = 40005}] = true}
+local slowWrite = {}
+crewHall:recordAfterProfiles(1, members, 89, {{committed = true}, slowWrite})
+task.wait(21)
+assert(crewHall.pending == 1 and next(crewHall.localScores) == nil, "crew result expired or ranked before saving")
+slowWrite.committed = true
+waitFor(function() return crewHall.pending == 0 end)
+assert(crewHall.localScores.w1_c2["40004_40005"] == 89)
+local failedWrite = {}
+crewHall:recordAfterProfiles(1, members, 80, {{committed = true}, failedWrite})
+failedWrite.failed = true
+waitFor(function() return crewHall.pending == 0 end)
+assert(crewHall.localScores.w1_c2["40004_40005"] == 89, "failed profile changed the leaderboard")
+print("EXPANSION CREW RANK PASS confirmed after 21 seconds, failed write excluded")

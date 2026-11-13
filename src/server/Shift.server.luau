@@ -155,7 +155,13 @@ end)
 local function movePlayer(player, destination)
 	player.Character:PivotTo(destination)
 	local data = players[player]
-	if data then data.movement = nil; data.cargoVerified = false end
+	if data then
+		local root = rootOf(player)
+		local position = root and root.Position
+		data.movement = position and MovementGuard.new(position.X, position.Z, now()) or nil
+		data.cargoVerified = false
+		if data.reserveProof then data.reserveProof.verified = false end
+	end
 	player:SetAttribute("MovementVerified", false)
 end
 
