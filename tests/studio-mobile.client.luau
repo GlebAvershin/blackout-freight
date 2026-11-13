@@ -6,8 +6,9 @@ local state = storage:WaitForChild("Freight"):WaitForChild("Shift")
 local fixture = storage:WaitForChild("MobileHudResult")
 local inputs = game:GetService("UserInputService")
 local input = assert(inputs:CreateVirtualInput(), "Studio virtual input unavailable")
-local card, dock, journal = gui.ShiftCard, gui.EndingJournalButton, gui:WaitForChild("MobileJournal"):WaitForChild("EndingJournal")
-local offer, preview = gui.AuroraLens, gui.AuroraPreview
+local card = gui:WaitForChild("ShiftCard")
+local dock = gui:WaitForChild("EndingJournalButton")
+local offer, preview = gui:WaitForChild("AuroraLens"), gui:WaitForChild("AuroraPreview")
 local portrait = script:GetAttribute("Portrait")
 
 local function waitFor(condition, label)
@@ -18,6 +19,12 @@ local function waitFor(condition, label)
 	until os.clock() >= deadline
 	error("MOBILE HUD QA: " .. label .. " viewport=" .. tostring(gui.AbsoluteSize) .. " touch=" .. tostring(inputs.TouchEnabled) .. " phase=" .. tostring(state:GetAttribute("Phase")), 2)
 end
+
+local journal
+waitFor(function()
+	journal = gui:FindFirstChild("EndingJournal", true)
+	return journal ~= nil
+end, "journal created")
 
 local pointerOffset
 local function tap(button)

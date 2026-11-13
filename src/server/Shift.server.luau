@@ -12,9 +12,7 @@ local Round = require(shared.Round)
 local MovementGuard = require(shared.MovementGuard)
 local Progression = require(shared.Progression)
 local Roles = require(shared.Roles)
-local SentinelBrain = require(shared.SentinelBrain)
-local sentinelBrain = SentinelBrain.new()
-local sentinelVariant = "Sentinel"
+local SentinelController = require(script.Parent.SentinelController)
 local RailCycle = require(shared.RailCycle)
 local FreightYard = require(script.Parent.FreightYard)
 local Config = require(shared.Config)
@@ -41,17 +39,6 @@ local shelters = require(script.Parent.LightShelters).new(world, Depot, Roles)
 local depotPositions = positions
 local yard
 local currentMap = "depot"
-local scanner = drone.PrimaryPart.Scanner
-local searchBeam = Instance.new("Beam")
-searchBeam.Name = "TrackingBeam"
-searchBeam.Attachment0 = Instance.new("Attachment", drone.PrimaryPart)
-searchBeam.Color = ColorSequence.new(Depot.Red)
-searchBeam.Transparency = NumberSequence.new(0.55, 0.82)
-searchBeam.Width0 = 0.12
-searchBeam.Width1 = 1.3
-searchBeam.FaceCamera = true
-searchBeam.LightEmission = 0.85
-searchBeam.Parent = drone.PrimaryPart
 local state = Instance.new("Folder")
 state.Name = "Shift"
 state:SetAttribute("Phase", "waiting")
@@ -70,12 +57,11 @@ local random = Random.new()
 local round
 local cells = {}
 local carried = {}
-local trackedPlayer
+local sentinel
 local players = {}
 local commerceService = CommerceService.new(Config, function(player) return players[player] ~= nil end, shared)
 local heatLevel = 1
 local pilot
-local swarm = {}
 local gateShieldUntil = 0
 local gateLights = {}
 local function setGateShield(active)
@@ -90,11 +76,9 @@ local roundGuid
 local roundStartedAt
 local dispatchWeek
 local decoyUntil, decoyReadyAt = 0, 0
-local distracted = false
 local operation, lastOperation, layout
 local crewInviteToken, crewInviteExpires, crewReplay
 local depotSpawn = CFrame.new(0, 4, 59)
-local droneStart = Vector3.new(table.unpack(Config.Drone.Start))
 local function now()
 	return workspace:GetServerTimeNow()
 end
@@ -208,12 +192,7 @@ local function clearCargo(player)
 	player:SetAttribute("Carrying", false)
 	player:SetAttribute("CargoCount", 0)
 	player:SetAttribute("BlackBoxCarrying", false)
-	if trackedPlayer == player then
-		trackedPlayer = nil
-		searchBeam.Attachment1 = nil
-		scanner.Color = Depot.Amber
-		player:SetAttribute("Tracked", false)
-	end
+	sentinel.forget(player)
 end
 
 local function recover(player, caught)
@@ -310,25 +289,23 @@ end
 local function resetDecoy()
 	clearPortableBeacon()
 	state:SetAttribute("DecoyReadyAt", 0)
-	decoyUntil, decoyReadyAt, distracted = 0, 0, false
+	decoyUntil, decoyReadyAt = 0, 0
 	setDecoyReady(false)
 	lightBeacon(false)
-	scanner.Color = Depot.Amber
-	searchBeam.Attachment1 = nil
-	searchBeam.Color = ColorSequence.new(Depot.Red)
+	sentinel.resetDecoy()
 	state:SetAttribute("DecoyUntil", 0)
 end
 
 decoy.Triggered:Connect(function(player)
 	local time = now()
 	if not round or round.outcome ~= "live" or time >= round.deadline or time < decoyReadyAt
-		or not trackedPlayer or carried[player] or not players[player] or not within(player, decoyAnchor) then
+		or not sentinel.trackedPlayer() or carried[player] or not players[player] or not within(player, decoyAnchor) then
 		return
 	end
 	decoyUntil = time + (player:GetAttribute("UpgradeLens") and 6 or Config.DecoySeconds)
 	decoyReadyAt = time + (player:GetAttribute("UpgradeCoil") and 20 or Config.DecoyCooldown)
 	state:SetAttribute("DecoyReadyAt", decoyReadyAt)
-	round:assistBonus(trackedPlayer.UserId, player.UserId)
+	round:assistBonus(sentinel.trackedPlayer().UserId, player.UserId)
 	setDecoyReady(false)
 	state:SetAttribute("DecoyUntil", decoyUntil)
 	log(AnalyticsService.LogCustomEvent, player, "DecoyActivated")
@@ -455,6 +432,23 @@ deliver.Triggered:Connect(function(player)
 		end
 	end
 end)
+
+local function catch(player)
+	recover(player, true)
+	player:SetAttribute("Caught", (player:GetAttribute("Caught") or 0) + 1)
+	players[player].shiftCatches += 1
+	if heatLevel >= 3 then player:SetAttribute("RecoveryUntil", now() + 10) end
+	movePlayer(player, depotSpawn)
+	log(AnalyticsService.LogCustomEvent, player, "Caught")
+end
+
+sentinel = SentinelController.new(drone, world, state, carried, shelters, {
+	rootOf = rootOf,
+	clearPath = clearPath,
+	catch = catch,
+	setDecoyReady = setDecoyReady,
+	lightBeacon = lightBeacon,
+})
 
 local function updateCrewPatch(player, character)
 	local existing = character:FindFirstChild("Depot 07 patch")
@@ -666,7 +660,7 @@ preparation.OnServerEvent:Connect(function(player, action, value)
 		local role = player:GetAttribute("CrewRole")
 		if value ~= nil or not root or not round or time < (player:GetAttribute("RecoveryUntil") or 0) or time >= round.deadline
 			or not Roles.canUse(role, round.outcome, time, data.abilityReadyAt or 0, carried[player] ~= nil,
-				root.Position.Z < Config.AirlockSafeZ, trackedPlayer ~= nil and time >= decoyReadyAt and time >= decoyUntil)
+				root.Position.Z < Config.AirlockSafeZ, sentinel.trackedPlayer() ~= nil and time >= decoyReadyAt and time >= decoyUntil)
 			or not verifyMovement(player, root) then return end
 		if math.abs(root.Position.X) > 70 or root.Position.Z < -75 then return end
 		local definition = Roles.Catalog[role]
@@ -694,7 +688,7 @@ preparation.OnServerEvent:Connect(function(player, action, value)
 			decoyUntil = time + definition.duration + (player:GetAttribute("UpgradeLens") and 1 or 0)
 			decoyReadyAt = time + (player:GetAttribute("UpgradeCoil") and 20 or Config.DecoyCooldown)
 			state:SetAttribute("DecoyReadyAt", decoyReadyAt)
-			round:assistBonus(trackedPlayer.UserId, player.UserId)
+			round:assistBonus(sentinel.trackedPlayer().UserId, player.UserId)
 			state:SetAttribute("DecoyUntil", decoyUntil)
 			setDecoyReady(false)
 		end
@@ -734,27 +728,7 @@ for _, player in Players:GetPlayers() do
 	join(player)
 end
 
-local dronePoint = droneStart
-local patrol = {}
-for _, point in Config.Drone.Patrol do
-	table.insert(patrol, Vector3.new(table.unpack(point)))
-end
 local heat = Config.Heat[1]
-local patrolIndex = 1
-local function catch(player)
-	recover(player, true)
-	player:SetAttribute("Caught", (player:GetAttribute("Caught") or 0) + 1)
-	players[player].shiftCatches += 1
-	if heatLevel >= 3 then player:SetAttribute("RecoveryUntil", now() + 10) end
-	movePlayer(player, depotSpawn)
-	log(AnalyticsService.LogCustomEvent, player, "Caught")
-end
-
-local function clearSwarm()
-	for _, unit in swarm do unit.model:Destroy() end
-	table.clear(swarm)
-end
-
 local function moveDrone(dt)
 	local time = now()
 	shelters.step(time, rootOf)
@@ -767,95 +741,8 @@ local function moveDrone(dt)
 	local gateShield = time < gateShieldUntil
 	setGateShield(gateShield)
 	if not pulseActive and portableBeacon then clearPortableBeacon() end
-	local candidates = {}
-	if not pulseActive then
-		for player in carried do
-			local root = rootOf(player)
-			if root and root.Position.Z < Config.AirlockSafeZ then
-				local pos = root.Position
-				local distance = (Vector3.new(pos.X, dronePoint.Y, pos.Z) - dronePoint).Magnitude
-				table.insert(candidates, {id=player, x=pos.X, z=pos.Z,
-					priority=round.carrying[player.UserId] == blackBoxId and distance * Config.Drone.BlackBoxPriority or distance,
-					visible=sentinelVariant ~= "Tracker" or clearPath(dronePoint, pos), protected=shelters.protects(pos) or (gateShield and pos.Z >= 48 and math.abs(pos.X) <= 13)})
-			end
-		end
-	else sentinelBrain.clear() end
-	local target, rememberedX, rememberedZ, mode = sentinelBrain.choose(sentinelVariant, time, candidates)
-	local targetRoot = target and rootOf(target)
-	state:SetAttribute("SentinelMode", pulseActive and "distracted" or mode)
-	setDecoyReady(target ~= nil and time >= decoyReadyAt)
-	local goal = patrol[patrolIndex]
-	if target ~= trackedPlayer or pulseActive ~= distracted then
-		if trackedPlayer then
-			trackedPlayer:SetAttribute("Tracked", false)
-		end
-		trackedPlayer = target
-		distracted = pulseActive
-		lightBeacon(pulseActive and not portableBeacon)
-		searchBeam.Attachment1 = pulseActive and activeDecoyAnchor or (target and carried[target].PrimaryPart.TrackingTarget or nil)
-		searchBeam.Color = ColorSequence.new(pulseActive and Depot.Cyan or Depot.Red)
-		if target then
-			target:SetAttribute("Tracked", true)
-		end
-	end
-	scanner.Color = pulseActive and Depot.Cyan or (target and Depot.Red or (mode == "search" and Color3.fromRGB(174,120,255) or Depot.Amber))
-	if pulseActive then
-		goal = Vector3.new(activeDecoyAnchor.WorldPosition.X, dronePoint.Y, activeDecoyAnchor.WorldPosition.Z)
-	elseif pilotRoot then
-		local pos = pilotRoot.Position
-		goal = Vector3.new(math.clamp(pos.X, -65, 65), dronePoint.Y, math.clamp(pos.Z, -70, 52.5))
-	elseif targetRoot then
-		local pos = targetRoot.Position
-		goal = Vector3.new(math.clamp(pos.X, -65, 65), dronePoint.Y, math.clamp(pos.Z, -70, 52.5))
-	elseif mode == "search" then
-		goal = Vector3.new(math.clamp(rememberedX, -65, 65), dronePoint.Y, math.clamp(rememberedZ, -70, 52.5))
-	elseif (goal - dronePoint).Magnitude < 2 then
-		patrolIndex = (patrolIndex - 1 + (if heatLevel >= 3 then -1 else 1)) % #patrol + 1
-	end
-	if operation then
-		local x, z = Operations.waypoint(Operations.Routes[operation], dronePoint.X, dronePoint.Z, goal.X, goal.Z)
-		goal = Vector3.new(x, dronePoint.Y, z)
-	end
-	local delta = goal - dronePoint
-	if delta.Magnitude > 0.05 then
-		local dir = delta.Unit
-		local speed = if target and round.carrying[target.UserId] == blackBoxId then heat.BlackBoxSpeed elseif target or pulseActive then heat.ChaseSpeed else heat.PatrolSpeed
-		dronePoint += dir * math.min(delta.Magnitude, dt * speed)
-		drone:PivotTo(CFrame.lookAt(dronePoint, dronePoint + dir))
-	end
-	if pilotRoot and not pulseActive then
-		for _, candidate in candidates do
-			local root = rootOf(candidate.id)
-			if not candidate.protected and root and (root.Position-dronePoint).Magnitude < Config.Drone.CatchRadius
-				and clearPath(dronePoint,root.Position) then
-				catch(candidate.id)
-				break
-			end
-		end
-	elseif targetRoot and (targetRoot.Position - dronePoint).Magnitude < Config.Drone.CatchRadius
-		and clearPath(dronePoint, targetRoot.Position) then
-		catch(target)
-	end
-	for _, unit in swarm do
-		local point = unit.model:GetPivot().Position
-		local nextGoal = patrol[unit.index]
-		if pulseActive then
-			nextGoal = activeDecoyAnchor.WorldPosition
-		elseif targetRoot and carried[target] and clearPath(point, targetRoot.Position) then
-			nextGoal = targetRoot.Position
-		elseif (nextGoal - point).Magnitude < 2 then
-			unit.index = unit.index % #patrol + 1
-		end
-		local x, z = nextGoal.X, math.min(nextGoal.Z, 52.5)
-		if operation then x, z = Operations.waypoint(Operations.Routes[operation], point.X, point.Z, x, z) end
-		local delta = Vector3.new(x, point.Y, z) - point
-		if delta.Magnitude > 0.05 then
-			local nextPoint = point + delta.Unit * math.min(delta.Magnitude, dt * 11)
-			unit.model:PivotTo(CFrame.lookAt(nextPoint, nextPoint + delta.Unit))
-			if not pulseActive and targetRoot and carried[target] and (targetRoot.Position - nextPoint).Magnitude < 3.5
-				and clearPath(nextPoint, targetRoot.Position) then catch(target) end
-		end
-	end
+	sentinel.step(dt, time, pulseActive, pilotRoot, gateShield, activeDecoyAnchor,
+		decoyReadyAt, portableBeacon, operation and Operations.Routes[operation], round.carrying, blackBoxId)
 end
 
 local function startShift()
@@ -887,15 +774,7 @@ local function startShift()
 	heat = Config.Heat[heatLevel]
 	state:SetAttribute("Heat", heatLevel)
 	Lighting.ExposureCompensation = if heatLevel == 5 then -0.27 else 0.22
-	sentinelVariant = SentinelBrain.variant(heatLevel, yardEligible)
-	sentinelBrain.clear()
-	state:SetAttribute("SentinelVariant", sentinelVariant)
-	state:SetAttribute("SentinelMode", "patrol")
-	for _, part in drone:GetChildren() do
-		if part.Name == "Eye" or part.Name == "Thruster flare" then
-			part.Color = sentinelVariant == "Tracker" and Color3.fromRGB(174,120,255) or Depot.Red
-		end
-	end
+	sentinel.configure(heatLevel, yardEligible)
 	local eligible = false
 	for player in players do
 		if journal:eligible(player) then
@@ -957,24 +836,8 @@ local function startShift()
 		crewInviteExpires = now() + 360
 	end
 	state:SetAttribute("CrewInviteToken", if hasBlackBox then crewInviteToken else nil)
-	dronePoint = droneStart
-	patrolIndex = heatLevel >= 3 and 3 or 1
 	gateShieldUntil = now() + (if heatLevel >= 4 then 2 else 5)
-	clearSwarm()
-	if heatLevel == 5 then
-		for index, x in {-28, 28} do
-			local model = drone:Clone()
-			model.Name = "Swarm " .. index
-			CollectionService:RemoveTag(model.PrimaryPart, "FreightSentinel")
-			model.PrimaryPart.TrackingBeam:Destroy()
-			model.PrimaryPart.Scanner:Destroy()
-			model:ScaleTo(0.45)
-			model:PivotTo(CFrame.new(x, droneStart.Y, -22))
-			model.Parent = world
-			table.insert(swarm, {model = model, index = index})
-		end
-	end
-	drone:PivotTo(CFrame.new(dronePoint))
+	sentinel.deploy()
 	local function spawnCargo(id, model, isBlackBox)
 		cells[id] = model
 		local prompt, anchor = promptAt(model.PrimaryPart, isBlackBox and "Recover" or "Take cell",
@@ -1077,11 +940,9 @@ local function finishShift()
 		pilot:SetAttribute("PilotingSentinel", false)
 		pilot = nil
 	end
-	clearSwarm()
+	sentinel.finish()
 	Lighting.ExposureCompensation = 0.22
 	setGateShield(false)
-	sentinelBrain.clear()
-	state:SetAttribute("SentinelMode", "patrol")
 	shelters.clear()
 	if yard then yard.step(0); state:SetAttribute("TrainStatus", "clear") end
 	deliver.Enabled = false
