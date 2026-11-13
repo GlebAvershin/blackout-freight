@@ -9,3 +9,12 @@ assert(not R.canUse("Lure", "live", 10, 0, false, true, false))
 assert(not R.canUse("Unknown", "live", 10, 0, true, true, true))
 assert(R.speed(13, 10, true) == 22 and R.speed(13,13,true) == 16 and R.speed(13,10,false) == 16)
 print("PASS: role eligibility, shared cooldown, cargo requirement, safe zone, sprint expiry")
+
+for _, role in {"Scout", "Technician"} do
+ assert(R.canUse(role,"live",10,0,false,true,false))
+ assert(not R.canUse(role,"live",10,11,false,true,false))
+ assert(not R.canUse(role,"live",10,0,false,false,false))
+ assert(not R.canUse(role,"won",10,0,false,true,false))
+end
+assert(#R.Order == 4)
+print("PASS: support roles phase, cooldown and safe-zone gates")

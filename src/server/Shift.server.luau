@@ -33,6 +33,7 @@ end)
 
 local world, terminal, positions, drone, consoles, showPower, beacon, lightBeacon = Depot.build()
 CollectionService:AddTag(drone.PrimaryPart, "FreightSentinel")
+local shelters = require(script.Parent.LightShelters).new(world, Depot, Roles)
 local depotPositions = positions
 local yard
 local currentMap = "depot"
@@ -518,6 +519,7 @@ end
 
 Players.PlayerAdded:Connect(join)
 Players.PlayerRemoving:Connect(function(player)
+	shelters.remove(player)
 	recover(player)
 	journal:leave(player)
 	task.spawn(function() profiles:leave(player) end)
@@ -574,6 +576,9 @@ if Config.CosmeticPassId > 0 then
 	commerce.Parent = shared
 end
 
+local scan = Instance.new("RemoteEvent")
+scan.Name = "SentinelScan"
+scan.Parent = shared
 local preparation = Instance.new("RemoteEvent")
 preparation.Name = "Preparation"
 preparation.OnServerEvent:Connect(function(player, action, value)
@@ -599,6 +604,10 @@ preparation.OnServerEvent:Connect(function(player, action, value)
 			data.sprintUntil = time + definition.duration
 			player:SetAttribute("SprintUntil", data.sprintUntil)
 			root.Parent.Humanoid.WalkSpeed = 22
+		elseif role == "Scout" then
+			scan:FireClient(player, drone, time + definition.duration)
+		elseif role == "Technician" then
+			shelters.deploy(player, root, time)
 		else
 			clearPortableBeacon()
 			portableBeacon = Depot.part(world, "Portable crew beacon", Vector3.new(1.2, 0.5, 1.2),
@@ -656,6 +665,7 @@ local heat = Config.Heat[1]
 local patrolIndex = 1
 local function moveDrone(dt)
 	local time = now()
+	shelters.step(time, rootOf)
 	local pulseActive = time < decoyUntil
 	if not pulseActive and portableBeacon then clearPortableBeacon() end
 	local target, targetRoot, nearest
@@ -666,7 +676,7 @@ local function moveDrone(dt)
 				local pos = root.Position
 				local distance = (Vector3.new(pos.X, dronePoint.Y, pos.Z) - dronePoint).Magnitude
 				local priority = if round.carrying[player.UserId] == blackBoxId then distance * Config.Drone.BlackBoxPriority else distance
-				if pos.Z < Config.AirlockSafeZ and (not nearest or priority < nearest) then
+				if pos.Z < Config.AirlockSafeZ and not shelters.protects(pos) and (not nearest or priority < nearest) then
 					target, targetRoot, nearest = player, root, priority
 				end
 			end
@@ -718,6 +728,7 @@ local function moveDrone(dt)
 end
 
 local function startShift()
+	shelters.clear()
 	local votes, novice = {}, false
 	local mapVotes, yardEligible = {}, true
 	for player in players do
@@ -880,6 +891,7 @@ local function startShift()
 end
 
 local function finishShift()
+	shelters.clear()
 	if yard then yard.step(0); state:SetAttribute("TrainStatus", "clear") end
 	deliver.Enabled = false
 	resetDecoy()

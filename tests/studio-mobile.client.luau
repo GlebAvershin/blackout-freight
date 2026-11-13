@@ -133,7 +133,17 @@ tap(workshop.RoleLure)
 waitFor(function() return player:GetAttribute("NextCrewRole") == "Lure" end, "select lure for next shift")
 assert(player:GetAttribute("CrewRole") == "Carrier", "role changed during preparation before shift start")
 task.wait(0.6)
-journal.CanvasPosition = Vector2.new(0, workshop.Position.Y.Offset + 344)
+for _, id in {"Scout", "Technician"} do
+	journal.CanvasPosition = Vector2.new(0, workshop.Position.Y.Offset + 290)
+	task.wait(0.2)
+	local button = workshop["Role" .. id]
+	assert(button.AbsoluteSize.Y >= 44 and button.TextFits, "support role clipped")
+	tap(button)
+	waitFor(function() return player:GetAttribute("NextCrewRole") == id end, "select " .. id)
+	assert(workshop.RoleDetail.TextFits, "support detail clipped")
+	task.wait(0.6)
+end
+journal.CanvasPosition = Vector2.new(0, workshop.Position.Y.Offset + 394)
 task.wait(0.2)
 assert(workshop.Mapyard.AbsoluteSize.Y >= 44 and workshop.Mapyard.TextFits and workshop.MapDetail.TextFits, "map selection clipped")
 tap(workshop.Mapdepot)

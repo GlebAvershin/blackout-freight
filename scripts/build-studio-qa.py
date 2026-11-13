@@ -12,7 +12,8 @@ work.mkdir(exist_ok=True)
 rojo = sys.argv[1] if len(sys.argv) > 1 else "rojo"
 output = work / "Blackout Freight Server QA.rbxl"
 yard = "--yard" in sys.argv[2:]
-roles = "--roles" in sys.argv[2:]
+support = "--support" in sys.argv[2:]
+roles = "--roles" in sys.argv[2:] or support
 progression = "--progression" in sys.argv[2:]
 solo = "--solo" in sys.argv[2:]
 guidance = "--guidance" in sys.argv[2:]
@@ -125,6 +126,9 @@ end)
         shutil.copytree(root / "src/shared", qa / "shared")
         config = qa / "shared/Config.luau"
         config.write_text(config.read_text().replace("Target = 5,", "Target = 1,"))
+    if support:
+        shutil.copyfile(root / "tests/studio-support-roles.server.luau", qa / "server/Scenario.server.luau")
+        shutil.copyfile(root / "tests/studio-scan.client.luau", qa / "client/ScanScenario.client.luau")
     tree["ServerScriptService"]["Freight"]["$path"] = str(qa / "server")
     tree["ReplicatedStorage"]["Freight"]["$path"] = str(qa / "shared" if progression or roles or yard else root / "src/shared")
     tree["StarterPlayer"]["StarterPlayerScripts"]["Freight"]["$path"] = str(qa / "client")

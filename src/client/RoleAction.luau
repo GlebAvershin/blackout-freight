@@ -21,7 +21,7 @@ function RoleAction.mount(gui, player, state, shared, colors, add, t)
 		local carrying = player:GetAttribute("Carrying") == true
 		local outside = root and root.Position.Z < require(shared.Config).AirlockSafeZ
 		button.Visible = state:GetAttribute("Phase") == "live" and humanoid ~= nil and humanoid.Health > 0
-			and outside == true and not menusOpen and (role == "Lure" or (role == "Carrier" and carrying))
+			and outside == true and not menusOpen and (role == "Lure" or role == "Scout" or role == "Technician" or (role == "Carrier" and carrying))
 		if not button.Visible then return end
 		invite.Visible = false
 		button.Position, button.Size, button.AnchorPoint = invite.Position, invite.Size, invite.AnchorPoint
@@ -29,9 +29,11 @@ function RoleAction.mount(gui, player, state, shared, colors, add, t)
 		local readyAt = player:GetAttribute("AbilityReadyAt") or 0
 		if role == "Lure" then readyAt = math.max(readyAt, state:GetAttribute("DecoyReadyAt") or 0) end
 		local remaining = math.max(0, math.ceil(readyAt - time))
-		local label = role == "Lure" and t("Lure", "Маяк") or t("Dash", "Рывок")
+		local label = if role == "Scout" then t("Scan", "Сканер") elseif role == "Technician" then t("Light", "Свет") elseif role == "Lure" then t("Lure", "Маяк") else t("Dash", "Рывок")
+		local setupRemaining = math.max(0, math.ceil((player:GetAttribute("ShelterSetupUntil") or 0) - time))
+		if setupRemaining > 0 then label = t("Hold still", "Стой"); remaining = setupRemaining end
 		button.Text = (compact and "" or "Q · ") .. label .. (remaining > 0 and " " .. remaining or "")
-		button.Interactable = remaining == 0 and (role == "Carrier" or state:GetAttribute("DecoyReady") == true)
+		button.Interactable = remaining == 0 and (role ~= "Lure" or state:GetAttribute("DecoyReady") == true)
 		button.TextColor3 = button.Interactable and colors.cyan or colors.muted
 	end
 	return api
