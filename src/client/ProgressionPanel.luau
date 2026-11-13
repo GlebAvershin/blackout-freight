@@ -2,8 +2,9 @@
 local Panel = {}
 function Panel.mount(parent, player, state, shared, colors, add, t)
 	local catalog = require(shared.Progression).Catalog
+	local roles = require(shared.Roles)
 	local remote = shared:WaitForChild("Preparation")
-	local frame = add("Frame", parent, {Name = "Workshop", BackgroundTransparency = 1, Size = UDim2.new(1, -24, 0, 232)})
+	local frame = add("Frame", parent, {Name = "Workshop", BackgroundTransparency = 1, Size = UDim2.new(1, -24, 0, 336)})
 	local heading = add("TextLabel", frame, {Name = "Balance", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 28),
 		TextColor3 = colors.cyan, TextSize = 13, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Left})
 	local function button(name, text, position, size)
@@ -25,6 +26,16 @@ function Panel.mount(parent, player, state, shared, colors, add, t)
 		upgrades[id] = b
 	end
 	local status = add("TextLabel", frame, {Name = "Status", Position = UDim2.fromOffset(0, 184), Size = UDim2.new(1, 0, 0, 48),
+		BackgroundTransparency = 1, TextColor3 = colors.muted, TextSize = 12, TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Left, Font = Enum.Font.Gotham})
+	local roleButtons = {}
+	for index, id in roles.Order do
+		local b = button("Role" .. id, t(roles.Catalog[id].en, roles.Catalog[id].ru),
+			UDim2.new((index-1)/2, 2, 0, 240), UDim2.new(0.5, -4, 0, 44))
+		b.Activated:Connect(function() remote:FireServer("role", id) end)
+		roleButtons[id] = b
+	end
+	local roleDetail = add("TextLabel", frame, {Name = "RoleDetail", Position = UDim2.fromOffset(0, 288), Size = UDim2.new(1, 0, 0, 48),
 		BackgroundTransparency = 1, TextColor3 = colors.muted, TextSize = 12, TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left, Font = Enum.Font.Gotham})
 	local api = {}
@@ -54,7 +65,14 @@ function Panel.mount(parent, player, state, shared, colors, add, t)
 			elseif not ready then t("Loading progress…", "Загружаем прогресс…")
 			elseif between then t("Vote for next shift. Ties favor lower Heat; newcomers start at 1.", "Голосуй за следующую смену. При равенстве — ниже; для новичков — 1.")
 			else t("Earn Scrap by delivering cells. Upgrade at the airlock; vote between shifts.", "Scrap дают за доставки. Улучшения — у шлюза, Тревога — между сменами.")
-		return y + 240
+		local selected = player:GetAttribute("NextCrewRole") or "Carrier"
+		for id, b in roleButtons do
+			b.Interactable = between
+			b.TextColor3 = selected == id and colors.cyan or colors.paper
+		end
+		local definition = roles.Catalog[selected] or roles.Catalog.Carrier
+		roleDetail.Text = t(definition.detailEN, definition.detailRU)
+		return y + 344
 	end
 	return api
 end

@@ -605,7 +605,10 @@ local offered = false
 local previewTracked = false
 local commerce = Config.CosmeticPassId > 0 and shared:WaitForChild("Commerce")
 
+local roleAction = require(script.Parent.RoleAction).mount(gui, player, state, shared, colors, add, t)
+
 local function draw()
+	invite.Visible = not (compact and (journalPanel.Visible or preview.Visible))
 	if not openingInvite then
 		invite.Text = inviteLabel()
 	end
@@ -733,7 +736,7 @@ local function draw()
 		end
 	elseif phase == "briefing" then
 		objective.Text = compact and t("Next shift", "Подготовка") or t("Prepare your crew", "Подготовка экипажа")
-		hint.Text = t("Open the log: choose Heat and workshop upgrades.", "Открой журнал: выбери Тревогу и улучшения.")
+		hint.Text = t("Open the log: choose your role, Heat and upgrades.", "Открой журнал: выбери роль, Тревогу и улучшения.")
 		radio.Text = string.format(t("Scrap +%d · balance %d", "Scrap +%d · всего %d"), player:GetAttribute("LastScrapAward") or 0, player:GetAttribute("Scrap") or 0)
 	elseif phase == "lost" then
 		objective.Text = t("Signal lost", "Сигнал потерян")
@@ -867,5 +870,6 @@ end)
 
 while gui.Parent do
 	draw()
+	roleAction.draw(compact, invite, journalPanel.Visible or preview.Visible)
 	task.wait(0.2)
 end

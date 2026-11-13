@@ -10,6 +10,7 @@ local shared = ReplicatedStorage:WaitForChild("Freight")
 local Round = require(shared.Round)
 local MovementGuard = require(shared.MovementGuard)
 local Progression = require(shared.Progression)
+local Roles = require(shared.Roles)
 local Config = require(shared.Config)
 local Operations = require(shared.Operations)
 local Dispatch = require(shared.Dispatch)
@@ -100,7 +101,8 @@ local function verifyMovement(player, root)
 	if not data or not root then return false end
 	local position, time = root.Position, now()
 	if not data.movement then data.movement = MovementGuard.new(position.X, position.Z, time) end
-	local valid = data.movement:sample(position.X, position.Z, time, 16)
+	local speed = Roles.speed(data.sprintUntil or 0, time, carried[player] ~= nil)
+	local valid = data.movement:sample(position.X, position.Z, time, speed)
 	player:SetAttribute("MovementVerified", valid)
 	if not valid then
 		data.cargoVerified = false
@@ -118,7 +120,11 @@ RunService.Heartbeat:Connect(function(dt)
 	movementElapsed = 0
 	for player, data in players do
 		local root = rootOf(player)
-		if root then verifyMovement(player, root) else data.movement = nil; data.cargoVerified = false end
+		if root then
+			local speed = Roles.speed(data.sprintUntil or 0, now(), carried[player] ~= nil)
+			root.Parent.Humanoid.WalkSpeed = speed
+			verifyMovement(player, root)
+		else data.movement = nil; data.cargoVerified = false end
 	end
 end)
 
@@ -158,7 +164,13 @@ local function clearPath(origin, destination)
 end
 
 local function clearCargo(player)
-	if players[player] then players[player].cargoVerified = false end
+	if players[player] then
+		players[player].cargoVerified = false
+		players[player].sprintUntil = 0
+		player:SetAttribute("SprintUntil", 0)
+		local root = rootOf(player)
+		if root then root.Parent.Humanoid.WalkSpeed = 16 end
+	end
 	if carried[player] then
 		carried[player]:Destroy()
 		carried[player] = nil
@@ -233,6 +245,13 @@ end
 local decoy, decoyAnchor = promptAt(beacon, "Activate", "Decoy beacon", Vector3.new(0, 2, 0))
 decoy.RequiresLineOfSight = false
 CollectionService:AddTag(beacon, "FreightDecoy")
+local portableBeacon
+local activeDecoyAnchor = decoyAnchor
+
+local function clearPortableBeacon()
+	if portableBeacon then portableBeacon:Destroy(); portableBeacon = nil end
+	activeDecoyAnchor = decoyAnchor
+end
 
 local function setDecoyReady(ready)
 	decoy.Enabled = ready
@@ -240,6 +259,8 @@ local function setDecoyReady(ready)
 end
 
 local function resetDecoy()
+	clearPortableBeacon()
+	state:SetAttribute("DecoyReadyAt", 0)
 	decoyUntil, decoyReadyAt, distracted = 0, 0, false
 	setDecoyReady(false)
 	lightBeacon(false)
@@ -257,6 +278,7 @@ decoy.Triggered:Connect(function(player)
 	end
 	decoyUntil = time + (player:GetAttribute("UpgradeLens") and 6 or Config.DecoySeconds)
 	decoyReadyAt = time + (player:GetAttribute("UpgradeCoil") and 20 or Config.DecoyCooldown)
+	state:SetAttribute("DecoyReadyAt", decoyReadyAt)
 	round:assistBonus(trackedPlayer.UserId, player.UserId)
 	setDecoyReady(false)
 	state:SetAttribute("DecoyUntil", decoyUntil)
@@ -331,7 +353,7 @@ deliver.Triggered:Connect(function(player)
 		local verified = verifyMovement(player, deliveryRoot)
 		if deliveryData and verified and deliveryData.cargoVerified and deliveryData.pickupAt and deliveryRoot then
 			local distance = (deliveryRoot.Position - deliveryData.pickupPosition).Magnitude
-			if time - deliveryData.pickupAt >= math.max(0.5, distance / 19 - 0.5) then
+			if time - deliveryData.pickupAt >= math.max(0.5, distance / (deliveryData.usedSprint and 25 or 19) - 0.5) then
 				deliveryData.verifiedDeliveries = (deliveryData.verifiedDeliveries or 0) + 1
 			end
 		end
@@ -438,6 +460,10 @@ local function join(player)
 	player:SetAttribute("ShiftDeliveries", 0)
 	player:SetAttribute("Caught", 0)
 	player:SetAttribute("FirstDelivery", false)
+	player:SetAttribute("CrewRole", "Carrier")
+	player:SetAttribute("NextCrewRole", "Carrier")
+	player:SetAttribute("AbilityReadyAt", 0)
+	player:SetAttribute("SprintUntil", 0)
 	for _, attribute in {"PreferredCellFinish", "EndingBroadcast", "EndingShelter", "Aurora", "Crew", "Carrying"} do
 		player:GetAttributeChangedSignal(attribute):Connect(function()
 			restoreCellFinish(player)
@@ -553,7 +579,47 @@ preparation.OnServerEvent:Connect(function(player, action, value)
 	data.nextPreparation = time + 0.5
 	local phase, root = state:GetAttribute("Phase"), rootOf(player)
 	local between = phase == "won" or phase == "lost" or phase == "briefing"
-	if action == "heat" then
+	if action == "ability" then
+		local role = player:GetAttribute("CrewRole")
+		if value ~= nil or not root or not round or now() >= round.deadline
+			or not Roles.canUse(role, round.outcome, time, data.abilityReadyAt or 0, carried[player] ~= nil,
+				root.Position.Z < Config.AirlockSafeZ, trackedPlayer ~= nil and time >= decoyReadyAt and time >= decoyUntil)
+			or not verifyMovement(player, root) then return end
+		if math.abs(root.Position.X) > 70 or root.Position.Z < -75 then return end
+		local definition = Roles.Catalog[role]
+		data.abilityReadyAt = time + definition.cooldown
+		player:SetAttribute("AbilityReadyAt", data.abilityReadyAt)
+		if role == "Carrier" then
+			data.usedSprint = true
+			data.sprintUntil = time + definition.duration
+			player:SetAttribute("SprintUntil", data.sprintUntil)
+			root.Parent.Humanoid.WalkSpeed = 22
+		else
+			clearPortableBeacon()
+			portableBeacon = Depot.part(world, "Portable crew beacon", Vector3.new(1.2, 0.5, 1.2),
+				CFrame.new(root.Position.X, 0.5, root.Position.Z), Depot.Cyan, Enum.Material.Neon, false)
+			portableBeacon.CanQuery = false
+			activeDecoyAnchor = Instance.new("Attachment", portableBeacon)
+			activeDecoyAnchor.Position = Vector3.new(0, 1.5, 0)
+			local light = Instance.new("PointLight", portableBeacon)
+			light.Color, light.Range, light.Brightness = Depot.Cyan, 10, 1.5
+			decoyUntil = time + definition.duration + (player:GetAttribute("UpgradeLens") and 1 or 0)
+			decoyReadyAt = time + (player:GetAttribute("UpgradeCoil") and 20 or Config.DecoyCooldown)
+			state:SetAttribute("DecoyReadyAt", decoyReadyAt)
+			round:assistBonus(trackedPlayer.UserId, player.UserId)
+			state:SetAttribute("DecoyUntil", decoyUntil)
+			setDecoyReady(false)
+		end
+		log(AnalyticsService.LogCustomEvent, player, "RoleAbility", 1, {
+			[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = role,
+		})
+	elseif action == "role" then
+		if not between or type(value) ~= "string" or not Roles.Catalog[value] then return end
+		player:SetAttribute("NextCrewRole", value)
+		log(AnalyticsService.LogCustomEvent, player, "RoleSelected", 1, {
+			[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = value,
+		})
+	elseif action == "heat" then
 		if not between or type(value) ~= "number" or value % 1 ~= 0 or not Config.Heat[value] then return end
 		player:SetAttribute("HeatVote", value)
 		log(AnalyticsService.LogCustomEvent, player, "HeatVote", value)
@@ -582,6 +648,7 @@ local patrolIndex = 1
 local function moveDrone(dt)
 	local time = now()
 	local pulseActive = time < decoyUntil
+	if not pulseActive and portableBeacon then clearPortableBeacon() end
 	local target, targetRoot, nearest
 	if not pulseActive then
 		for player in carried do
@@ -604,8 +671,8 @@ local function moveDrone(dt)
 		end
 		trackedPlayer = target
 		distracted = pulseActive
-		lightBeacon(pulseActive)
-		searchBeam.Attachment1 = pulseActive and decoyAnchor or (target and carried[target].PrimaryPart.TrackingTarget or nil)
+		lightBeacon(pulseActive and not portableBeacon)
+		searchBeam.Attachment1 = pulseActive and activeDecoyAnchor or (target and carried[target].PrimaryPart.TrackingTarget or nil)
 		scanner.Color = pulseActive and Depot.Cyan or (target and Depot.Red or Depot.Amber)
 		searchBeam.Color = ColorSequence.new(pulseActive and Depot.Cyan or Depot.Red)
 		if target then
@@ -613,7 +680,7 @@ local function moveDrone(dt)
 		end
 	end
 	if pulseActive then
-		goal = Vector3.new(beacon.Position.X, dronePoint.Y, beacon.Position.Z)
+		goal = Vector3.new(activeDecoyAnchor.WorldPosition.X, dronePoint.Y, activeDecoyAnchor.WorldPosition.Z)
 	elseif targetRoot then
 		local pos = targetRoot.Position
 		goal = Vector3.new(math.clamp(pos.X, -65, 65), dronePoint.Y, math.clamp(pos.Z, -70, 52.5))
@@ -722,6 +789,7 @@ local function startShift()
 				and round:pickup(player.UserId, id, now()) then
 				data.cargoVerified = verifyMovement(player, root)
 				data.pickupAt, data.pickupPosition = now(), root.Position
+				data.usedSprint = false
 				prompt.Enabled = false
 				model.Parent = nil
 				showCargo(player, root, isBlackBox)
@@ -767,6 +835,10 @@ local function startShift()
 		data.tookBlackBox = false
 		data.shiftCatches = 0
 		data.verifiedDeliveries = 0
+		data.abilityReadyAt, data.sprintUntil = 0, 0
+		player:SetAttribute("CrewRole", player:GetAttribute("NextCrewRole") or "Carrier")
+		player:SetAttribute("AbilityReadyAt", 0)
+		player:SetAttribute("SprintUntil", 0)
 		player:SetAttribute("LastScrapAward", 0)
 		player:SetAttribute("DispatchCompletedThisShift", false)
 		player:SetAttribute("NewBestThisShift", false)

@@ -7,7 +7,7 @@ import tempfile
 
 root = Path(__file__).resolve().parents[1]
 studio = "/Applications/RobloxStudio.app/Contents/MacOS/RobloxStudio"
-modes = (False,) if "--landscape-only" in sys.argv else (False, True)
+modes = (False,) if "--landscape-only" in sys.argv else ((True,) if "--portrait-only" in sys.argv else (False, True))
 client_source = (root / "tests/studio-mobile.client.luau").read_text()
 assert "]==]" not in client_source
 
@@ -55,6 +55,12 @@ event.OnServerEvent:Connect(function(player, step)
         game:GetService("ReplicatedStorage").Freight.Shift:SetAttribute("Phase", "briefing")
     elseif step == "resume" then
         game:GetService("ReplicatedStorage").Freight.Shift:SetAttribute("Phase", "live")
+    elseif step == "role-preview" then
+        player.Character:PivotTo(CFrame.new(0,3,50))
+        player:SetAttribute("Carrying", true)
+    elseif step == "role-reset" then
+        player.Character:PivotTo(CFrame.new(0,3,59))
+        player:SetAttribute("Carrying", false)
     elseif step == "crew" then
 		player:SetAttribute("Crew", true)
 	elseif step == "done" then
@@ -62,7 +68,7 @@ event.OnServerEvent:Connect(function(player, step)
 	end
 end)
 event.Parent = game:GetService("ReplicatedStorage")
-task.delay(45, function() studioTest:EndTest("TIMEOUT") end)
+task.delay(60, function() studioTest:EndTest("TIMEOUT") end)
 ]=]
 server.Parent = game:GetService("ServerScriptService")
 for _, portrait in {{{", ".join(str(mode).lower() for mode in modes)}}} do
@@ -81,8 +87,8 @@ sim:StopSimulationAsync()
         subprocess.run([
             studio, "--task", "RunScript", "--localPlaceFile", str(place),
             "--runScriptFile", str(launcher), "--outputFile", str(output), "--quitAfterExecution",
-        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, timeout=150)
-    except subprocess.TimeoutExpired:
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, timeout=190)
+    except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
         if output.exists(): print(output.read_text()[-10000:])
         raise
     lines = output.read_text().splitlines()
