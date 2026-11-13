@@ -51,3 +51,7 @@ EN: Grab a battery. The drone hunts whoever carries it. Deliver five cells with 
 [Подтверждение из кабинета](share-links.jpg) · [Официальное руководство Roblox](https://create.roblox.com/docs/production/promotion/share-links).
 
 Сводка наблюдений: `python3 scripts/summarize-playtest.py docs/playtest/observations.csv`.
+
+Для каждого новичка нужна одна строка. Сводка отклоняет повторный код участника или повторный Roblox ID, если он указан. Для второй смены она отдельно показывает неизвестные исходы среди взявших батарею и число игроков, у которых сам факт взятия неизвестен.
+
+В `workingThresholds` до 15 внешних сессий отображается `insufficient_data`. После этого `met` и `below` означают, что пропущенные наблюдения уже не могут изменить вывод, а `inconclusive` означает, что могут. D1 и D7 по-прежнему выводятся как наблюдаемые результаты и число неизвестных исходов.
