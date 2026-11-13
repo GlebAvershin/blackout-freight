@@ -4,7 +4,8 @@ local players = game:GetService("Players")
 local state = game.ReplicatedStorage:WaitForChild("Freight"):WaitForChild("Shift")
 local world = workspace:WaitForChild("Blackout Freight • Depot 07")
 local probe = require(script.Parent.DroneProbe)
-task.delay(150, function()
+local heartbeat = game:GetService("RunService").Heartbeat
+task.delay(probe.timeout, function()
 	studio:EndTest("PROFILE TIMEOUT clients=" .. #players:GetPlayers())
 end)
 
@@ -53,25 +54,56 @@ local ok, result = xpcall(function()
 
 	local function measure(label)
 		table.clear(probe.samples)
+		local frames = {}
+		local monitor = heartbeat:Connect(function(dt) table.insert(frames, {dt}) end)
 		local started = os.clock()
 		probe.record = true
-		task.wait(10)
+		task.wait(probe.window)
 		probe.record = false
+		monitor:Disconnect()
 		local elapsed = os.clock() - started
 		local samples, hunt = probe.samples, 0
+		local covered, bucketStart, bucketCount = 0, 0, 0
+		local minRate, maxRate = math.huge, 0
 		for _, sample in samples do
 			if sample[5] == "hunt" then hunt += 1 end
+			covered += sample[6]
+			bucketCount += 1
+			if covered - bucketStart >= 5 then
+				local rate = bucketCount / (covered - bucketStart)
+				minRate, maxRate = math.min(minRate, rate), math.max(maxRate, rate)
+				bucketStart, bucketCount = covered, 0
+			end
 		end
 		assert(not dropped and #players:GetPlayers() == 4 and #samples >= 30, "incomplete sample")
-		assert((label == "patrol" and hunt == 0) or (label == "chase" and hunt == #samples),
+		assert((not label:find("chase") and hunt == 0) or (label:find("chase") and hunt == #samples),
 			"mixed drone modes: " .. hunt .. "/" .. #samples)
-		return string.format("%s n=%d hunt=%d hz=%.2f total_ms=%s transforms_ms=%s rays=%s parts=%s tick_gap_ms=%s",
-			label, #samples, hunt, #samples / elapsed, summary(samples, 1, 1000),
+		local stats = string.format("%s n=%d hunt=%d hz=%.2f heartbeat_hz=%.2f frame_ms=%s total_ms=%s transforms_ms=%s rays=%s parts=%s tick_gap_ms=%s 5s_hz=%.2f..%.2f",
+			label, #samples, hunt, #samples / elapsed, #frames / elapsed, summary(frames, 1, 1000), summary(samples, 1, 1000),
 			summary(samples, 2, 1000), summary(samples, 3, 1), summary(samples, 4, 1),
-			summary(samples, 6, 1000))
+			summary(samples, 6, 1000), minRate, maxRate)
+		print("PROFILE WINDOW", stats)
+		return stats
 	end
 
+	-- Drive each server frame to at least 43 ms in the controlled load windows.
+	-- This is fixture-only load; clients and game logic still run in Studio.
+	local function stress()
+		local previous = os.clock()
+		return heartbeat:Connect(function()
+			local deadline = previous + 0.043
+			while os.clock() < deadline do end
+			previous = os.clock()
+		end)
+	end
 	local patrol = measure("patrol")
+	local loadedPatrol
+	if probe.stress then
+		local load = stress()
+		task.wait(0.5)
+		loadedPatrol = measure("load-patrol")
+		load:Disconnect()
+	end
 	checkModels()
 	local carrier = roster[1]
 	local best, distance = nil, math.huge
@@ -87,14 +119,22 @@ local ok, result = xpcall(function()
 	-- A moving target keeps the drone transforms active through the whole sample.
 	carrier.Character:PivotTo(CFrame.new(0, 12, 15))
 	local started = os.clock()
-	local motion = game:GetService("RunService").Heartbeat:Connect(function()
+	local motion = heartbeat:Connect(function()
 		carrier.Character:PivotTo(CFrame.new(0, 12, 4 + 11 * math.cos((os.clock() - started) * 0.9)))
 	end)
 	task.wait(0.5)
 	local chase = measure("chase")
+	local loadedChase
+	if probe.stress then
+		local load = stress()
+		task.wait(0.5)
+		loadedChase = measure("load-chase")
+		load:Disconnect()
+	end
 	motion:Disconnect()
 	checkModels()
 	assert(world.Sentinel.PrimaryPart.TrackingBeam.Attachment1 ~= nil, "tracking beam lost")
-	return string.format("clients=4 route=%s | %s | %s", tostring(state:GetAttribute("Operation")), patrol, chase)
+	return table.concat({"clients=4 route=" .. tostring(state:GetAttribute("Operation")), patrol, chase,
+		loadedPatrol, loadedChase}, " | ")
 end, debug.traceback)
 studio:EndTest(ok and "PROFILE PASS " .. result or "PROFILE FAIL " .. result)

@@ -1023,8 +1023,18 @@ while true do
 	end
 	if next(players) ~= nil then
 		startShift()
+		local stepPeriod = 0.05
+		local stepBudget, elapsed = 0, 0
 		while (round.outcome == "live" or round.outcome == "routing") and next(players) ~= nil do
-			local dt = task.wait(0.05)
+			local frame = RunService.Heartbeat:Wait()
+			stepBudget += frame
+			elapsed += frame
+			if stepBudget + 1e-6 < stepPeriod then continue end
+			-- Carry the fractional remainder across frames. After a stall, skip missed
+			-- updates rather than running catch-up bursts against the same world state.
+			stepBudget = math.max(0, stepBudget - stepPeriod) % stepPeriod
+			local dt = elapsed
+			elapsed = 0
 			round:expire(now())
 			if round.outcome == "live" and next(players) ~= nil then
 				moveDrone(math.min(dt, 0.15))

@@ -10,7 +10,12 @@ root = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--ref", help="Use production sources from this Git revision")
 parser.add_argument("--rojo", default="rojo")
+parser.add_argument("--window", type=int, default=10, help="Seconds per measurement window (10–120)")
+parser.add_argument("--stress", action="store_true", help="Add windows with deliberately slow server frames")
 args = parser.parse_args()
+if not 10 <= args.window <= 120:
+    parser.error("--window must be 10–120 seconds")
+duration = args.window * (4 if args.stress else 2)
 rojo = str(Path(args.rojo).resolve()) if Path(args.rojo).is_file() else args.rojo
 
 
@@ -32,7 +37,12 @@ with tempfile.TemporaryDirectory(prefix="freight-heat5-") as directory:
             ))
 
     server = copy / "src/server"
-    (server / "DroneProbe.luau").write_text("return {samples = {}, move = 0, rays = 0, parts = 0}")
+    (server / "DroneProbe.luau").write_text(
+        f"return {{samples = {{}}, move = 0, rays = 0, parts = 0, "
+        f"window = {args.window}, stress = {str(args.stress).lower()}, timeout = {duration + 120}}}"
+    )
+    config = copy / "src/shared/Config.luau"
+    config.write_text(replace_once(config.read_text(), "ShiftSeconds = 165,", f"ShiftSeconds = {duration + 45},"))
     shift = server / "Shift.server.luau"
     source = "local probe = require(script.Parent.DroneProbe)\n" + shift.read_text()
     source = replace_once(source, "Random.new()", "Random.new(7105)")
@@ -91,7 +101,7 @@ print("RESULT", test:ExecuteMultiplayerTestAsync(4, "YardQA"))
             "/Applications/RobloxStudio.app/Contents/MacOS/RobloxStudio",
             "--task", "RunScript", "--localPlaceFile", str(copy / ".tools/Blackout Freight Yard QA.rbxl"),
             "--runScriptFile", str(launcher), "--outputFile", str(output), "--quitAfterExecution",
-        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, timeout=225)
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, timeout=duration + 200)
     finally:
         if output.exists():
             print(output.read_text()[-10000:])
