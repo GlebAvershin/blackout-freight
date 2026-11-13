@@ -27,7 +27,14 @@ function Panel.mount(parent, player, shared, colors, add, t)
 		buttons[i]=b
 	end
 	local detail=label("Detail",282,150,colors.muted,false)
-		local offers = {}
+	local offers = {}
+	local shiftPassViewed = false
+	local function trackShiftPass(step)
+		local remote = shared:FindFirstChild("ShiftPassFunnel")
+		if not remote then return false end
+		remote:FireServer(step)
+		return true
+	end
 	local function offer(id, attribute, en, ru, ownedEN, ownedRU, subscribe)
 		if id == 0 or id == "" then return end
 		local button = add("TextButton",frame,{Name=attribute,Size=UDim2.new(1,0,0,44),
@@ -36,6 +43,10 @@ function Panel.mount(parent, player, shared, colors, add, t)
 		table.insert(offers,{button=button,attribute=attribute,title=t(en,ru),owned=t(ownedEN,ownedRU)})
 		button.Activated:Connect(function()
 			if player:GetAttribute(attribute) ~= false or (attribute == "ShiftPass" and not season.active(os.time())) then return end
+			if attribute == "ShiftPass" then
+				if not shiftPassViewed then shiftPassViewed = trackShiftPass(1) end
+				if shiftPassViewed then trackShiftPass(2) end
+			end
 			pcall(function()
 				if subscribe then marketplace:PromptSubscriptionPurchase(player,id)
 				else marketplace:PromptGamePassPurchase(player,id) end
@@ -106,6 +117,13 @@ function Panel.mount(parent, player, shared, colors, add, t)
 			item.button.Text = owned and item.owned or item.title
 			if visible then
 				item.button.Position = UDim2.fromOffset(0,height)
+				if item.attribute == "ShiftPass" and not owned and not shiftPassViewed and parent.Visible then
+					local y = item.button.AbsolutePosition.Y
+					local top = parent.AbsolutePosition.Y
+					if y >= top and y + item.button.AbsoluteSize.Y <= top + parent.AbsoluteWindowSize.Y then
+						shiftPassViewed = trackShiftPass(1)
+					end
+				end
 				height += 50
 			end
 		end

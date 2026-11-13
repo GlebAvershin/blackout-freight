@@ -1,26 +1,51 @@
 local AdService = game:GetService("AdService")
+local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local MarketplaceService = game:GetService("MarketplaceService")
 local AnalyticsService = game:GetService("AnalyticsService")
 local Analytics = require(script.Parent.Analytics)
+local Season = require(game:GetService("ReplicatedStorage").Freight.Season)
+local shiftPassSteps = {"Offer viewed", "Purchase prompt requested", "Purchase confirmed"}
 
 local CommerceService = {}
 CommerceService.__index = CommerceService
 
-function CommerceService.new(config, isPresent)
+function CommerceService.new(config, isPresent, shared)
 	local self = setmetatable({passes = {Aurora = config.CosmeticPassId, Crew = config.CrewPassId,
 		ShiftPass = config.ShiftPassId, DoubleScrap = config.DoubleScrapPassId},
-		club = config.DepotClubSubscriptionId, clubRequests = {}, isPresent = isPresent}, CommerceService)
+		club = config.DepotClubSubscriptionId, clubRequests = {}, shiftPassFunnels = {}, isPresent = isPresent}, CommerceService)
 	self.connection = MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passId, bought)
 		if not bought or passId <= 0 or not isPresent(player) then return end
 		for finish, configuredId in self.passes do
 			if passId == configuredId then
 				player:SetAttribute(finish, true)
 				Analytics.log(AnalyticsService.LogCustomEvent, player, finish .. "PassPurchased")
+				if finish == "ShiftPass" then
+					local funnel = self.shiftPassFunnels[player]
+					if funnel and funnel.step == 2 then self:logShiftPassStep(player, funnel, 3) end
+				end
 				return
 			end
 		end
 	end)
+	if config.ShiftPassId > 0 then
+		local remote = Instance.new("RemoteEvent")
+		remote.Name = "ShiftPassFunnel"
+		remote.OnServerEvent:Connect(function(player, step)
+			if not self.isPresent(player) or player:GetAttribute("ShiftPass") ~= false
+				or not Season.active(os.time()) then return end
+			local funnel = self.shiftPassFunnels[player]
+			if step == 1 and not funnel then
+				funnel = {id = HttpService:GenerateGUID(false)}
+				self.shiftPassFunnels[player] = funnel
+				self:logShiftPassStep(player, funnel, 1)
+			elseif step == 2 and funnel and funnel.step == 1 then
+				self:logShiftPassStep(player, funnel, 2)
+			end
+		end)
+		Players.PlayerRemoving:Connect(function(player) self.shiftPassFunnels[player] = nil end)
+		remote.Parent = shared
+	end
 	if self.club ~= "" then
 		Players.UserSubscriptionStatusChanged:Connect(function(player, id)
 			if id == self.club then self:refreshClub(player) end
@@ -28,6 +53,11 @@ function CommerceService.new(config, isPresent)
 		Players.PlayerRemoving:Connect(function(player) self.clubRequests[player] = nil end)
 	end
 	return self
+end
+
+function CommerceService:logShiftPassStep(player, funnel, step)
+	funnel.step = step
+	Analytics.log(AnalyticsService.LogFunnelStepEvent, player, "Shift Pass", funnel.id, step, shiftPassSteps[step])
 end
 
 -- The platform retries unresolved receipts. Acknowledge only after UpdateAsync.

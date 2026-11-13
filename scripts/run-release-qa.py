@@ -20,6 +20,7 @@ checks += [
  ('roles',['python3','scripts/run-roles-studio-qa.py']),
  ('support-roles',['python3','scripts/run-roles-studio-qa.py','--support']),
  ('yard',['python3','scripts/run-yard-studio-qa.py']),
+ ('pilot',['python3','scripts/run-yard-studio-qa.py','--pilot']),
  ('high-heat',['python3','scripts/run-yard-studio-qa.py','--high-heat']),
  ('tracker',['python3','scripts/run-yard-studio-qa.py','--tracker']),
  ('four-player-restore',['python3','scripts/run-four-player-studio-qa.py']),

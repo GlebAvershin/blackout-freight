@@ -72,7 +72,7 @@ local cells = {}
 local carried = {}
 local trackedPlayer
 local players = {}
-local commerceService = CommerceService.new(Config, function(player) return players[player] ~= nil end)
+local commerceService = CommerceService.new(Config, function(player) return players[player] ~= nil end, shared)
 local heatLevel = 1
 local pilot
 local swarm = {}
@@ -1091,6 +1091,8 @@ local function finishShift()
 	end
 	showPower(round.delivered, false, round.ending)
 	local elapsed = math.max(0, now() - roundStartedAt)
+	local resultReason = if round.outcome == "won" then (round.routeSource or "chosen")
+		else "shift_timeout"
 	for player, data in players do
 		local reward = Progression.reward(data.verifiedDeliveries or 0, heat.ScrapMultiplier)
 		if reward > 0 then
@@ -1136,7 +1138,9 @@ local function finishShift()
 				[Enum.AnalyticsCustomFieldKeys.CustomField03.Name] = operation or "standard",
 			})
 		end
-		log(AnalyticsService.LogCustomEvent, player, "Shift_" .. round.outcome, elapsed)
+		log(AnalyticsService.LogCustomEvent, player, "Shift_" .. round.outcome, elapsed, {
+			[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = resultReason,
+		})
 	end
 	for _, cell in cells do
 		cell:Destroy()

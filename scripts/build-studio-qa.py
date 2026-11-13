@@ -12,7 +12,8 @@ work.mkdir(exist_ok=True)
 rojo = sys.argv[1] if len(sys.argv) > 1 else "rojo"
 output = work / "Blackout Freight Server QA.rbxl"
 tracker = "--tracker" in sys.argv[2:]
-yard = "--yard" in sys.argv[2:] or tracker
+pilot = "--pilot" in sys.argv[2:]
+yard = "--yard" in sys.argv[2:] or tracker or pilot
 high_heat = "--high-heat" in sys.argv[2:]
 support = "--support" in sys.argv[2:]
 roles = "--roles" in sys.argv[2:] or support
@@ -118,6 +119,14 @@ local preparation = Instance.new("RemoteEvent")''')
     if high_heat:
         script = script.replace('player:SetAttribute("MapVote", "yard")', 'player:SetAttribute("MapVote", "depot")\n player:SetAttribute("HeatVote", 5)', 1)
         script = script.replace('player:SetAttribute("RecoveryUntil", 0)', 'player:SetAttribute("RecoveryUntil", 0)\n player:SetAttribute("UpgradeRack", true)\n player:SetAttribute("UpgradeLamp", true)', 1)
+    if pilot:
+        script = script.replace('player:SetAttribute("MapVote", "yard")', 'player:SetAttribute("MapVote", "depot")', 1)
+        start = "\t\tstartShift()"
+        assert script.count(start) == 1
+        script = script.replace(start, '''
+        state:SetAttribute("Phase", "briefing")
+        repeat task.wait(0.05) until state:GetAttribute("PilotTestReady")
+        startShift()''')
     server.write_text(script)
     project = json.loads((root / "default.project.json").read_text())
     tree = project["tree"]
@@ -147,6 +156,10 @@ end)
         shutil.copytree(root / "src/shared", qa / "shared")
         config = qa / "shared/Config.luau"
         config.write_text(config.read_text().replace("Target = 5,", "Target = 1,"))
+    if pilot:
+        config.write_text(config.read_text().replace("SentinelPilotEnabled = false", "SentinelPilotEnabled = true"))
+        shutil.copyfile(root / "tests/studio-pilot.server.luau", qa / "server/Scenario.server.luau")
+        output = work / "Blackout Freight Pilot QA.rbxl"
     if high_heat:
         config.write_text(config.read_text().replace("Target = 1,", "Target = 5,"))
         shutil.copyfile(root / "tests/studio-high-heat.server.luau", qa / "server/Scenario.server.luau")
