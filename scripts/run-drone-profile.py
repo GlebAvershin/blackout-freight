@@ -12,9 +12,12 @@ parser.add_argument("--ref", help="Use production sources from this Git revision
 parser.add_argument("--rojo", default="rojo")
 parser.add_argument("--window", type=int, default=10, help="Seconds per measurement window (10–120)")
 parser.add_argument("--stress", action="store_true", help="Add windows with deliberately slow server frames")
+parser.add_argument("--check-cadence", action="store_true", help="Require 19–21 updates/s in each 5-second sample")
 args = parser.parse_args()
 if not 10 <= args.window <= 120:
     parser.error("--window must be 10–120 seconds")
+if args.check_cadence and not args.stress:
+    parser.error("--check-cadence requires --stress")
 duration = args.window * (4 if args.stress else 2)
 rojo = str(Path(args.rojo).resolve()) if Path(args.rojo).is_file() else args.rojo
 
@@ -39,7 +42,8 @@ with tempfile.TemporaryDirectory(prefix="freight-heat5-") as directory:
     server = copy / "src/server"
     (server / "DroneProbe.luau").write_text(
         f"return {{samples = {{}}, move = 0, rays = 0, parts = 0, "
-        f"window = {args.window}, stress = {str(args.stress).lower()}, timeout = {duration + 120}}}"
+        f"window = {args.window}, stress = {str(args.stress).lower()}, "
+        f"checkCadence = {str(args.check_cadence).lower()}, timeout = {duration + 120}}}"
     )
     config = copy / "src/shared/Config.luau"
     config.write_text(replace_once(config.read_text(), "ShiftSeconds = 165,", f"ShiftSeconds = {duration + 45},"))

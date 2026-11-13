@@ -52,6 +52,7 @@ local ok, result = xpcall(function()
 	task.wait(5)
 	checkModels()
 
+	local cadenceFailures = {}
 	local function measure(label)
 		table.clear(probe.samples)
 		local frames = {}
@@ -64,6 +65,7 @@ local ok, result = xpcall(function()
 		local elapsed = os.clock() - started
 		local samples, hunt = probe.samples, 0
 		local covered, bucketStart, bucketCount = 0, 0, 0
+		local completeBuckets = 0
 		local minRate, maxRate = math.huge, 0
 		for _, sample in samples do
 			if sample[5] == "hunt" then hunt += 1 end
@@ -72,6 +74,7 @@ local ok, result = xpcall(function()
 			if covered - bucketStart >= 5 then
 				local rate = bucketCount / (covered - bucketStart)
 				minRate, maxRate = math.min(minRate, rate), math.max(maxRate, rate)
+				completeBuckets += 1
 				bucketStart, bucketCount = covered, 0
 			end
 		end
@@ -83,6 +86,18 @@ local ok, result = xpcall(function()
 			summary(samples, 2, 1000), summary(samples, 3, 1), summary(samples, 4, 1),
 			summary(samples, 6, 1000), minRate, maxRate)
 		print("PROFILE WINDOW", stats)
+		if probe.checkCadence then
+			local heartbeatRate = #frames / elapsed
+			if label:find("load") then
+				assert(heartbeatRate >= 22 and heartbeatRate <= 24,
+					"stress window did not sustain 22–24 server frames/s: " .. stats)
+			else
+				assert(heartbeatRate >= 45, "ordinary window has insufficient server frames: " .. stats)
+			end
+			if completeBuckets < math.floor(probe.window / 5) - 1 or minRate < 19 or maxRate > 21 then
+				table.insert(cadenceFailures, stats)
+			end
+		end
 		return stats
 	end
 
@@ -134,6 +149,7 @@ local ok, result = xpcall(function()
 	motion:Disconnect()
 	checkModels()
 	assert(world.Sentinel.PrimaryPart.TrackingBeam.Attachment1 ~= nil, "tracking beam lost")
+	assert(#cadenceFailures == 0, "drone cadence regression: " .. table.concat(cadenceFailures, " | "))
 	return table.concat({"clients=4 route=" .. tostring(state:GetAttribute("Operation")), patrol, chase,
 		loadedPatrol, loadedChase}, " | ")
 end, debug.traceback)
