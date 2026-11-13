@@ -32,14 +32,22 @@ end}})
 local client = Instance.new("LocalScript")
 client.Name = "MobileHudQA"
 client.Source = [==[
-{client_source}]==]
+local ok, message = xpcall(function()
+{client_source}
+end, debug.traceback)
+if not ok then
+	warn(message)
+	local result = game:GetService("ReplicatedStorage"):WaitForChild("MobileHudResult", 5)
+	if result then result:FireServer("failure", message) end
+end
+]==]
 client.Parent = game:GetService("StarterPlayer").StarterPlayerScripts
 local server = Instance.new("Script")
 server.Source = [=[
 local studioTest = game:GetService("StudioTestService")
 local event = Instance.new("RemoteEvent")
 event.Name = "MobileHudResult"
-event.OnServerEvent:Connect(function(player, step)
+event.OnServerEvent:Connect(function(player, step, detail)
 	if step == "seed" then
 		player:SetAttribute("EndingBroadcast", true)
 		player:SetAttribute("EndingShelter", true)
@@ -66,6 +74,8 @@ event.OnServerEvent:Connect(function(player, step)
 		player:SetAttribute("Crew", true)
 	elseif step == "done" then
 		studioTest:EndTest("PASS")
+	elseif step == "failure" then
+		studioTest:EndTest("FAIL " .. tostring(detail))
 	end
 end)
 event.Parent = game:GetService("ReplicatedStorage")
@@ -80,7 +90,7 @@ for _, portrait in {{{", ".join(str(mode).lower() for mode in modes)}}} do
 	game:GetService("StarterGui").ScreenOrientation = orientation
 	sim:SetOrientationAsync(orientation)
 	client:SetAttribute("Portrait", portrait)
-	print("MOBILE HUD STUDIO RESULT", portrait, test:ExecuteMultiplayerTestAsync(1,"MobileHudQA"))
+	print("MOBILE HUD STUDIO RESULT", portrait, test:ExecutePlayModeAsync("MobileHudQA"))
 end
 sim:StopSimulationAsync()
 ''')
