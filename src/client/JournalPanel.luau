@@ -47,26 +47,31 @@ function JournalPanel.mount(gui, journalButton, player, state, shared, colors, a
 	local yardRecord = label(journalPanel, "YardRecord", 12, 0, nil, 54, 12, colors.amber, true)
 	yardRecord.TextWrapped = true
 	yardRecord.TextTruncate = Enum.TextTruncate.None
-	local function soundToggle(name, attribute, enabledText, disabledText)
+	local function settingToggle(owner, name, attribute, enabledText, disabledText)
 		local button = add("TextButton", journalPanel, {
 			Name = name, Size = UDim2.new(0.5, -18, 0, 44),
 			BackgroundColor3 = colors.slate, TextColor3 = colors.paper,
-			Font = Enum.Font.GothamBold, TextSize = 13, AutoLocalize = false,
+			Font = Enum.Font.GothamBold, TextSize = 13, TextWrapped = true, AutoLocalize = false,
 		})
 		add("UICorner", button, {CornerRadius = UDim.new(0, 5)})
 		local function update()
-			button.Text = SoundService:GetAttribute(attribute) and disabledText or enabledText
+			button.Text = owner:GetAttribute(attribute) and disabledText or enabledText
 		end
 		button.Activated:Connect(function()
-			SoundService:SetAttribute(attribute, not SoundService:GetAttribute(attribute))
+			owner:SetAttribute(attribute, not owner:GetAttribute(attribute))
 		end)
-		SoundService:GetAttributeChangedSignal(attribute):Connect(update)
+		owner:GetAttributeChangedSignal(attribute):Connect(update)
 		update()
 		return button
 	end
 
-	local musicToggle = soundToggle("MusicToggle", "FreightMusicMuted", t("Music: on", "Музыка: вкл"), t("Music: off", "Музыка: выкл"))
-	local effectsToggle = soundToggle("EffectsToggle", "FreightEffectsMuted", t("Effects: on", "Эффекты: вкл"), t("Effects: off", "Эффекты: выкл"))
+	local musicToggle = settingToggle(SoundService, "MusicToggle", "FreightMusicMuted", t("Music: on", "Музыка: вкл"), t("Music: off", "Музыка: выкл"))
+	local effectsToggle = settingToggle(SoundService, "EffectsToggle", "FreightEffectsMuted", t("Effects: on", "Эффекты: вкл"), t("Effects: off", "Эффекты: выкл"))
+	local config = require(shared.Config)
+	local lightsToggle = config.SectorBlackoutEnabled and settingToggle(player, "BlackoutTransitionToggle", "FreightSteadyLights",
+		t("Light fade: on", "Затемнение: плавно"), t("Light fade: off", "Затемнение: сразу"))
+	local pingsToggle = config.CrewPingsEnabled and settingToggle(player, "CrewPingToggle", "FreightMuteCrewPings",
+		t("Crew pings: on", "Метки команды: вкл"), t("Crew pings: off", "Метки команды: выкл"))
 	local journalShell = add("Frame", gui, {
 		Name = "MobileJournal", BackgroundColor3 = colors.ink, BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0), Visible = false,
@@ -185,6 +190,9 @@ function JournalPanel.mount(gui, journalButton, player, state, shared, colors, a
 		end
 		contentHeight = progressionPanel.draw(contentHeight + 8)
 		contentHeight = seasonPanel.draw(contentHeight + 8)
+		if lightsToggle then lightsToggle.Position = UDim2.fromOffset(12, contentHeight) end
+		if pingsToggle then pingsToggle.Position = UDim2.new(0.5, 6, 0, contentHeight) end
+		if lightsToggle or pingsToggle then contentHeight += 52 end
 		if compact then
 			journalPanel.CanvasSize = UDim2.fromOffset(0, contentHeight)
 		else

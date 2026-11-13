@@ -13,6 +13,8 @@ return table.freeze({
 		table.freeze({ChaseSpeed = 15.3, BlackBoxSpeed = 16.5, PatrolSpeed = 11, ScrapMultiplier = 2.2}),
 	}),
 	SentinelPilotEnabled = false, -- Enable after stable population and published multiplayer QA.
+	SectorBlackoutEnabled = true,
+	CrewPingsEnabled = true,
 	Target = 5,
 	ShiftSeconds = 165,
 	CellCount = 8,

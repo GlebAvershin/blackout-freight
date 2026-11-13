@@ -418,6 +418,11 @@ local previewTracked = false
 local commerce = Config.CosmeticPassId > 0 and shared:WaitForChild("Commerce")
 
 local roleAction = require(script.Parent.RoleAction).mount(gui, player, state, shared, colors, add, t)
+local drawCrewPings
+if Config.CrewPingsEnabled then
+	drawCrewPings = require(script.Parent.CrewPings).mount(gui, player, state, shared:WaitForChild("CrewPing"), colors, add, t)
+end
+local sawBlackoutWarning = false
 
 local function draw()
 	invite.Visible = not (compact and (journalPanel.Visible or preview.Visible))
@@ -721,6 +726,24 @@ end)
 
 while gui.Parent do
 	draw()
-	roleAction.draw(compact, invite, journalPanel.Visible or preview.Visible)
+	local menusOpen = journalPanel.Visible or preview.Visible
+	local blackout = state:GetAttribute("BlackoutPhase")
+	if blackout and state:GetAttribute("Phase") == "live" and not menusOpen then
+		local warning = blackout == "warning"
+		if compact and not player:GetAttribute("Tracked") then
+			objective.Text = if warning then t("Power fault", "Сбой света") else t("Sector dark", "Сектор погас")
+			objective.TextColor3 = colors.amber
+		elseif not compact or detailsExpanded then
+			radio.Text = if warning then t("Mira: Switchyard lights failing.", "Мира: Свет в сортировочной гаснет.")
+				else t("Mira: Switchyard dark. Follow the guide lights.", "Мира: В сортировочной темно. Следуй по огням.")
+		end
+		if warning and not sawBlackoutWarning and (not compact or detailsExpanded or not player:GetAttribute("Tracked")) then
+			sawBlackoutWarning = true
+			shared.Preparation:FireServer("blackoutSeen")
+		end
+	end
+	if not blackout then sawBlackoutWarning = false end
+	roleAction.draw(compact, invite, menusOpen)
+	if drawCrewPings then drawCrewPings(invite.Position.Y, compact, menusOpen) end
 	task.wait(0.2)
 end

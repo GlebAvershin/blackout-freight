@@ -165,3 +165,9 @@ state:GetAttributeChangedSignal("TrainStatus"):Connect(function()
 		crossingBell:Play()
 	end
 end)
+
+local blackoutCue = sound("FreightBlackoutCue", "rbxasset://sounds/volume_slider.ogg", effects, 0.33, SoundService)
+blackoutCue.PlaybackSpeed = 0.62
+state:GetAttributeChangedSignal("BlackoutPhase"):Connect(function()
+	if state:GetAttribute("BlackoutPhase") == "warning" then blackoutCue:Play() end
+end)

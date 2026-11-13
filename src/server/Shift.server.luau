@@ -16,6 +16,7 @@ local SentinelController = require(script.Parent.SentinelController)
 local RailCycle = require(shared.RailCycle)
 local FreightYard = require(script.Parent.FreightYard)
 local Config = require(shared.Config)
+local SectorBlackout = require(shared.SectorBlackout)
 local Operations = require(shared.Operations)
 local Dispatch = require(shared.Dispatch)
 local PowerCell = require(shared.PowerCell)
@@ -74,6 +75,7 @@ for _, part in world:GetChildren() do
 end
 local roundGuid
 local roundStartedAt
+local blackoutStartsAt
 local dispatchWeek
 local decoyUntil, decoyReadyAt = 0, 0
 local operation, lastOperation, layout
@@ -174,6 +176,46 @@ geometryRay.RespectCanCollide = true
 
 local function clearPath(origin, destination)
 	return workspace:Raycast(origin, destination - origin, geometryRay) == nil
+end
+
+if Config.CrewPingsEnabled then
+	local ping = Instance.new("RemoteEvent")
+	ping.Name = "CrewPing"
+	local tags = {battery = "FreightPickup", danger = "FreightSentinel"}
+	ping.OnServerEvent:Connect(function(player, kind, position)
+		local data = players[player]
+		local time = now()
+		if not data or time < (data.nextPingRequest or 0) then return end
+		data.nextPingRequest = time + 0.25
+		if not round or round.outcome ~= "live" or time >= round.deadline or player == pilot
+			or time < (data.nextPing or 0) or time < (player:GetAttribute("RecoveryUntil") or 0)
+			or (kind ~= "battery" and kind ~= "danger" and kind ~= "here") or typeof(position) ~= "Vector3" then return end
+		local root = rootOf(player)
+		if not root or not ((position - root.Position).Magnitude <= 65) then return end
+		local tag = tags[kind]
+		if tag then
+			local closest, distance = nil, 8
+			for _, part in CollectionService:GetTagged(tag) do
+				if part:IsA("BasePart") and part:IsDescendantOf(world) then
+					local offset = (position - part.Position).Magnitude
+					if offset < distance then closest, distance = part, offset end
+				end
+			end
+			if not closest then return end
+			position = closest.Position
+		end
+		local offset = position - root.Position
+		local distance = offset.Magnitude
+		if distance > 65 or (distance > 1 and not clearPath(root.Position, position - offset.Unit)) then return end
+		data.nextPing = time + 3
+		for teammate in players do
+			if teammate ~= pilot then ping:FireClient(teammate, player.UserId, kind, position, time + 5) end
+		end
+		log(AnalyticsService.LogCustomEvent, player, "PingUsed", 1, {
+			[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = kind,
+		})
+	end)
+	ping.Parent = shared
 end
 
 local function clearCargo(player)
@@ -415,6 +457,7 @@ deliver.Triggered:Connect(function(player)
 			end
 			state:SetAttribute("EndsAt", round.deadline)
 			setGateShield(false)
+			state:SetAttribute("BlackoutPhase", nil)
 			state:SetAttribute("Phase", "routing")
 		end
 		local data = players[player]
@@ -434,6 +477,10 @@ deliver.Triggered:Connect(function(player)
 end)
 
 local function catch(player)
+	local root = rootOf(player)
+	if root and state:GetAttribute("BlackoutPhase") == "dark" and SectorBlackout.contains(root.Position) then
+		log(AnalyticsService.LogCustomEvent, player, "BlackoutCaught")
+	end
 	recover(player, true)
 	player:SetAttribute("Caught", (player:GetAttribute("Caught") or 0) + 1)
 	players[player].shiftCatches += 1
@@ -509,6 +556,7 @@ local function join(player)
 		return
 	end
 	players[player] = {onboard = 0, picked = false, delivered = false, activeShifts = 0, startedAt = now(), shiftCatches = 0}
+	if blackoutStartsAt and not state:GetAttribute("BlackoutPhase") then blackoutStartsAt = nil end
 	player:SetAttribute("Carrying", false)
 	player:SetAttribute("BlackBoxCarrying", false)
 	player:SetAttribute("Tracked", false)
@@ -650,6 +698,13 @@ preparation.Name = "Preparation"
 preparation.OnServerEvent:Connect(function(player, action, value)
 	local data = players[player]
 	if not data or type(action) ~= "string" then return end
+	if action == "blackoutSeen" then
+		if value == nil and not data.blackoutSeen and state:GetAttribute("BlackoutPhase") == "warning" then
+			data.blackoutSeen = true
+			log(AnalyticsService.LogCustomEvent, player, "BlackoutSeen")
+		end
+		return
+	end
 	local time = now()
 	if time < (data.nextPreparation or 0) then return end
 	data.nextPreparation = time + 0.5
@@ -824,6 +879,15 @@ local function startShift()
 		end
 	end
 	roundStartedAt = now()
+	-- A new crew member gets a full introductory shift before the first outage.
+	blackoutStartsAt = nil
+	if Config.SectorBlackoutEnabled and not yard and not pilot and Config.ShiftSeconds > SectorBlackout.EarliestSeconds + 15 then
+		local ready = true
+		for _, data in players do
+			if not data.finishedShift then ready = false; break end
+		end
+		if ready then blackoutStartsAt = roundStartedAt + SectorBlackout.EarliestSeconds end
+	end
 	dispatchWeek = Dispatch.week(os.time())
 	state:SetAttribute("DispatchWeek", dispatchWeek)
 	local hasBlackBox = operation == "west"
@@ -909,6 +973,7 @@ local function startShift()
 		data.picked, data.delivered, data.choseRoute = false, false, false
 		data.tookBlackBox = false
 		data.shiftCatches = 0
+		data.blackoutSeen = false
 		data.verifiedDeliveries = 0
 		data.abilityReadyAt, data.sprintUntil = 0, 0
 		player:SetAttribute("CrewRole", player:GetAttribute("NextCrewRole") or "Carrier")
@@ -936,6 +1001,7 @@ local function startShift()
 end
 
 local function finishShift()
+	state:SetAttribute("BlackoutPhase", nil)
 	if pilot then
 		pilot:SetAttribute("PilotingSentinel", false)
 		pilot = nil
@@ -955,6 +1021,7 @@ local function finishShift()
 	local resultReason = if round.outcome == "won" then (round.routeSource or "chosen")
 		else "shift_timeout"
 	for player, data in players do
+		data.finishedShift = true
 		local reward = Progression.reward(data.verifiedDeliveries or 0, heat.ScrapMultiplier)
 		if reward > 0 then
 			profiles:enqueue(player, {kind = "reward", amount = reward,
@@ -1036,6 +1103,15 @@ while true do
 			local dt = elapsed
 			elapsed = 0
 			round:expire(now())
+			if blackoutStartsAt then
+				local elapsedBlackout = now() - blackoutStartsAt
+				local blackoutPhase = if round.outcome ~= "live" or elapsedBlackout < 0 then nil
+					elseif elapsedBlackout < SectorBlackout.WarningSeconds then "warning"
+					elseif elapsedBlackout < SectorBlackout.WarningSeconds + SectorBlackout.DarkSeconds then "dark"
+					else nil
+				if state:GetAttribute("BlackoutPhase") ~= blackoutPhase then state:SetAttribute("BlackoutPhase", blackoutPhase) end
+				if elapsedBlackout >= SectorBlackout.WarningSeconds + SectorBlackout.DarkSeconds then blackoutStartsAt = nil end
+			end
 			if round.outcome == "live" and next(players) ~= nil then
 				moveDrone(math.min(dt, 0.15))
 				if yard then

@@ -1,5 +1,6 @@
 local Lighting = game:GetService("Lighting")
 local PowerCell = require(game:GetService("ReplicatedStorage"):WaitForChild("Freight").PowerCell)
+local SectorBlackout = require(game:GetService("ReplicatedStorage").Freight.SectorBlackout)
 
 local Depot = {}
 Depot.Cyan = PowerCell.Cyan
@@ -165,7 +166,7 @@ function Depot.build()
 	end
 	local sectors = {
 		{z = 36, title = "01 / RECEIVING", color = Color3.fromRGB(116, 199, 214)},
-		{z = 5, title = "02 / SWITCHYARD", color = Color3.fromRGB(234, 163, 102)},
+		{z = 5, title = "02 / SWITCHYARD", color = Color3.fromRGB(234, 163, 102), blackout = true},
 		{z = -27, title = "03 / COLD STORAGE", color = Color3.fromRGB(147, 173, 237)},
 		{z = -55, title = "04 / RELAY CORE", color = Color3.fromRGB(168, 207, 182)},
 	}
@@ -174,7 +175,8 @@ function Depot.build()
 		box("Service gantry", 0, 12, z, 136, 0.9, 1.4, steel, Enum.Material.Metal)
 		for _, x in {-53, 53} do
 			box("Overhead service duct", x, 12.2, z + 11, 4.1, 1.2, 19, ink, Enum.Material.Metal)
-			box("Gantry edge", x, 11.5, z, 16, 0.1, 0.24, accent, neon)
+			local edge = box("Gantry edge", x, 11.5, z, 16, 0.1, 0.24, accent, neon)
+			if sector.blackout then edge:AddTag(SectorBlackout.FixtureTag) end
 		end
 		local board = box("Sector wayfinding", 0, 10.6, z, 17, 1.8, 0.36, ink, Enum.Material.Metal)
 		sign(board, sector.title, accent, Enum.NormalId.Back)
@@ -182,6 +184,7 @@ function Depot.build()
 		for _, x in {-42, 0, 42} do
 			local fixture = box("Aisle light", x, 11.45, z, 4.5, 0.18, 0.5, accent, neon)
 			light(fixture, accent, 24, 0.85)
+			if sector.blackout then fixture:AddTag(SectorBlackout.FixtureTag) end
 		end
 	end
 

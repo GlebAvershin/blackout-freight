@@ -84,6 +84,22 @@ tap(card.ShiftDetails)
 waitFor(function() return not card.Hint.Visible and card.AbsoluteSize.Y == 32 end, "collapse shift details")
 assert(math.abs(card.AbsolutePosition.X + card.AbsoluteSize.X / 2 - gui.AbsoluteSize.X / 2) <= 1,
 	"shift card must stay horizontally centered")
+local ping = gui:WaitForChild("CrewPingButton")
+waitFor(function() return ping.Visible end, "crew ping entry visible")
+assert(inside(ping) and ping.AbsoluteSize.Y >= 44, "ping button outside safe area")
+tap(ping)
+local pingMenu = gui.CrewPingMenu
+assert(pingMenu.Visible and gui.CrewPingAim.Visible and inside(pingMenu), "ping menu outside safe area")
+assert(pingMenu.AbsolutePosition.Y >= card.AbsolutePosition.Y + card.AbsoluteSize.Y, "ping menu overlaps shift card")
+for _, option in pingMenu:GetChildren() do
+	assert(inside(option) and option.TextFits and option.AbsoluteSize.Y >= 44, "ping option clipped")
+end
+tap(ping)
+assert(not pingMenu.Visible and not gui.CrewPingAim.Visible, "cancel leaves ping menu visible")
+state:SetAttribute("BlackoutPhase", "warning")
+waitFor(function() return card.Objective.Text == "Power fault" or card.Objective.Text == "Сбой света" end, "collapsed blackout warning")
+assert(card.Objective.TextFits, "blackout warning clipped")
+state:SetAttribute("BlackoutPhase", nil)
 fixture:FireServer("seed")
 waitFor(function() return player:GetAttribute("MobileFixtureReady") end, "load the server fixture")
 state:SetAttribute("Phase", "won")
@@ -107,6 +123,7 @@ local actions = shell.Actions
 assert(inside(shell) and inside(journal) and inside(actions), "journal outside the safe area")
 assert(journal.AbsolutePosition.Y + journal.AbsoluteSize.Y < actions.AbsolutePosition.Y, "scrollable content overlaps actions")
 assert(not card.Visible and not dock.Visible and not invite.Visible and not offer.Visible, "journal overlaps other HUD elements")
+assert(not ping.Visible, "ping button overlaps journal")
 for _, button in {actions.MusicToggle, actions.EffectsToggle, actions.Close} do
 	assert(inside(button) and button.AbsoluteSize.Y >= 44, "journal action clipped")
 end
@@ -212,9 +229,10 @@ for _,tier in {0,1,2,3} do
  task.wait(0.2)
  assert(seasonPanel.Heading.TextFits and seasonPanel.Dates.TextFits and seasonPanel.Progress.TextFits,"season heading clipped")
  for i=1,3 do
-  journal.CanvasPosition=Vector2.new(0,seasonPanel.Position.Y.Offset+134+(i-1)*48)
-  task.wait(0.15)
   local b=seasonPanel["Chapter"..i]
+  local rowCenter=seasonPanel.Position.Y.Offset+b.Position.Y.Offset+b.Size.Y.Offset/2
+  journal.CanvasPosition=Vector2.new(0,math.max(0,rowCenter-journal.AbsoluteSize.Y/2))
+  task.wait(0.15)
   assert(b.AbsoluteSize.Y>=44 and b.TextFits,"season touch target")
   tap(b)
   task.wait(0.2)
