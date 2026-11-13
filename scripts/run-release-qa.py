@@ -16,6 +16,7 @@ checks += [(p.stem,['.tools/luau/luau',str(p.relative_to(root))]) for p in sorte
 checks += [
  ('profiles',['python3','scripts/run-expansion-studio-qa.py']),
  ('gameplay',['python3','scripts/run-progression-gameplay-qa.py']),
+ ('progression-restore',['python3','scripts/run-persistence-studio-qa.py']),
  ('roles',['python3','scripts/run-roles-studio-qa.py']),
  ('support-roles',['python3','scripts/run-roles-studio-qa.py','--support']),
  ('yard',['python3','scripts/run-yard-studio-qa.py']),

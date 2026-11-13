@@ -16,8 +16,10 @@ yard = "--yard" in sys.argv[2:] or tracker
 support = "--support" in sys.argv[2:]
 roles = "--roles" in sys.argv[2:] or support
 progression = "--progression" in sys.argv[2:]
+persistence = "--persistence" in sys.argv[2:]
 solo = "--solo" in sys.argv[2:]
 guidance = "--guidance" in sys.argv[2:]
+assert not persistence or not any((tracker, yard, support, roles, progression, solo, guidance)), '--persistence is a standalone scenario'
 if solo:
     output = work / "Blackout Freight Solo QA.rbxl"
 if guidance:
@@ -86,6 +88,18 @@ test.Parent = game:GetService("ServerStorage")
 
 '''
     script = script.replace("local routePrompts = {}", hook + "local routePrompts = {}", 1)
+    if persistence:
+        # Inject only the storage boundary; gameplay rules and reward logic stay intact.
+        start = script.index('local journal\nlocal studioTest')
+        end = script.index('game:BindToClose(function() profiles:close() end)', start)
+        script = script[:start] + 'local journal = EndingJournal.new(fixture.journal)\nfixture.attach(profiles, journal)\n' + script[end:]
+        script = script.replace('local profiles = ProfileService.new()',
+            'local fixture = require(script.Parent.PersistenceFixture)\nlocal profiles = ProfileService.new(fixture.profile)')
+        shutil.copyfile(root / 'tests/studio-persistence-fixture.luau', qa / 'server/PersistenceFixture.luau')
+        shutil.copyfile(root / 'tests/studio-persistence.server.luau', qa / 'server/Scenario.server.luau')
+        shutil.copyfile(root / 'tests/studio-persistence.client.luau', qa / 'client/PersistenceScenario.client.luau')
+        (qa / 'client/OperationsScenario.client.luau').unlink()
+        output = work / 'Blackout Freight Persistence QA.rbxl'
     if roles or yard:
         script = script.replace("preparation.OnServerEvent:Connect(function(player, action, value)", "connectPreparation(preparation, function(player, action, value)")
         script = script.replace('local preparation = Instance.new("RemoteEvent")', '''local function connectPreparation(remote, callback)
