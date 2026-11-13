@@ -1,11 +1,13 @@
 -- Lives inside the existing scrollable journal, never over the gameplay HUD.
 local Panel = {}
 function Panel.mount(parent, player, state, shared, colors, add, t)
-	local catalog = require(shared.Progression).Catalog
+	local progression = require(shared.Progression)
+	local catalog = progression.Catalog
+	local config = require(shared.Config)
 	local roles = require(shared.Roles)
 	local rankTrack = require(shared.RankTrack)
 	local remote = shared:WaitForChild("Preparation")
-	local frame = add("Frame", parent, {Name = "Workshop", BackgroundTransparency = 1, Size = UDim2.new(1, -24, 0, 580)})
+	local frame = add("Frame", parent, {Name = "Workshop", BackgroundTransparency = 1, Size = UDim2.new(1, -24, 0, 730)})
 	local heading = add("TextLabel", frame, {Name = "Balance", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 28),
 		TextColor3 = colors.cyan, TextSize = 13, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Left})
 	local function button(name, text, position, size)
@@ -16,45 +18,53 @@ function Panel.mount(parent, player, state, shared, colors, add, t)
 		return b
 	end
 	local votes, upgrades = {}, {}
-	for level = 1, 3 do
-		local b = button("Heat" .. level, t("Heat ", "Тревога ") .. level, UDim2.new((level-1)/3, 2, 0, 32), UDim2.new(1/3, -4, 0, 44))
+	for level = 1, #config.Heat do
+		local b = button("Heat" .. level, t("Heat ", "Тревога ") .. level, UDim2.new((level-1)%3/3, 2, 0, 32 + math.floor((level-1)/3)*50), UDim2.new(1/3, -4, 0, 44))
 		b.Activated:Connect(function() remote:FireServer("heat", level) end)
 		votes[level] = b
 	end
-	for index, id in {"Coil", "Lens"} do
-		local b = button(id, "", UDim2.fromOffset(0, 84 + (index-1)*50), UDim2.new(1, 0, 0, 44))
+	for index, id in progression.UpgradeOrder do
+		local b = button(id, "", UDim2.fromOffset(0, 234 + (index-1)*50), UDim2.new(1, 0, 0, 44))
 		b.Activated:Connect(function() remote:FireServer("upgrade", id) end)
 		upgrades[id] = b
 	end
-	local status = add("TextLabel", frame, {Name = "Status", Position = UDim2.fromOffset(0, 184), Size = UDim2.new(1, 0, 0, 48),
+	local status = add("TextLabel", frame, {Name = "Status", Position = UDim2.fromOffset(0, 334), Size = UDim2.new(1, 0, 0, 48),
 		BackgroundTransparency = 1, TextColor3 = colors.muted, TextSize = 12, TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left, Font = Enum.Font.Gotham})
 	local roleButtons = {}
 	for index, id in roles.Order do
 		local b = button("Role" .. id, t(roles.Catalog[id].en, roles.Catalog[id].ru),
-			UDim2.new((index-1)%2/2, 2, 0, 240 + math.floor((index-1)/2)*50), UDim2.new(0.5, -4, 0, 44))
+			UDim2.new((index-1)%2/2, 2, 0, 390 + math.floor((index-1)/2)*50), UDim2.new(0.5, -4, 0, 44))
 		b.Activated:Connect(function() remote:FireServer("role", id) end)
 		roleButtons[id] = b
 	end
-	local roleDetail = add("TextLabel", frame, {Name = "RoleDetail", Position = UDim2.fromOffset(0, 338), Size = UDim2.new(1, 0, 0, 48),
+	local roleDetail = add("TextLabel", frame, {Name = "RoleDetail", Position = UDim2.fromOffset(0, 488), Size = UDim2.new(1, 0, 0, 48),
 		BackgroundTransparency = 1, TextColor3 = colors.muted, TextSize = 12, TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left, Font = Enum.Font.Gotham})
 	local mapButtons = {}
 	for index, id in {"depot", "yard"} do
 		local b = button("Map" .. id, id == "yard" and t("Freight yard", "Грузовой двор") or t("Depot 07", "Депо 07"),
-			UDim2.new((index-1)/2, 2, 0, 394), UDim2.new(0.5,-4,0,44))
+			UDim2.new((index-1)/2, 2, 0, 544), UDim2.new(0.5,-4,0,44))
 		b.Activated:Connect(function() remote:FireServer("map", id) end)
 		mapButtons[id] = b
 	end
-	local mapDetail = add("TextLabel", frame, {Name = "MapDetail", Position = UDim2.fromOffset(0,442), Size = UDim2.new(1,0,0,48),
+	local mapDetail = add("TextLabel", frame, {Name = "MapDetail", Position = UDim2.fromOffset(0,592), Size = UDim2.new(1,0,0,48),
 		BackgroundTransparency = 1, TextColor3 = colors.muted, TextSize = 12, TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left, Font = Enum.Font.Gotham})
-	local rankTitle = add("TextLabel", frame, {Name="RankTitle", Position=UDim2.fromOffset(0,490), Size=UDim2.new(1,0,0,24),
+	local rankTitle = add("TextLabel", frame, {Name="RankTitle", Position=UDim2.fromOffset(0,640), Size=UDim2.new(1,0,0,24),
 		BackgroundTransparency=1, TextColor3=colors.cyan, TextSize=13, Font=Enum.Font.GothamBold, TextXAlignment=Enum.TextXAlignment.Left})
-	local rankGoal = add("TextLabel", frame, {Name="RankGoal", Position=UDim2.fromOffset(0,518), Size=UDim2.new(1,0,0,48),
+	local rankGoal = add("TextLabel", frame, {Name="RankGoal", Position=UDim2.fromOffset(0,668), Size=UDim2.new(1,0,0,48),
 		BackgroundTransparency=1, TextColor3=colors.muted, TextSize=12, Font=Enum.Font.Gotham, TextWrapped=true, TextXAlignment=Enum.TextXAlignment.Left})
-	local rankBar = add("Frame", frame, {Name="RankProgress", Position=UDim2.fromOffset(0,572), Size=UDim2.new(1,0,0,4), BackgroundColor3=colors.slate, BorderSizePixel=0})
+	local rankBar = add("Frame", frame, {Name="RankProgress", Position=UDim2.fromOffset(0,722), Size=UDim2.new(1,0,0,4), BackgroundColor3=colors.slate, BorderSizePixel=0})
 	local rankFill = add("Frame", rankBar, {Name="Fill", Size=UDim2.fromScale(0,1), BackgroundColor3=colors.cyan, BorderSizePixel=0})
+	local pilotButton
+	if config.SentinelPilotEnabled then
+		pilotButton = button("Pilot", "", UDim2.fromOffset(0,730), UDim2.new(1,0,0,44))
+		frame.Size = UDim2.new(1,-24,0,780)
+		pilotButton.Activated:Connect(function()
+			remote:FireServer("pilot", player:GetAttribute("PilotVolunteer") ~= true)
+		end)
+	end
 	local api = {}
 	function api.draw(y)
 		frame.Position = UDim2.fromOffset(12, y)
@@ -67,7 +77,7 @@ function Panel.mount(parent, player, state, shared, colors, add, t)
 		local profile = player:GetAttribute("ProfileStatus")
 		local ready = profile == "ready" or profile == "local"
 		for level, b in votes do
-			b.Interactable = between
+			b.Interactable = between and (level <= 3 or (player:GetAttribute("EndingBroadcast") and player:GetAttribute("EndingShelter")) == true)
 			b.TextColor3 = (player:GetAttribute("HeatVote") or 1) == level and colors.amber or colors.paper
 		end
 		for id, b in upgrades do
@@ -80,7 +90,7 @@ function Panel.mount(parent, player, state, shared, colors, add, t)
 		status.Text = if profile == "unavailable" then t("Progress unavailable. Rejoin to retry.", "Прогресс недоступен. Перезайди для повторной загрузки.")
 			elseif profile == "saving" then t("Saving progress…", "Сохраняем прогресс…")
 			elseif not ready then t("Loading progress…", "Загружаем прогресс…")
-			elseif between then t("Heat 2–3: Tracker if everyone has both endings. Ties favor lower Heat.", "Тревога 2–3: Следопыт, если у всех обе концовки. При равенстве — ниже.")
+			elseif between then t("Heat 4–5 require both endings for everyone. Heat 5 adds the Swarm.", "Тревога 4–5: нужны обе концовки у всех. На 5-й появляется Рой.")
 			else t("Earn Scrap by delivering cells. Upgrade at the airlock; vote between shifts.", "Scrap дают за доставки. Улучшения — у шлюза, Тревога — между сменами.")
 		local selected = player:GetAttribute("NextCrewRole") or "Carrier"
 		for id, b in roleButtons do
@@ -102,7 +112,13 @@ function Panel.mount(parent, player, state, shared, colors, add, t)
 		rankGoal.Text = nextReward and string.format(t("Next: %s · %d/%d XP. Title + sleeve badge. Earn XP by delivering.", "Далее: %s · %d/%d XP. Позывной и знак за доставки."), t(nextReward.en,nextReward.ru), xp,nextReward.xp)
 			or t("All career badges earned. Keep improving your crew time.", "Все знаки карьеры получены. Улучшай время экипажа.")
 		rankFill.Size = UDim2.fromScale(fraction,1)
-		return y + 588
+		if pilotButton then
+			pilotButton.Interactable = between and unlocked == true
+			pilotButton.Text = player:GetAttribute("PilotVolunteer")
+				and t("Sentinel operator · volunteered", "Оператор Sentinel · заявка принята")
+				or t("Volunteer to steer Sentinel · 3+ players", "Управлять Sentinel · от 3 игроков")
+		end
+		return y + (pilotButton and 788 or 738)
 	end
 	return api
 end

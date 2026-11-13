@@ -20,15 +20,17 @@ function Round.new(target, deadline, ids, routingSeconds, bonusId)
 		outcome = "live",
 		cells = cells,
 		carrying = {},
+		reserve = {},
 		bonusId = bonusId,
 	}, Round)
 end
 
-function Round:pickup(user, id, now)
-	if self.outcome ~= "live" or now >= self.deadline or self.carrying[user] or self.cells[id] ~= "available" then
+function Round:pickup(user, id, now, rack)
+	local first = self.carrying[user]
+	if self.outcome ~= "live" or now >= self.deadline or (first and (not rack or self.reserve[user] or first == self.bonusId or id == self.bonusId)) or self.cells[id] ~= "available" then
 		return false
 	end
-	self.carrying[user] = id
+	if first then self.reserve[user] = id else self.carrying[user] = id end
 	self.cells[id] = "carried"
 	if id == self.bonusId then
 		self.bonusPickedAt = now
@@ -36,11 +38,12 @@ function Round:pickup(user, id, now)
 	return true
 end
 
-function Round:drop(user)
+function Round:drop(user, confiscateBonus)
 	local id = self.carrying[user]
 	if id then
-		self.carrying[user] = nil
-		self.cells[id] = "available"
+		self.carrying[user] = self.reserve[user]
+		self.reserve[user] = nil
+		self.cells[id] = if confiscateBonus and id == self.bonusId then "lost" else "available"
 		if id == self.bonusId then
 			self.bonusHelper = nil
 			self.bonusPickedAt = nil
@@ -63,7 +66,8 @@ function Round:deposit(user, now)
 	if self.outcome ~= "live" or now >= self.deadline or not id then
 		return false
 	end
-	self.carrying[user] = nil
+	self.carrying[user] = self.reserve[user]
+	self.reserve[user] = nil
 	self.cells[id] = "delivered"
 	if id == self.bonusId then
 		return true, true, self.bonusHelper, math.max(1, math.ceil(now - self.bonusPickedAt))

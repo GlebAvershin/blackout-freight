@@ -13,6 +13,7 @@ rojo = sys.argv[1] if len(sys.argv) > 1 else "rojo"
 output = work / "Blackout Freight Server QA.rbxl"
 tracker = "--tracker" in sys.argv[2:]
 yard = "--yard" in sys.argv[2:] or tracker
+high_heat = "--high-heat" in sys.argv[2:]
 support = "--support" in sys.argv[2:]
 roles = "--roles" in sys.argv[2:] or support
 progression = "--progression" in sys.argv[2:]
@@ -114,6 +115,9 @@ local preparation = Instance.new("RemoteEvent")''')
         script = script.replace('journal:join(player)', 'journal:join(player)\n journal:award(player, "broadcast")\n journal:award(player, "shelter")\n player:SetAttribute("MapVote", "yard")', 1)
     if tracker:
         script = script.replace('player:SetAttribute("MapVote", "yard")', 'player:SetAttribute("MapVote", "yard")\n player:SetAttribute("HeatVote", 2)', 1)
+    if high_heat:
+        script = script.replace('player:SetAttribute("MapVote", "yard")', 'player:SetAttribute("MapVote", "depot")\n player:SetAttribute("HeatVote", 5)', 1)
+        script = script.replace('player:SetAttribute("RecoveryUntil", 0)', 'player:SetAttribute("RecoveryUntil", 0)\n player:SetAttribute("UpgradeRack", true)\n player:SetAttribute("UpgradeLamp", true)', 1)
     server.write_text(script)
     project = json.loads((root / "default.project.json").read_text())
     tree = project["tree"]
@@ -143,6 +147,9 @@ end)
         shutil.copytree(root / "src/shared", qa / "shared")
         config = qa / "shared/Config.luau"
         config.write_text(config.read_text().replace("Target = 5,", "Target = 1,"))
+    if high_heat:
+        config.write_text(config.read_text().replace("Target = 1,", "Target = 5,"))
+        shutil.copyfile(root / "tests/studio-high-heat.server.luau", qa / "server/Scenario.server.luau")
     if tracker:
         shutil.copyfile(root / "tests/studio-tracker.server.luau", qa / "server/Scenario.server.luau")
     if support:

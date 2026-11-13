@@ -1,5 +1,6 @@
 -- Atomic, write-through profile. No cached snapshot is ever written back.
 -- A lease excludes another server; sequence numbers make ambiguous retries safe.
+local Progression = if script then require(game:GetService("ReplicatedStorage").Freight.Progression) else require("../shared/Progression")
 local Season = if script then require(game:GetService("ReplicatedStorage").Freight.Season) else require("../shared/Season")
 local Profile = {}
 Profile.__index = Profile
@@ -72,19 +73,32 @@ function Profile:transact(userId, sequence, operation)
 		if sequence ~= data.sequence + 1 then return nil end
 		if operation.kind == "reward" then
 			local amount = operation.amount
-			assert(type(amount) == "number" and amount >= 0 and amount <= 100 and amount % 1 == 0)
-			-- Fixed UTC-hour cap persists across rejoining and server changes.
+			assert(type(amount) == "number" and amount >= 0 and amount <= 110 and amount % 1 == 0)
+			-- Keep the free XP pace independent of paid wallet bonuses.
 			local hour = math.floor(time / 3600)
-			local earned = data.rewardHour == hour and (data.hourEarned or 0) or 0
-			amount = math.min(amount, math.max(0, 600 - earned))
-			data.rewardHour, data.hourEarned = hour, earned + amount
-			data.lastAward = amount
-			data.scrap += amount
+			local sameHour = data.rewardHour == hour
+			local earned = sameHour and (data.hourEarned or 0) or 0
+			local xpEarned = sameHour and (data.hourXP or earned) or 0
+			local wallet = Progression.walletReward(amount, operation.doubleScrap == true, operation.club == true)
+			amount = math.min(amount, math.max(0, 600 - xpEarned))
+			wallet = math.min(wallet, math.max(0, 600 - earned))
+			data.rewardHour, data.hourEarned, data.hourXP = hour, earned + wallet, xpEarned + amount
+			data.lastAward = wallet
+			data.scrap += wallet
 			data.rankXP += amount
 			local earnedAt = operation.earnedAt or time -- legacy/internal callers
 			assert(type(earnedAt)=="number" and earnedAt>=0 and earnedAt<=time and earnedAt%1==0, "Invalid award timestamp")
 			data.seasons[Season.Id] = Season.advance(data.seasons[Season.Id], operation.deliveries or 0, operation.ending, earnedAt)
 			data.lastResult = "rewarded"
+		elseif operation.kind == "adReward" then
+			local id = operation.purchaseId
+			assert(type(id) == "string" and #id > 0 and #id <= 128, "Invalid receipt ID")
+			data.adReceipts = table.clone(data.adReceipts or {})
+			if not data.adReceipts[id] then
+				data.scrap += Progression.AdScrap
+				data.adReceipts[id] = true
+			end
+			data.lastResult = "adRewarded"
 		elseif operation.kind == "role" then
 			assert(({Carrier=true,Lure=true,Scout=true,Technician=true})[operation.role], "Invalid role")
 			data.preferences.role = operation.role

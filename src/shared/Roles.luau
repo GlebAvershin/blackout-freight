@@ -2,7 +2,7 @@ local Roles = {}
 Roles.Order = table.freeze({"Carrier", "Lure", "Scout", "Technician"})
 Roles.Catalog = table.freeze({
 	Carrier = table.freeze({en = "Carrier", ru = "Носильщик", cooldown = 24, duration = 3,
-		detailEN = "Dash with cargo for 3s. Everyone can carry one item.", detailRU = "Рывок с грузом на 3 с. Все могут нести один предмет."}),
+		detailEN = "Dash with cargo for 3s. Workshop rack adds a second cell.", detailRU = "Рывок с грузом на 3 с. Крепление даёт второй слот."}),
 	Lure = table.freeze({en = "Lure", ru = "Приманка", cooldown = 30, duration = 4,
 		detailEN = "Drop a lure during a chase. Beacons share a cooldown.", detailRU = "Оставь маяк во время погони. У маяков общий откат."}),
 	Scout = table.freeze({en = "Scout", ru = "Разведчик", cooldown = 12, duration = 5,

@@ -1,6 +1,7 @@
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 local DataStoreService = game:GetService("DataStoreService")
+local Progression = require(game:GetService("ReplicatedStorage").Freight.Progression)
 local Profile = require(script.Parent.Profile)
 local RankTrack = require(game:GetService("ReplicatedStorage").Freight.RankTrack)
 local Season = require(game:GetService("ReplicatedStorage").Freight.Season)
@@ -39,7 +40,7 @@ local function publish(player, data, preferenceKind)
 		player:SetAttribute("SavedMusicMuted", data.preferences.musicMuted == true)
 		player:SetAttribute("SavedEffectsMuted", data.preferences.effectsMuted == true)
 	end
-	for _, id in {"Coil", "Lens"} do player:SetAttribute("Upgrade" .. id, data.upgrades[id] == true) end
+	for _, id in Progression.UpgradeOrder do player:SetAttribute("Upgrade" .. id, data.upgrades[id] == true) end
 end
 
 local function retry(callback)
@@ -77,6 +78,7 @@ function Service:join(player)
 					refreshedAt = os.clock()
 					table.remove(session.queue, 1)
 					publish(player, result, item.operation.kind)
+					item.committed = true
 					local tier = Season.tier(result.seasons[Season.Id])
 					if tier > previousTier then
 						player:SetAttribute("LastSeasonUnlocked", tier)
@@ -129,8 +131,9 @@ function Service:enqueue(player, operation, key)
 	-- Freeze server-owned event eligibility before a queue/network delay can
 	-- cross the season boundary. Never read a timestamp from a RemoteEvent.
 	if accepted.kind == "reward" then accepted.earnedAt = self.clock and self.clock() or os.time() end
-	table.insert(session.queue, {operation = accepted})
-	return true
+		local item = {operation = accepted}
+	table.insert(session.queue, item)
+	return true, item
 end
 
 function Service:leave(player)

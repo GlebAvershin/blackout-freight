@@ -662,7 +662,8 @@ local function draw()
 	if decoyPrompt then
 		decoyPrompt.Enabled = decoyReady
 	end
-	drawGuide(phase, carrying, route, deliveries == 0 or needsRecoveryGuide or justDelivered)
+	local heat = state:GetAttribute("Heat") or 1
+	drawGuide(heat == 5 and "" or phase, carrying, route, deliveries == 0 or needsRecoveryGuide or justDelivered)
 	drawJournal()
 	brand.Text = state:GetAttribute("Map") == "yard" and t("07 / FREIGHT YARD", "07 / ГРУЗОВОЙ ДВОР") or route and string.upper(localized(route.name)) or t("DEPOT 07   /   THE LAST SIGNAL", "ДЕПО 07   /   ПОСЛЕДНИЙ СИГНАЛ")
 	timer.Text = phase == "waiting" and "—" or string.format("%d:%02d", remaining // 60, remaining % 60)
@@ -700,6 +701,8 @@ local function draw()
 		end
 		if boxStatus == "secured" then
 			radio.Text = t("Mira: Black box recovered. Check the log.", "Мира: Ящик доставлен. Проверь журнал.")
+		elseif boxStatus == "lost" then
+			radio.Text = t("Mira: Black box lost for this shift.", "Мира: Чёрный ящик потерян до конца смены.")
 		elseif blackBox then
 			radio.Text = t("Mira: That signal is drawing Sentinel in!", "Мира: Сигнал ящика притягивает Sentinel!")
 		elseif boxStatus == "available" then
@@ -769,6 +772,16 @@ local function draw()
 		hint.Text = t("Restore the relay. Start with a blue cell.", "Верни связь. Начни с синей батареи.")
 		radio.Text = t("Mira: I’m at dispatch. Follow the amber lights home.", "Мира: Я в диспетчерской. Янтарный свет ведёт обратно.")
 	end
+	if phase == "live" then
+		local recovery = math.ceil((player:GetAttribute("RecoveryUntil") or 0) - serverTime)
+		if player:GetAttribute("PilotingSentinel") then
+			hint.Text = t("Lead Sentinel by moving. Intercept the crew.", "Веди Sentinel своим движением. Перехвати экипаж.")
+		elseif recovery > 0 then
+			hint.Text = string.format(t("Recovering · %ds", "Восстановление · %d с"), recovery)
+		elseif (player:GetAttribute("CargoCount") or 0) == 2 then
+			hint.Text = t("Two cells. Use the console twice.", "Две батареи. Используй консоль дважды.")
+		end
+	end
 	local unlockedRank = player:GetAttribute("LastRankUnlocked") or 0
 	if unlockedRank > 0 and (phase == "won" or phase == "lost" or phase == "briefing") then
 		radio.Text = string.format(t("Rank %d! New title and sleeve badge. Open the log.", "Ранг %d! Новый позывной и знак. Открой журнал."), unlockedRank)
@@ -781,6 +794,9 @@ local function draw()
 		radio.Text = state:GetAttribute("SentinelMode") == "search"
 			and t("Mira: Tracker lost you. Stay behind cover.", "Мира: Следопыт потерял тебя. Оставайся за укрытием.")
 			or t("Mira: Tracker follows cargo light. Break its line of sight.", "Мира: Следопыт видит свет груза. Скройся за контейнером.")
+	end
+	if phase == "live" and heat == 5 then
+		radio.Text = t("Mira: Swarm active. Use cover and beacons.", "Мира: Рой активен. Используй укрытия и маяки.")
 	end
 	if phase == "live" and state:GetAttribute("Map") == "yard" then
 		local train = state:GetAttribute("TrainStatus")

@@ -2,6 +2,8 @@
 local Panel = {}
 function Panel.mount(parent, player, shared, colors, add, t)
 	local season = require(shared.Season)
+	local config = require(shared.Config)
+	local marketplace = game:GetService("MarketplaceService")
 	local frame = add("Frame",parent,{Name="Season",BackgroundTransparency=1,Size=UDim2.new(1,-24,0,440)})
 	local function label(name,y,height,color,bold)
 		return add("TextLabel",frame,{Name=name,Position=UDim2.fromOffset(0,y),Size=UDim2.new(1,0,0,height),
@@ -25,6 +27,52 @@ function Panel.mount(parent, player, shared, colors, add, t)
 		buttons[i]=b
 	end
 	local detail=label("Detail",282,150,colors.muted,false)
+		local offers = {}
+	local function offer(id, attribute, en, ru, ownedEN, ownedRU, subscribe)
+		if id == 0 or id == "" then return end
+		local button = add("TextButton",frame,{Name=attribute,Size=UDim2.new(1,0,0,44),
+			BackgroundColor3=colors.slate,TextColor3=colors.paper,TextSize=12,TextWrapped=true,AutoLocalize=false,Font=Enum.Font.GothamBold})
+		add("UICorner",button,{CornerRadius=UDim.new(0,5)})
+		table.insert(offers,{button=button,attribute=attribute,title=t(en,ru),owned=t(ownedEN,ownedRU)})
+		button.Activated:Connect(function()
+			if player:GetAttribute(attribute) ~= false or (attribute == "ShiftPass" and not season.active(os.time())) then return end
+			pcall(function()
+				if subscribe then marketplace:PromptSubscriptionPurchase(player,id)
+				else marketplace:PromptGamePassPurchase(player,id) end
+			end)
+		end)
+	end
+	offer(config.ShiftPassId,"ShiftPass","Shift Pass · three season patch styles","Пропуск смены · три сезонные нашивки","Shift Pass owned","Пропуск смены приобретён")
+	offer(config.DoubleScrapPassId,"DoubleScrap","2× Scrap · same hourly cap","2× Scrap · тот же лимит в час","2× Scrap active","2× Scrap действует")
+	offer(config.DepotClubSubscriptionId,"DepotClub","Depot Club · rotating patch + 25% Scrap","Клуб депо · сменная нашивка и +25% Scrap","Depot Club active","Клуб депо действует",true)
+	local ad, adAvailable, checkingAd
+	if config.RewardedScrapProductId > 0 then
+		ad = add("TextButton",frame,{Name="RewardedScrap",Visible=false,Size=UDim2.new(1,0,0,44),
+			Text=t("Watch a video · +25 Scrap","Посмотреть ролик · +25 Scrap"),
+			BackgroundColor3=colors.slate,TextColor3=colors.paper,TextSize=12,TextWrapped=true,AutoLocalize=false,Font=Enum.Font.GothamBold})
+		add("UICorner",ad,{CornerRadius=UDim.new(0,5)})
+		local ads = game:GetService("AdService")
+		local checkedAt = -120
+		local function check()
+			if checkingAd or os.clock()-checkedAt < 120 then return end
+			checkingAd, checkedAt = true, os.clock()
+			task.spawn(function()
+				local ok, result = pcall(ads.GetAdAvailabilityNowAsync,ads,Enum.AdFormat.RewardedVideo)
+				adAvailable = ok and result.AdAvailabilityResult == Enum.AdAvailabilityResult.IsAvailable
+				checkingAd = false
+			end)
+		end
+		parent:GetPropertyChangedSignal("Visible"):Connect(function()
+			if parent.Visible then check() end
+		end)
+		ad.Activated:Connect(function()
+			if not adAvailable then return end
+			adAvailable = false
+			checkedAt = os.clock()
+			local remote = shared:FindFirstChild("RewardedScrap")
+			if remote then remote:FireServer() end
+		end)
+	end
 	local api={}
 	function api.draw(y)
 		frame.Position=UDim2.fromOffset(12,y)
@@ -49,7 +97,28 @@ function Panel.mount(parent, player, shared, colors, add, t)
 		else
 			detail.Text=t("Deliver 30 cells and win both Broadcast and Shelter during the event, with a verified delivery in each. Unlocks the final recording and a permanent Echo patch.", "Сдай 30 батарей и получи «Эфир» и «Укрытие» во время события, с личной доставкой в каждой победе. Награда — финальная запись и постоянный знак «Эхо».")
 		end
-		return y+448
+		local height = 440
+		for _, item in offers do
+			local owned = player:GetAttribute(item.attribute)
+			local visible = owned ~= nil and (item.attribute ~= "ShiftPass" or active or owned)
+			item.button.Visible = visible
+			item.button.Interactable = visible and not owned
+			item.button.Text = owned and item.owned or item.title
+			if visible then
+				item.button.Position = UDim2.fromOffset(0,height)
+				height += 50
+			end
+		end
+		if ad then
+			local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+			ad.Visible = adAvailable == true and root ~= nil and root.Position.Z >= config.AirlockSafeZ and not player:GetAttribute("Carrying")
+			if ad.Visible then
+				ad.Position = UDim2.fromOffset(0,height)
+				height += 50
+			end
+		end
+		frame.Size = UDim2.new(1,-24,0,height)
+		return y+height+8
 	end
 	return api
 end
