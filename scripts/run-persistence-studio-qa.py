@@ -5,6 +5,7 @@ Production target, timer, drone and reward rules are unchanged.
 """
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 
@@ -14,13 +15,17 @@ evidence = ROOT / '.tools/persistence-evidence'
 evidence.mkdir(exist_ok=True)
 with tempfile.TemporaryDirectory(prefix='freight-persistence-') as directory:
     folder = Path(directory)
+    place=folder/'Scenario.rbxl'
+    shutil.copyfile(ROOT/'.tools/Blackout Freight Persistence QA.rbxl',place)
     def run(argument, label):
+        run_place=folder/(label+'.rbxl')
+        shutil.copyfile(place,run_place)
         launcher, output = folder / 'run.luau', evidence / f'{label}.log'
         launcher.write_text('print("PERSISTENCE RESULT", game:GetService("StudioTestService"):ExecuteMultiplayerTestAsync(1,' + json.dumps(argument) + '))\n')
         if output.exists():
             output.unlink()
         subprocess.run(['/Applications/RobloxStudio.app/Contents/MacOS/RobloxStudio', '--task', 'RunScript',
-            '--localPlaceFile', str(ROOT / '.tools/Blackout Freight Persistence QA.rbxl'),
+            '--localPlaceFile', str(run_place),
             '--runScriptFile', str(launcher), '--outputFile', str(output), '--quitAfterExecution'],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, timeout=250)
         text = output.read_text()

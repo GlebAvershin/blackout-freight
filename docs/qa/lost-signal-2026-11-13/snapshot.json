@@ -1,0 +1,41 @@
+{
+  "profile": {
+    "Player_-1": {
+      "lastAward": 50,
+      "seasons": {
+        "lost_signal_2026": {
+          "broadcast": true,
+          "deliveries": 5,
+          "shelter": false
+        }
+      },
+      "sequence": 2,
+      "upgrades": [],
+      "lastResult": "preferences",
+      "scrap": 50,
+      "version": 1,
+      "preferences": {
+        "musicMuted": false,
+        "role": "Technician",
+        "effectsMuted": false
+      },
+      "rankXP": 50,
+      "rewardHour": 498494,
+      "hourEarned": 50
+    }
+  },
+  "journal": {
+    "-1": {
+      "bestClearSeconds": 86,
+      "broadcast": true,
+      "dispatchWeeks": [
+        2967
+      ],
+      "west": false,
+      "blackBox": false,
+      "shelter": false,
+      "east": false,
+      "yard": false
+    }
+  }
+}

@@ -909,6 +909,7 @@ local function startShift()
 		player:SetAttribute("SprintUntil", 0)
 		player:SetAttribute("LastScrapAward", 0)
 		player:SetAttribute("LastRankUnlocked", 0)
+		player:SetAttribute("LastSeasonUnlocked", 0)
 		player:SetAttribute("DispatchCompletedThisShift", false)
 		player:SetAttribute("NewBestThisShift", false)
 		player:SetAttribute("SignalUnlockedThisShift", false)
@@ -942,7 +943,9 @@ local function finishShift()
 	for player, data in players do
 		local reward = Progression.reward(data.verifiedDeliveries or 0, heat.ScrapMultiplier)
 		if reward > 0 then
-			profiles:enqueue(player, {kind = "reward", amount = reward}, roundGuid)
+			profiles:enqueue(player, {kind = "reward", amount = reward,
+				deliveries = math.clamp(data.verifiedDeliveries or 0, 0, 5),
+				ending = if round.outcome == "won" then round.ending else nil}, roundGuid)
 		end
 		clearCargo(player)
 		if round.outcome == "lost" and rootOf(player) then

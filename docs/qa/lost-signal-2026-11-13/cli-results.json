@@ -1,0 +1,119 @@
+{
+  "checkedUTC": "2026-11-13T14:32:44.088041+00:00",
+  "checks": [
+    {
+      "command": [
+        ".tools/luau/luau-compile",
+        "--null",
+        "src",
+        "tests"
+      ],
+      "exitCode": 0,
+      "output": "Compiled 6 KLOC into 328 KB bytecode (read 0.01s, parse 0.00s, compile 0.01s)"
+    },
+    {
+      "command": [
+        ".tools/luau/luau",
+        "tests/analytics-policy.test.luau"
+      ],
+      "exitCode": 0,
+      "output": "PASS: studio, test accounts and owner excluded; external players retained"
+    },
+    {
+      "command": [
+        ".tools/luau/luau",
+        "tests/dispatch.test.luau"
+      ],
+      "exitCode": 0,
+      "output": "PASS: UTC rotation, contract conditions, duplicate and stale progress, rejoin"
+    },
+    {
+      "command": [
+        ".tools/luau/luau",
+        "tests/ending-journal.test.luau"
+      ],
+      "exitCode": 0,
+      "output": "PASS: journal defaults, atomic union, stale read, malformed data, immutable snapshots"
+    },
+    {
+      "command": [
+        ".tools/luau/luau",
+        "tests/movement-guard.test.luau"
+      ],
+      "exitCode": 0,
+      "output": "PASS: movement budget, sustained speed, teleport, recovery, authorized reset, invalid coordinates\nPASS: batched one-second replication, authorized sprint and persistent speed abuse"
+    },
+    {
+      "command": [
+        ".tools/luau/luau",
+        "tests/operations.test.luau"
+      ],
+      "exitCode": 0,
+      "output": "PASS: route rotation, route inventory, drone path, native invite and unavailable states"
+    },
+    {
+      "command": [
+        ".tools/luau/luau",
+        "tests/profile.test.luau"
+      ],
+      "exitCode": 0,
+      "output": "PASS: profile leases, duplicate callbacks, ambiguous commits, purchases, expiry, stale servers, corrupt/future saves\nPASS: preference defaults, validation, unchanged economy, second-server restore"
+    },
+    {
+      "command": [
+        ".tools/luau/luau",
+        "tests/progression.test.luau"
+      ],
+      "exitCode": 0,
+      "output": "PASS: rewards, persistent hourly cap, heat votes, novice protection, ties"
+    },
+    {
+      "command": [
+        ".tools/luau/luau",
+        "tests/rail-cycle.test.luau"
+      ],
+      "exitCode": 0,
+      "output": "PASS: rail warning window, cycle wrap, swept hit bounds, majority and beginner gate\nPASS: yard recording unlock, rejoin and monotonic merge"
+    },
+    {
+      "command": [
+        ".tools/luau/luau",
+        "tests/rank-track.test.luau"
+      ],
+      "exitCode": 0,
+      "output": "PASS: career thresholds, progress fractions, duplicate and downward unlock rejection"
+    },
+    {
+      "command": [
+        ".tools/luau/luau",
+        "tests/roles.test.luau"
+      ],
+      "exitCode": 0,
+      "output": "PASS: role eligibility, shared cooldown, cargo requirement, safe zone, sprint expiry\nPASS: support roles phase, cooldown and safe-zone gates"
+    },
+    {
+      "command": [
+        ".tools/luau/luau",
+        "tests/round.test.luau"
+      ],
+      "exitCode": 0,
+      "output": "PASS: contention, one cargo, recovery, scoring, victory, deadline\nPASS: decision window, valid endings, first-choice wins, safe timeout\nPASS: optional cargo, contested pickup, dropped assist, delivery and crew credit"
+    },
+    {
+      "command": [
+        ".tools/luau/luau",
+        "tests/season.test.luau"
+      ],
+      "exitCode": 0,
+      "output": "PASS: season window, participation, milestones, immutable callbacks, duplicate/lost replies, legacy profile and second-session restore\nPASS: retry across expiry preserves earned season award; future timestamps rejected\nPASS: malformed season cannot silently load as an empty record"
+    },
+    {
+      "command": [
+        ".tools/luau/luau",
+        "tests/sentinel-brain.test.luau"
+      ],
+      "exitCode": 0,
+      "output": "PASS: tracker visibility, stale position, expiry, shelter, decoy, classic priority, beginner gate"
+    }
+  ]
+}

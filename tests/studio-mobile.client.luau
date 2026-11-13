@@ -120,9 +120,26 @@ assert(journal.BlackBoxRecord.Visible and journal.BlackBoxRecord.TextFits and jo
 	"Black Box recording or crew time is missing or clipped")
 -- Scroll the workshop into view without changing the journal shell or footer.
 local workshop = journal:WaitForChild("Workshop")
+tap(actions.Close)
+player:SetAttribute("LastSeasonUnlocked",1)
+waitFor(function() return dock.Visible end,"season notification entry")
+tap(dock)
+waitFor(function() return journal.Visible end,"open new recording")
+assert(math.abs(journal.CanvasPosition.Y-journal.Season.Position.Y.Offset)<2,"new recording did not open event section")
+player:SetAttribute("LastSeasonUnlocked",0)
 fixture:FireServer("briefing")
 waitFor(function() return state:GetAttribute("Phase") == "briefing" and player:GetAttribute("Scrap") == 120 end, "workshop fixture")
-journal.CanvasPosition = Vector2.new(0, workshop.Position.Y.Offset)
+player:SetAttribute("LastSeasonUnlocked",1)
+tap(actions.Close)
+tap(dock)
+waitFor(function() return journal.Visible end,"new recording during briefing")
+assert(math.abs(journal.CanvasPosition.Y-journal.Season.Position.Y.Offset)<2,"briefing hid new recording behind workshop")
+player:SetAttribute("LastSeasonUnlocked",0)
+tap(actions.Close)
+waitFor(function() return dock.Visible end,"close for Prepare entry")
+tap(dock)
+waitFor(function() return journal.Visible end,"Prepare entry")
+assert(math.abs(journal.CanvasPosition.Y-workshop.Position.Y.Offset)<2,"Prepare scrolled past workshop to season")
 task.wait(0.3)
 assert(workshop.Heat1.AbsoluteSize.Y >= 44 and workshop.Coil.AbsoluteSize.Y >= 44, "workshop touch targets too small")
 assert(workshop.Status.TextFits and workshop.Balance.TextFits and workshop.Coil.TextFits and workshop.Lens.TextFits, "workshop text clipped")
@@ -179,6 +196,24 @@ for _, xp in {0,250,500,1000} do
 	assert(workshop.RankTitle.TextFits and workshop.RankGoal.TextFits, "career text clipped")
 	assert(workshop.RankProgress.Fill.Size.X.Scale >= 0 and workshop.RankProgress.Fill.Size.X.Scale <= 1, "career progress overflow")
 end
+local seasonPanel=journal:WaitForChild("Season")
+for _,tier in {0,1,2,3} do
+ player:SetAttribute("SeasonTier",tier)
+ player:SetAttribute("SeasonDeliveries",tier==3 and 30 or tier*5)
+ journal.CanvasPosition=Vector2.new(0,seasonPanel.Position.Y.Offset)
+ task.wait(0.2)
+ assert(seasonPanel.Heading.TextFits and seasonPanel.Dates.TextFits and seasonPanel.Progress.TextFits,"season heading clipped")
+ for i=1,3 do
+  journal.CanvasPosition=Vector2.new(0,seasonPanel.Position.Y.Offset+134+(i-1)*48)
+  task.wait(0.15)
+  local b=seasonPanel["Chapter"..i]
+  assert(b.AbsoluteSize.Y>=44 and b.TextFits,"season touch target")
+  tap(b)
+  task.wait(0.2)
+  assert(seasonPanel.Detail.TextFits,"season recording clipped")
+ end
+end
+
 player:SetAttribute("RankXP",0)
 fixture:FireServer("resume")
 waitFor(function() return state:GetAttribute("Phase") == "live" end, "resume gameplay")

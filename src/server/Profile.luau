@@ -1,12 +1,13 @@
 -- Atomic, write-through profile. No cached snapshot is ever written back.
 -- A lease excludes another server; sequence numbers make ambiguous retries safe.
+local Season = if script then require(game:GetService("ReplicatedStorage").Freight.Season) else require("../shared/Season")
 local Profile = {}
 Profile.__index = Profile
 local LeaseSeconds = 120
 
 local function copy(old)
 	if old == nil then
-		return {version = 1, scrap = 0, rankXP = 0, upgrades = {}, preferences = {role="Carrier",musicMuted=false,effectsMuted=false}, sequence = 0}
+		return {version = 1, scrap = 0, rankXP = 0, upgrades = {}, seasons = {}, preferences = {role="Carrier",musicMuted=false,effectsMuted=false}, sequence = 0}
 	end
 	assert(type(old) == "table" and old.version == 1, "Unsupported profile version")
 	assert(type(old.scrap) == "number" and old.scrap >= 0 and old.scrap % 1 == 0, "Invalid balance")
@@ -14,6 +15,9 @@ local function copy(old)
 	assert(type(old.upgrades) == "table", "Invalid upgrades")
 	local result = table.clone(old)
 	result.upgrades = table.clone(old.upgrades)
+	assert(old.seasons == nil or type(old.seasons)=="table", "Invalid seasons")
+	result.seasons = table.clone(old.seasons or {})
+	if result.seasons[Season.Id] ~= nil then result.seasons[Season.Id] = Season.copy(result.seasons[Season.Id]) end
 	assert(old.preferences == nil or type(old.preferences) == "table", "Invalid preferences")
 	result.preferences = old.preferences and table.clone(old.preferences) or {role="Carrier",musicMuted=false,effectsMuted=false}
 	return result
@@ -77,6 +81,9 @@ function Profile:transact(userId, sequence, operation)
 			data.lastAward = amount
 			data.scrap += amount
 			data.rankXP += amount
+			local earnedAt = operation.earnedAt or time -- legacy/internal callers
+			assert(type(earnedAt)=="number" and earnedAt>=0 and earnedAt<=time and earnedAt%1==0, "Invalid award timestamp")
+			data.seasons[Season.Id] = Season.advance(data.seasons[Season.Id], operation.deliveries or 0, operation.ending, earnedAt)
 			data.lastResult = "rewarded"
 		elseif operation.kind == "role" then
 			assert(({Carrier=true,Lure=true,Scout=true,Technician=true})[operation.role], "Invalid role")

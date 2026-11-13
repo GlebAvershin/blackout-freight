@@ -80,7 +80,7 @@ for _, portrait in {{{", ".join(str(mode).lower() for mode in modes)}}} do
 	game:GetService("StarterGui").ScreenOrientation = orientation
 	sim:SetOrientationAsync(orientation)
 	client:SetAttribute("Portrait", portrait)
-	print("MOBILE HUD STUDIO RESULT", portrait, test:ExecutePlayModeAsync("MobileHudQA"))
+	print("MOBILE HUD STUDIO RESULT", portrait, test:ExecuteMultiplayerTestAsync(1,"MobileHudQA"))
 end
 sim:StopSimulationAsync()
 ''')

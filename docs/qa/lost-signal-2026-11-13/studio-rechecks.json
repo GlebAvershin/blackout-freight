@@ -1,0 +1,8 @@
+{
+  "profiles": "PASS: expiry retry, tier 3, reload, badge and respawn",
+  "mobileLandscape": "PASS: latest HUD and briefing season anchor",
+  "fourPlayer": "FAIL: native four-client control run timed out with only three clients connected; all four journals remain required",
+  "mobilePortrait": "PASS: latest HUD, three chapters, four tier states, briefing entry",
+  "cloudPersistence": "NOT TESTED",
+  "published": false
+}

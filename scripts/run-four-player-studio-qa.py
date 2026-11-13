@@ -3,18 +3,23 @@ Uses only an in-memory fixture; this does not test cloud DataStores or invitatio
 """
 from pathlib import Path
 import json
+import shutil
 import subprocess
 import tempfile
 root = Path(__file__).resolve().parents[1]
 subprocess.run(['python3','scripts/build-studio-qa.py',str(root/'.tools/rojo/rojo')],cwd=root,check=True)
 with tempfile.TemporaryDirectory(prefix='freight-four-') as directory:
     folder=Path(directory)
+    place=folder/'Scenario.rbxl'
+    shutil.copyfile(root/'.tools/Blackout Freight Server QA.rbxl',place)
     def run(argument):
+        run_place=folder/('restore.rbxl' if argument.startswith('FourPlayerRestore:') else 'write.rbxl')
+        shutil.copyfile(place,run_place)
         launcher,output=folder/'run.luau',folder/'output.log'
         launcher.write_text('print("FOUR RESULT", game:GetService("StudioTestService"):ExecuteMultiplayerTestAsync(4,'+json.dumps(argument)+'))\n')
         if output.exists(): output.unlink()
         subprocess.run(['/Applications/RobloxStudio.app/Contents/MacOS/RobloxStudio','--task','RunScript',
-            '--localPlaceFile',str(root/'.tools/Blackout Freight Server QA.rbxl'),'--runScriptFile',str(launcher),
+            '--localPlaceFile',str(run_place),'--runScriptFile',str(launcher),
             '--outputFile',str(output),'--quitAfterExecution'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=True,timeout=200)
         result=output.read_text()
         evidence=root/'.tools/four-player-evidence'

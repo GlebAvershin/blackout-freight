@@ -5,6 +5,7 @@ local ok, failure = xpcall(function()
 	local fixture = require(script.Parent.PersistenceFixture)
 	local players = game:GetService("Players")
 	local storage = game:GetService("ReplicatedStorage")
+	local Season = require(storage:WaitForChild("Freight").Season)
 	local control = Instance.new("RemoteEvent")
 	control.Name = "PersistenceTestControl"
 	local ready, observed = {}, {}
@@ -26,12 +27,14 @@ local ok, failure = xpcall(function()
 			control:FireClient(player, "observe")
 			local values = observed[player]
 			return values and values[1] == true and values[2] == 50 and values[3] == "Technician" and values[4] == activeRole
+				and values[5]==player:GetAttribute("SeasonDeliveries") and values[6]==player:GetAttribute("SeasonTier")
 		end, "replicated journal / balance / selected and active roles")
 	end
 	if fixture.restoring then
 		assert(player:GetAttribute("EndingBroadcast") == true and player:GetAttribute("EndingShelter") == false)
 		assert(player:GetAttribute("Scrap") == 50 and player:GetAttribute("RankXP") == 50)
 		assert(player:GetAttribute("NextCrewRole") == "Technician" and player:GetAttribute("CrewRole") == "Technician")
+		if Season.active(os.time()) then assert(player:GetAttribute("SeasonDeliveries")==5 and player:GetAttribute("SeasonTier")==1) end
 		clientCheck("Technician")
 		print("PERSISTENCE PASS second process restored Broadcast, 50 Scrap, 50 XP, selected and active Technician on server and client")
 		test:EndTest("PERSISTENCE RESTORE PASS")
@@ -103,6 +106,7 @@ local ok, failure = xpcall(function()
 	waitFor(function() return state:GetAttribute("Phase") == "won" and player:GetAttribute("Scrap") == 50
 		and player:GetAttribute("EndingBroadcast") == true and player:GetAttribute("JournalStatus") == "ready" end, "new ending and earned Scrap")
 	assert(player:GetAttribute("EndingShelter") == false and player:GetAttribute("LastScrapAward") == 50)
+	if Season.active(os.time()) then assert(player:GetAttribute("SeasonDeliveries")==5 and player:GetAttribute("SeasonTier")==1 and player:GetAttribute("SeasonBroadcast")) end
 	control:FireClient(player, "select")
 	waitFor(function() return player:GetAttribute("NextCrewRole") == "Technician" and player:GetAttribute("ProfileStatus") == "local" end, "role remote accepted")
 	clientCheck("Carrier")

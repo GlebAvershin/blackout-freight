@@ -1,0 +1,127 @@
+{
+  "startedUTC": "20261113T140117Z",
+  "candidateSHA256": "5f4eb400667f17f503ecff2c08246340a730a1e51814989ca3847c7a9841672b",
+  "checks": [
+    {
+      "name": "compile",
+      "exitCode": 0,
+      "seconds": 0.08
+    },
+    {
+      "name": "analytics-policy.test",
+      "exitCode": 0,
+      "seconds": 0.02
+    },
+    {
+      "name": "dispatch.test",
+      "exitCode": 0,
+      "seconds": 0.01
+    },
+    {
+      "name": "ending-journal.test",
+      "exitCode": 0,
+      "seconds": 0.01
+    },
+    {
+      "name": "movement-guard.test",
+      "exitCode": 0,
+      "seconds": 0.0
+    },
+    {
+      "name": "operations.test",
+      "exitCode": 0,
+      "seconds": 0.01
+    },
+    {
+      "name": "profile.test",
+      "exitCode": 0,
+      "seconds": 0.0
+    },
+    {
+      "name": "progression.test",
+      "exitCode": 0,
+      "seconds": 0.0
+    },
+    {
+      "name": "rail-cycle.test",
+      "exitCode": 0,
+      "seconds": 0.01
+    },
+    {
+      "name": "rank-track.test",
+      "exitCode": 0,
+      "seconds": 0.0
+    },
+    {
+      "name": "roles.test",
+      "exitCode": 0,
+      "seconds": 0.01
+    },
+    {
+      "name": "round.test",
+      "exitCode": 0,
+      "seconds": 0.0
+    },
+    {
+      "name": "season.test",
+      "exitCode": 0,
+      "seconds": 0.0
+    },
+    {
+      "name": "sentinel-brain.test",
+      "exitCode": 0,
+      "seconds": 0.0
+    },
+    {
+      "name": "profiles",
+      "exitCode": 1,
+      "seconds": 100.18
+    },
+    {
+      "name": "gameplay",
+      "exitCode": 0,
+      "seconds": 50.56
+    },
+    {
+      "name": "progression-restore",
+      "exitCode": 0,
+      "seconds": 147.09
+    },
+    {
+      "name": "roles",
+      "exitCode": 0,
+      "seconds": 58.8
+    },
+    {
+      "name": "support-roles",
+      "exitCode": 0,
+      "seconds": 83.87
+    },
+    {
+      "name": "yard",
+      "exitCode": 0,
+      "seconds": 64.68
+    },
+    {
+      "name": "tracker",
+      "exitCode": 0,
+      "seconds": 61.4
+    },
+    {
+      "name": "four-player-restore",
+      "exitCode": 1,
+      "seconds": 107.04
+    },
+    {
+      "name": "mobile-landscape",
+      "exitCode": -9,
+      "seconds": 176.64
+    },
+    {
+      "name": "mobile-portrait",
+      "exitCode": 0,
+      "seconds": 83.28
+    }
+  ],
+  "note": "Initial batch: three Studio checks failed to start/complete. Do not interpret as all checks passing. See QA report for reruns."
+}

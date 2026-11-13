@@ -259,7 +259,9 @@ end
 local function toggleJournal()
 	journalPanel.Visible = not journalPanel.Visible
 	if journalPanel.Visible then
-		journalPanel.CanvasPosition = state:GetAttribute("Phase") == "briefing" and Vector2.new(0, 10000) or Vector2.zero
+		local section = if (player:GetAttribute("LastSeasonUnlocked") or 0)>0 and (player:GetAttribute("LastRankUnlocked") or 0)==0 then journalPanel:FindFirstChild("Season")
+			elseif state:GetAttribute("Phase") == "briefing" then journalPanel:FindFirstChild("Workshop") else nil
+		journalPanel.CanvasPosition = section and Vector2.new(0,section.Position.Y.Offset) or Vector2.zero
 	end
 end
 journalButton.Activated:Connect(toggleJournal)
@@ -315,6 +317,7 @@ local function formatClearTime(seconds)
 end
 
 local progressionPanel = require(script.Parent.ProgressionPanel).mount(journalPanel, player, state, shared, colors, add, t)
+local seasonPanel = require(script.Parent.SeasonPanel).mount(journalPanel, player, shared, colors, add, t)
 
 local function drawJournal()
 	local broadcast = player:GetAttribute("EndingBroadcast") == true
@@ -329,6 +332,9 @@ local function drawJournal()
 	if phase == "briefing" then progress = t("Prepare", "Сборы")
 	elseif (phase == "won" or phase == "lost") and earned > 0 then progress = "+" .. earned .. " Scrap" end
 	local unlockedRank = player:GetAttribute("LastRankUnlocked") or 0
+	if (player:GetAttribute("LastSeasonUnlocked") or 0)>0 and (phase=="won" or phase=="lost" or phase=="briefing") then
+		progress=t("New recording!", "Новая запись!")
+	end
 	if unlockedRank > 0 and (phase == "won" or phase == "lost" or phase == "briefing") then
 		progress = t("Rank ", "Ранг ") .. unlockedRank .. "!"
 	end
@@ -391,6 +397,7 @@ local function drawJournal()
 		contentHeight += 60
 	end
 	contentHeight = progressionPanel.draw(contentHeight + 8)
+	contentHeight = seasonPanel.draw(contentHeight + 8)
 	if compact then
 		journalPanel.CanvasSize = UDim2.fromOffset(0, contentHeight)
 	else

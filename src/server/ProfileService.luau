@@ -3,12 +3,13 @@ local RunService = game:GetService("RunService")
 local DataStoreService = game:GetService("DataStoreService")
 local Profile = require(script.Parent.Profile)
 local RankTrack = require(game:GetService("ReplicatedStorage").Freight.RankTrack)
+local Season = require(game:GetService("ReplicatedStorage").Freight.Season)
 local Analytics = require(script.Parent.Analytics)
 local AnalyticsService = game:GetService("AnalyticsService")
 local Service = {}
 Service.__index = Service
 
-function Service.new(store)
+function Service.new(store, clock)
 	if not store and RunService:IsStudio() then
 		local records = {}
 		store = {UpdateAsync = function(_, key, callback)
@@ -17,12 +18,17 @@ function Service.new(store)
 			return value
 		end}
 	end
-	return setmetatable({store = store or DataStoreService:GetDataStore("FreightProfile_v1"), sessions = {}, closing = false}, Service)
+	return setmetatable({store = store or DataStoreService:GetDataStore("FreightProfile_v1"), clock = clock, sessions = {}, closing = false}, Service)
 end
 
 local function publish(player, data, preferenceKind)
 	player:SetAttribute("Scrap", data.scrap)
 	player:SetAttribute("RankXP", data.rankXP)
+	local season = data.seasons[Season.Id] or Season.copy(nil)
+	player:SetAttribute("SeasonDeliveries", season.deliveries)
+	player:SetAttribute("SeasonBroadcast", season.broadcast)
+	player:SetAttribute("SeasonShelter", season.shelter)
+	player:SetAttribute("SeasonTier", Season.tier(season))
 	local title = RankTrack.progress(data.rankXP)
 	player:SetAttribute("CrewTitle", title and title.id or "Rookie")
 	player:SetAttribute("CrewRank", 1 + math.floor(data.rankXP / 250))
@@ -48,7 +54,7 @@ end
 
 function Service:join(player)
 	if self.closing or self.sessions[player] then return end
-	local session = {profile = Profile.new(self.store, HttpService:GenerateGUID(false)), queue = {}, seen = {}}
+	local session = {profile = Profile.new(self.store, HttpService:GenerateGUID(false), self.clock), queue = {}, seen = {}}
 	self.sessions[player] = session
 	player:SetAttribute("ProfileStatus", "loading")
 	task.spawn(function()
@@ -59,6 +65,7 @@ function Service:join(player)
 			player:SetAttribute("ProfileStatus", RunService:IsStudio() and "local" or "ready")
 			local sequence, refreshedAt = data.sequence, os.clock()
 			local previousXP = data.rankXP
+			local previousTier = Season.tier(data.seasons[Season.Id])
 			while true do
 				local item = session.queue[1]
 				if item then
@@ -70,6 +77,12 @@ function Service:join(player)
 					refreshedAt = os.clock()
 					table.remove(session.queue, 1)
 					publish(player, result, item.operation.kind)
+					local tier = Season.tier(result.seasons[Season.Id])
+					if tier > previousTier then
+						player:SetAttribute("LastSeasonUnlocked", tier)
+						Analytics.log(AnalyticsService.LogCustomEvent, player, "SeasonMilestone", tier)
+					end
+					previousTier = tier
 					local unlocked = RankTrack.unlocked(previousXP, result.rankXP)
 					previousXP = result.rankXP
 					if unlocked then
@@ -112,7 +125,11 @@ function Service:enqueue(player, operation, key)
 	if not session or not session.ready or session.leaving or self.closing or #session.queue >= 16 then return false end
 	if key and session.seen[key] then return false end
 	if key then session.seen[key] = true end
-	table.insert(session.queue, {operation = table.clone(operation)})
+	local accepted = table.clone(operation)
+	-- Freeze server-owned event eligibility before a queue/network delay can
+	-- cross the season boundary. Never read a timestamp from a RemoteEvent.
+	if accepted.kind == "reward" then accepted.earnedAt = self.clock and self.clock() or os.time() end
+	table.insert(session.queue, {operation = accepted})
 	return true
 end
 

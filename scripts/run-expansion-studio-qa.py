@@ -32,8 +32,8 @@ PROFILE_SERVICE_TEST
 test:EndTest("PASS")
 ]=]
 server.Parent = game:GetService("ServerScriptService")
-print("EXPANSION STUDIO RESULT", test:ExecutePlayModeAsync("ExpansionQA"))
-'''.replace('PROFILE_SERVICE_TEST', (root / 'tests/studio-profile-service.luau').read_text() + '\n' + (root / 'tests/studio-rank-badge.luau').read_text()))
+print("EXPANSION STUDIO RESULT", test:ExecuteMultiplayerTestAsync(1,"ExpansionQA"))
+'''.replace('PROFILE_SERVICE_TEST', (root / 'tests/studio-profile-service.luau').read_text() + '\n' + (root / 'tests/studio-rank-badge.luau').read_text() + '\n' + (root / 'tests/studio-season.luau').read_text()))
     subprocess.run([studio, '--task', 'RunScript', '--localPlaceFile', str(place), '--runScriptFile', str(launcher), '--outputFile', str(output), '--quitAfterExecution'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, timeout=100)
     text = output.read_text()
     for line in text.splitlines():

@@ -10,7 +10,8 @@ control.OnClientEvent:Connect(function(command)
 		preparation:FireServer("ability")
 	else
 		control:FireServer("observed", player:GetAttribute("EndingBroadcast"),
-			player:GetAttribute("Scrap"), player:GetAttribute("NextCrewRole"), player:GetAttribute("CrewRole"))
+			player:GetAttribute("Scrap"), player:GetAttribute("NextCrewRole"), player:GetAttribute("CrewRole"),
+			player:GetAttribute("SeasonDeliveries"),player:GetAttribute("SeasonTier"))
 	end
 end)
 control:FireServer("ready")
