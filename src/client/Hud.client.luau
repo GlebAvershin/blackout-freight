@@ -758,11 +758,20 @@ local function draw()
 		hint.Text = t("Restore the relay. Start with a blue cell.", "Верни связь. Начни с синей батареи.")
 		radio.Text = t("Mira: I’m at dispatch. Follow the amber lights home.", "Мира: Я в диспетчерской. Янтарный свет ведёт обратно.")
 	end
+	if phase == "live" and state:GetAttribute("SentinelVariant") == "Tracker" then
+		if tracked then
+			if compact then objective.Text = t("HIDE!", "ПРЯЧЬСЯ!") end
+			hint.Text = t("Tracker sees the cell. Get behind solid cover.", "Следопыт видит груз. Скройся за контейнером.")
+		end
+		radio.Text = state:GetAttribute("SentinelMode") == "search"
+			and t("Mira: Tracker lost you. Stay behind cover.", "Мира: Следопыт потерял тебя. Оставайся за укрытием.")
+			or t("Mira: Tracker follows cargo light. Break its line of sight.", "Мира: Следопыт видит свет груза. Скройся за контейнером.")
+	end
 	if phase == "live" and state:GetAttribute("Map") == "yard" then
 		local train = state:GetAttribute("TrainStatus")
 		radio.Text = train == "warning" and t("Mira: Train approaching. Stay behind the red signals!", "Мира: Приближается состав. Жди за красными сигналами!")
 			or train == "passing" and t("Train crossing. Wait for cyan signals.", "Идёт состав. Дождись бирюзового сигнала.")
-			or t("Mira: Crossing clear. The far cells are beyond the tracks.", "Мира: Переезд свободен. Дальние батареи за путями.")
+			or (state:GetAttribute("SentinelVariant") == "Tracker" and radio.Text or t("Mira: Crossing clear. The far cells are beyond the tracks.", "Мира: Переезд свободен. Дальние батареи за путями."))
 		if compact and train ~= "clear" then
 			objective.Text = train == "warning" and t("TRAIN SOON", "СКОРО ПОЕЗД") or t("WAIT", "ПОДОЖДИ")
 			objective.TextColor3 = colors.amber

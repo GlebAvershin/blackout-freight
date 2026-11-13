@@ -73,7 +73,7 @@ function Panel.mount(parent, player, state, shared, colors, add, t)
 		status.Text = if profile == "unavailable" then t("Progress unavailable. Rejoin to retry.", "Прогресс недоступен. Перезайди для повторной загрузки.")
 			elseif profile == "saving" then t("Saving progress…", "Сохраняем прогресс…")
 			elseif not ready then t("Loading progress…", "Загружаем прогресс…")
-			elseif between then t("Vote for next shift. Ties favor lower Heat; newcomers start at 1.", "Голосуй за следующую смену. При равенстве — ниже; для новичков — 1.")
+			elseif between then t("Heat 2–3: Tracker if everyone has both endings. Ties favor lower Heat.", "Тревога 2–3: Следопыт, если у всех обе концовки. При равенстве — ниже.")
 			else t("Earn Scrap by delivering cells. Upgrade at the airlock; vote between shifts.", "Scrap дают за доставки. Улучшения — у шлюза, Тревога — между сменами.")
 		local selected = player:GetAttribute("NextCrewRole") or "Carrier"
 		for id, b in roleButtons do

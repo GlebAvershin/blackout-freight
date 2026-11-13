@@ -2,8 +2,9 @@
 from pathlib import Path
 import subprocess
 import tempfile
+import sys
 root = Path(__file__).resolve().parents[1]
-subprocess.run(['python3','scripts/build-studio-qa.py',str(root/'.tools/rojo/rojo'),'--yard'],cwd=root,check=True)
+subprocess.run(['python3','scripts/build-studio-qa.py',str(root/'.tools/rojo/rojo'),'--tracker' if '--tracker' in sys.argv else '--yard'],cwd=root,check=True)
 with tempfile.TemporaryDirectory(prefix='freight-yard-') as directory:
     folder=Path(directory)
     launcher,output=folder/'run.luau',folder/'result.log'

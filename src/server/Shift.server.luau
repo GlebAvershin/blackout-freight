@@ -11,6 +11,9 @@ local Round = require(shared.Round)
 local MovementGuard = require(shared.MovementGuard)
 local Progression = require(shared.Progression)
 local Roles = require(shared.Roles)
+local SentinelBrain = require(shared.SentinelBrain)
+local sentinelBrain = SentinelBrain.new()
+local sentinelVariant = "Sentinel"
 local RailCycle = require(shared.RailCycle)
 local FreightYard = require(script.Parent.FreightYard)
 local Config = require(shared.Config)
@@ -668,20 +671,22 @@ local function moveDrone(dt)
 	shelters.step(time, rootOf)
 	local pulseActive = time < decoyUntil
 	if not pulseActive and portableBeacon then clearPortableBeacon() end
-	local target, targetRoot, nearest
+	local candidates = {}
 	if not pulseActive then
 		for player in carried do
 			local root = rootOf(player)
-			if root then
+			if root and root.Position.Z < Config.AirlockSafeZ then
 				local pos = root.Position
 				local distance = (Vector3.new(pos.X, dronePoint.Y, pos.Z) - dronePoint).Magnitude
-				local priority = if round.carrying[player.UserId] == blackBoxId then distance * Config.Drone.BlackBoxPriority else distance
-				if pos.Z < Config.AirlockSafeZ and not shelters.protects(pos) and (not nearest or priority < nearest) then
-					target, targetRoot, nearest = player, root, priority
-				end
+				table.insert(candidates, {id=player, x=pos.X, z=pos.Z,
+					priority=round.carrying[player.UserId] == blackBoxId and distance * Config.Drone.BlackBoxPriority or distance,
+					visible=sentinelVariant ~= "Tracker" or clearPath(dronePoint, pos), protected=shelters.protects(pos)})
 			end
 		end
-	end
+	else sentinelBrain.clear() end
+	local target, rememberedX, rememberedZ, mode = sentinelBrain.choose(sentinelVariant, time, candidates)
+	local targetRoot = target and rootOf(target)
+	state:SetAttribute("SentinelMode", pulseActive and "distracted" or mode)
 	setDecoyReady(target ~= nil and time >= decoyReadyAt)
 	local goal = patrol[patrolIndex]
 	if target ~= trackedPlayer or pulseActive ~= distracted then
@@ -692,17 +697,19 @@ local function moveDrone(dt)
 		distracted = pulseActive
 		lightBeacon(pulseActive and not portableBeacon)
 		searchBeam.Attachment1 = pulseActive and activeDecoyAnchor or (target and carried[target].PrimaryPart.TrackingTarget or nil)
-		scanner.Color = pulseActive and Depot.Cyan or (target and Depot.Red or Depot.Amber)
 		searchBeam.Color = ColorSequence.new(pulseActive and Depot.Cyan or Depot.Red)
 		if target then
 			target:SetAttribute("Tracked", true)
 		end
 	end
+	scanner.Color = pulseActive and Depot.Cyan or (target and Depot.Red or (mode == "search" and Color3.fromRGB(174,120,255) or Depot.Amber))
 	if pulseActive then
 		goal = Vector3.new(activeDecoyAnchor.WorldPosition.X, dronePoint.Y, activeDecoyAnchor.WorldPosition.Z)
 	elseif targetRoot then
 		local pos = targetRoot.Position
 		goal = Vector3.new(math.clamp(pos.X, -65, 65), dronePoint.Y, math.clamp(pos.Z, -70, 52.5))
+	elseif mode == "search" then
+		goal = Vector3.new(math.clamp(rememberedX, -65, 65), dronePoint.Y, math.clamp(rememberedZ, -70, 52.5))
 	elseif (goal - dronePoint).Magnitude < 2 then
 		patrolIndex = patrolIndex % #patrol + 1
 	end
@@ -741,6 +748,15 @@ local function startShift()
 	heatLevel = Progression.chooseHeat(votes, novice)
 	heat = Config.Heat[heatLevel]
 	state:SetAttribute("Heat", heatLevel)
+	sentinelVariant = SentinelBrain.variant(heatLevel, yardEligible)
+	sentinelBrain.clear()
+	state:SetAttribute("SentinelVariant", sentinelVariant)
+	state:SetAttribute("SentinelMode", "patrol")
+	for _, part in drone:GetChildren() do
+		if part.Name == "Eye" or part.Name == "Thruster flare" then
+			part.Color = sentinelVariant == "Tracker" and Color3.fromRGB(174,120,255) or Depot.Red
+		end
+	end
 	local eligible = false
 	for player in players do
 		if journal:eligible(player) then
@@ -891,6 +907,8 @@ local function startShift()
 end
 
 local function finishShift()
+	sentinelBrain.clear()
+	state:SetAttribute("SentinelMode", "patrol")
 	shelters.clear()
 	if yard then yard.step(0); state:SetAttribute("TrainStatus", "clear") end
 	deliver.Enabled = false
