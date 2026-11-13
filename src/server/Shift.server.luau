@@ -9,6 +9,7 @@ local DataStoreService = game:GetService("DataStoreService")
 local shared = ReplicatedStorage:WaitForChild("Freight")
 local Round = require(shared.Round)
 local MovementGuard = require(shared.MovementGuard)
+local Progression = require(shared.Progression)
 local Config = require(shared.Config)
 local Operations = require(shared.Operations)
 local Dispatch = require(shared.Dispatch)
@@ -61,6 +62,7 @@ local carried = {}
 local trackedPlayer
 local players = {}
 local commerceService = CommerceService.new(Config, function(player) return players[player] ~= nil end)
+local heatLevel = 1
 local roundGuid
 local roundStartedAt
 local dispatchWeek
@@ -92,7 +94,23 @@ local function rootOf(player)
 	return humanoid and humanoid.Health > 0 and character:FindFirstChild("HumanoidRootPart") or nil
 end
 
--- Observe first: no automatic kicks or penalties before latency testing.
+-- Currency eligibility samples at interaction time as well as on Heartbeat.
+local function verifyMovement(player, root)
+	local data = players[player]
+	if not data or not root then return false end
+	local position, time = root.Position, now()
+	if not data.movement then data.movement = MovementGuard.new(position.X, position.Z, time) end
+	local valid = data.movement:sample(position.X, position.Z, time, 16)
+	player:SetAttribute("MovementVerified", valid)
+	if not valid then
+		data.cargoVerified = false
+		if time >= (data.nextMoveLog or 0) then
+			data.nextMoveLog = time + 15
+			log(AnalyticsService.LogCustomEvent, player, "MoveFlag")
+		end
+	end
+	return valid
+end
 local movementElapsed = 0
 RunService.Heartbeat:Connect(function(dt)
 	movementElapsed += dt
@@ -100,24 +118,14 @@ RunService.Heartbeat:Connect(function(dt)
 	movementElapsed = 0
 	for player, data in players do
 		local root = rootOf(player)
-		if not root then data.movement = nil; continue end
-		local position, time = root.Position, now()
-		if not data.movement then
-			data.movement = MovementGuard.new(position.X, position.Z, time)
-		end
-		local valid = data.movement:sample(position.X, position.Z, time, 16)
-		player:SetAttribute("MovementVerified", valid)
-		if not valid and time >= (data.nextMoveLog or 0) then
-			data.nextMoveLog = time + 15
-			log(AnalyticsService.LogCustomEvent, player, "MoveFlag")
-		end
+		if root then verifyMovement(player, root) else data.movement = nil; data.cargoVerified = false end
 	end
 end)
 
 local function movePlayer(player, destination)
 	player.Character:PivotTo(destination)
 	local data = players[player]
-	if data then data.movement = nil end
+	if data then data.movement = nil; data.cargoVerified = false end
 	player:SetAttribute("MovementVerified", false)
 end
 
@@ -150,6 +158,7 @@ local function clearPath(origin, destination)
 end
 
 local function clearCargo(player)
+	if players[player] then players[player].cargoVerified = false end
 	if carried[player] then
 		carried[player]:Destroy()
 		carried[player] = nil
@@ -246,7 +255,8 @@ decoy.Triggered:Connect(function(player)
 		or not trackedPlayer or carried[player] or not players[player] or not within(player, decoyAnchor) then
 		return
 	end
-	decoyUntil, decoyReadyAt = time + Config.DecoySeconds, time + Config.DecoyCooldown
+	decoyUntil = time + (player:GetAttribute("UpgradeLens") and 6 or Config.DecoySeconds)
+	decoyReadyAt = time + (player:GetAttribute("UpgradeCoil") and 20 or Config.DecoyCooldown)
 	round:assistBonus(trackedPlayer.UserId, player.UserId)
 	setDecoyReady(false)
 	state:SetAttribute("DecoyUntil", decoyUntil)
@@ -316,6 +326,14 @@ deliver.Triggered:Connect(function(player)
 		end
 		if time < decoyUntil then
 			log(AnalyticsService.LogCustomEvent, player, "DeliveryDuringDecoy")
+		end
+		local deliveryData, deliveryRoot = players[player], rootOf(player)
+		local verified = verifyMovement(player, deliveryRoot)
+		if deliveryData and verified and deliveryData.cargoVerified and deliveryData.pickupAt and deliveryRoot then
+			local distance = (deliveryRoot.Position - deliveryData.pickupPosition).Magnitude
+			if time - deliveryData.pickupAt >= math.max(0.5, distance / 19 - 0.5) then
+				deliveryData.verifiedDeliveries = (deliveryData.verifiedDeliveries or 0) + 1
+			end
 		end
 		showDeliveryEffect(player)
 		clearCargo(player)
@@ -525,6 +543,31 @@ if Config.CosmeticPassId > 0 then
 	commerce.Parent = shared
 end
 
+local preparation = Instance.new("RemoteEvent")
+preparation.Name = "Preparation"
+preparation.OnServerEvent:Connect(function(player, action, value)
+	local data = players[player]
+	if not data or type(action) ~= "string" then return end
+	local time = now()
+	if time < (data.nextPreparation or 0) then return end
+	data.nextPreparation = time + 0.5
+	local phase, root = state:GetAttribute("Phase"), rootOf(player)
+	local between = phase == "won" or phase == "lost" or phase == "briefing"
+	if action == "heat" then
+		if not between or type(value) ~= "number" or value % 1 ~= 0 or not Config.Heat[value] then return end
+		player:SetAttribute("HeatVote", value)
+		log(AnalyticsService.LogCustomEvent, player, "HeatVote", value)
+	elseif action == "upgrade" then
+		local item = type(value) == "string" and Progression.Catalog[value]
+		if not item or not root or carried[player] or (not between and root.Position.Z < Config.AirlockSafeZ) then return end
+		player:SetAttribute("WorkshopResult", "pending")
+		if not profiles:enqueue(player, {kind = "upgrade", id = value, price = item.price}) then
+			player:SetAttribute("WorkshopResult", "unavailable")
+		end
+	end
+end)
+preparation.Parent = shared
+
 for _, player in Players:GetPlayers() do
 	join(player)
 end
@@ -599,6 +642,15 @@ local function moveDrone(dt)
 end
 
 local function startShift()
+	local votes, novice = {}, false
+	for player in players do
+		table.insert(votes, player:GetAttribute("HeatVote") or 1)
+		if not player:GetAttribute("FirstDelivery") and not player:GetAttribute("EndingBroadcast")
+			and not player:GetAttribute("EndingShelter") then novice = true end
+	end
+	heatLevel = Progression.chooseHeat(votes, novice)
+	heat = Config.Heat[heatLevel]
+	state:SetAttribute("Heat", heatLevel)
 	local eligible = false
 	for player in players do
 		if journal:eligible(player) then
@@ -668,6 +720,8 @@ local function startShift()
 			local data = players[player]
 			if data and root and clearPath(root.Position, anchor.WorldPosition)
 				and round:pickup(player.UserId, id, now()) then
+				data.cargoVerified = verifyMovement(player, root)
+				data.pickupAt, data.pickupPosition = now(), root.Position
 				prompt.Enabled = false
 				model.Parent = nil
 				showCargo(player, root, isBlackBox)
@@ -712,6 +766,8 @@ local function startShift()
 		data.picked, data.delivered, data.choseRoute = false, false, false
 		data.tookBlackBox = false
 		data.shiftCatches = 0
+		data.verifiedDeliveries = 0
+		player:SetAttribute("LastScrapAward", 0)
 		player:SetAttribute("DispatchCompletedThisShift", false)
 		player:SetAttribute("NewBestThisShift", false)
 		player:SetAttribute("SignalUnlockedThisShift", false)
@@ -739,6 +795,10 @@ local function finishShift()
 	showPower(round.delivered, false, round.ending)
 	local elapsed = math.max(0, now() - roundStartedAt)
 	for player, data in players do
+		local reward = Progression.reward(data.verifiedDeliveries or 0, heat.ScrapMultiplier)
+		if reward > 0 then
+			profiles:enqueue(player, {kind = "reward", amount = reward}, roundGuid)
+		end
 		clearCargo(player)
 		if round.outcome == "lost" and rootOf(player) then
 			movePlayer(player, depotSpawn * CFrame.new(random:NextNumber(-6, 6), 0, 0))
@@ -810,5 +870,10 @@ while true do
 		end
 		finishShift()
 		task.wait(8)
+		if next(players) then
+			state:SetAttribute("EndsAt", now() + 10)
+			state:SetAttribute("Phase", "briefing")
+			task.wait(10)
+		end
 	end
 end

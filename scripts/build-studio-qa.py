@@ -11,6 +11,7 @@ work = root / ".tools"
 work.mkdir(exist_ok=True)
 rojo = sys.argv[1] if len(sys.argv) > 1 else "rojo"
 output = work / "Blackout Freight Server QA.rbxl"
+progression = "--progression" in sys.argv[2:]
 solo = "--solo" in sys.argv[2:]
 guidance = "--guidance" in sys.argv[2:]
 if solo:
@@ -103,8 +104,15 @@ task.delay(30, function()
 	studio:EndTest("GUIDANCE QA TIMEOUT")
 end)
 ''')
+    if progression:
+        output = work / "Blackout Freight Progression Gameplay QA.rbxl"
+        shutil.copyfile(root / "tests/studio-progression.server.luau", qa / "server/Scenario.server.luau")
+        (qa / "client/OperationsScenario.client.luau").unlink()
+        shutil.copytree(root / "src/shared", qa / "shared")
+        config = qa / "shared/Config.luau"
+        config.write_text(config.read_text().replace("Target = 5,", "Target = 1,"))
     tree["ServerScriptService"]["Freight"]["$path"] = str(qa / "server")
-    tree["ReplicatedStorage"]["Freight"]["$path"] = str(root / "src/shared")
+    tree["ReplicatedStorage"]["Freight"]["$path"] = str(qa / "shared" if progression else root / "src/shared")
     tree["StarterPlayer"]["StarterPlayerScripts"]["Freight"]["$path"] = str(qa / "client")
     manifest = qa / "qa.project.json"
     manifest.write_text(json.dumps(project))

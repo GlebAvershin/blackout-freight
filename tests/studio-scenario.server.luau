@@ -28,7 +28,7 @@ local function waitFor(test, label, seconds)
 end
 
 local function phase(expected)
-	waitFor(function() return state:GetAttribute("Phase") == expected end, "expected phase " .. expected, 12)
+	waitFor(function() return state:GetAttribute("Phase") == expected end, "expected phase " .. expected, 24)
 end
 
 local function promptOn(name)

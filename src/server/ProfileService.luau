@@ -2,88 +2,111 @@ local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 local DataStoreService = game:GetService("DataStoreService")
 local Profile = require(script.Parent.Profile)
+local Analytics = require(script.Parent.Analytics)
+local AnalyticsService = game:GetService("AnalyticsService")
 local Service = {}
 Service.__index = Service
 
-function Service.new()
-	local store
-	if RunService:IsStudio() then
+function Service.new(store)
+	if not store and RunService:IsStudio() then
 		local records = {}
 		store = {UpdateAsync = function(_, key, callback)
 			local value = callback(records[key])
 			if value then records[key] = value end
 			return value
 		end}
-	else
-		store = DataStoreService:GetDataStore("FreightProfile_v1")
 	end
-	return setmetatable({store = store, sessions = {}, closing = false}, Service)
+	return setmetatable({store = store or DataStoreService:GetDataStore("FreightProfile_v1"), sessions = {}, closing = false}, Service)
 end
 
 local function publish(player, data)
 	player:SetAttribute("Scrap", data.scrap)
 	player:SetAttribute("RankXP", data.rankXP)
 	player:SetAttribute("CrewRank", 1 + math.floor(data.rankXP / 250))
+	for _, id in {"Coil", "Lens"} do player:SetAttribute("Upgrade" .. id, data.upgrades[id] == true) end
+end
+
+local function retry(callback)
+	for attempt = 1, 3 do
+		local result, reason = callback()
+		if result then return result end
+		if reason == "locked" then return nil end
+		if attempt < 3 then task.wait(attempt * 2) end
+	end
+	return nil
 end
 
 function Service:join(player)
 	if self.closing or self.sessions[player] then return end
-	local session = {profile = Profile.new(self.store, HttpService:GenerateGUID(false)), busy = true}
+	local session = {profile = Profile.new(self.store, HttpService:GenerateGUID(false)), queue = {}, seen = {}}
 	self.sessions[player] = session
 	player:SetAttribute("ProfileStatus", "loading")
 	task.spawn(function()
-		local data
-		for attempt = 1, 3 do
-			data = session.profile:acquire(player.UserId)
-			if data or session.leaving then break end
-			task.wait(attempt * 2)
-		end
-		session.busy = false
-		if session.leaving then
-			if data then session.profile:release(player.UserId) end
-			self.sessions[player] = nil
-			return
-		end
-		if not data then player:SetAttribute("ProfileStatus", "unavailable"); return end
-		session.ready = true
-		publish(player, data)
-		player:SetAttribute("ProfileStatus", RunService:IsStudio() and "local" or "ready")
-		while not session.leaving and not self.closing do
-			task.wait(30)
-			if session.leaving or self.closing then break end
-			if session.busy then continue end
-			session.busy = true
-			local refreshed = session.profile:refresh(player.UserId)
-			session.busy = false
-			if session.leaving then
-				session.profile:release(player.UserId)
-				self.sessions[player] = nil
-				break
+		local data = retry(function() return session.profile:acquire(player.UserId) end)
+		if data then
+			session.ready = true
+			publish(player, data)
+			player:SetAttribute("ProfileStatus", RunService:IsStudio() and "local" or "ready")
+			local sequence, refreshedAt = data.sequence, os.clock()
+			while true do
+				local item = session.queue[1]
+				if item then
+					player:SetAttribute("ProfileStatus", "saving")
+					-- No later operation may pass an unconfirmed write.
+					local result = retry(function() return session.profile:transact(player.UserId, sequence + 1, item.operation) end)
+					if not result then session.ready = false; break end
+					sequence += 1
+					refreshedAt = os.clock()
+					table.remove(session.queue, 1)
+					publish(player, result)
+					if item.operation.kind == "reward" then
+						player:SetAttribute("LastScrapAward", result.lastAward or 0)
+						Analytics.log(AnalyticsService.LogCustomEvent, player, "ScrapAwarded", result.lastAward or 0)
+					else
+						player:SetAttribute("WorkshopResult", result.lastResult)
+						if result.lastResult == "purchased" then
+							Analytics.log(AnalyticsService.LogCustomEvent, player, "WorkshopPurchased", item.operation.price, {
+								[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = item.operation.id,
+							})
+						end
+					end
+					player:SetAttribute("ProfileStatus", RunService:IsStudio() and "local" or "ready")
+				elseif session.leaving or self.closing then
+					break
+				elseif os.clock() - refreshedAt >= 30 then
+					if not retry(function() return session.profile:refresh(player.UserId) end) then
+						session.ready = false; break
+					end
+					refreshedAt = os.clock()
+				else
+					task.wait(0.1)
+				end
 			end
-			if not refreshed then
-				session.ready = false
-				player:SetAttribute("ProfileStatus", "unavailable")
-				break
-			end
 		end
+		session.ready = false
+		if not session.leaving and not self.closing then player:SetAttribute("ProfileStatus", "unavailable") end
+		retry(function() return session.profile:release(player.UserId) end)
+		self.sessions[player] = nil
 	end)
+end
+
+function Service:enqueue(player, operation, key)
+	local session = self.sessions[player]
+	if not session or not session.ready or session.leaving or self.closing or #session.queue >= 16 then return false end
+	if key and session.seen[key] then return false end
+	if key then session.seen[key] = true end
+	table.insert(session.queue, {operation = table.clone(operation)})
+	return true
 end
 
 function Service:leave(player)
 	local session = self.sessions[player]
-	if not session or session.leaving then return end
-	session.leaving = true
-	if session.busy then return end -- The in-flight acquire handles release itself.
-	for attempt = 1, 3 do
-		if session.profile:release(player.UserId) then break end
-		task.wait(attempt)
-	end
-	self.sessions[player] = nil
+	if session then session.leaving = true end -- Worker drains accepted writes before releasing.
 end
 
 function Service:close()
 	self.closing = true
-	for player in self.sessions do task.spawn(function() self:leave(player) end) end
+	for player in self.sessions do self:leave(player) end
 	local deadline = os.clock() + 25
 	while next(self.sessions) and os.clock() < deadline do task.wait(0.1) end
 end

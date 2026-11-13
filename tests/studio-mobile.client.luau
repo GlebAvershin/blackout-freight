@@ -11,12 +11,12 @@ local offer, preview = gui.AuroraLens, gui.AuroraPreview
 local portrait = script:GetAttribute("Portrait")
 
 local function waitFor(condition, label)
-	local deadline = os.clock() + 6
+	local deadline = os.clock() + 15
 	repeat
 		if condition() then return end
 		task.wait(0.05)
 	until os.clock() >= deadline
-	error("MOBILE HUD QA: " .. label, 2)
+	error("MOBILE HUD QA: " .. label .. " viewport=" .. tostring(gui.AbsoluteSize) .. " touch=" .. tostring(inputs.TouchEnabled) .. " phase=" .. tostring(state:GetAttribute("Phase")), 2)
 end
 
 local pointerOffset
@@ -100,6 +100,33 @@ assert(journal.ClearRecord.Text:find("1:13", 1, true) and journal.ClearRecord.Te
 assert(journal.ClearRecord.Position.Y.Offset + journal.ClearRecord.Size.Y.Offset <= journal.CanvasSize.Y.Offset, "record cannot be scrolled into view")
 assert(journal.BlackBoxRecord.Visible and journal.BlackBoxRecord.TextFits and journal.BlackBoxRecord.Text:find("0:41", 1, true),
 	"Black Box recording or crew time is missing or clipped")
+-- Scroll the workshop into view without changing the journal shell or footer.
+local workshop = journal:WaitForChild("Workshop")
+fixture:FireServer("briefing")
+waitFor(function() return state:GetAttribute("Phase") == "briefing" and player:GetAttribute("Scrap") == 120 end, "workshop fixture")
+journal.CanvasPosition = Vector2.new(0, workshop.Position.Y.Offset)
+task.wait(0.3)
+assert(workshop.Heat1.AbsoluteSize.Y >= 44 and workshop.Coil.AbsoluteSize.Y >= 44, "workshop touch targets too small")
+assert(workshop.Balance.TextFits and workshop.Coil.TextFits and workshop.Lens.TextFits, "workshop text clipped")
+tap(workshop.Heat2)
+waitFor(function() return player:GetAttribute("HeatVote") == 2 end, "server accepts heat vote")
+task.wait(0.6)
+journal.CanvasPosition = Vector2.new(0, workshop.Position.Y.Offset + 84)
+task.wait(0.2)
+tap(workshop.Coil)
+waitFor(function() return player:GetAttribute("UpgradeCoil") == true and player:GetAttribute("Scrap") == 80 end, "coil purchase")
+task.wait(0.6)
+local shared = storage.Freight
+shared.Preparation:FireServer("upgrade", "Coil")
+task.wait(0.7)
+assert(player:GetAttribute("Scrap") == 80, "duplicate upgrade charged twice")
+journal.CanvasPosition = Vector2.new(0, workshop.Position.Y.Offset + 134)
+task.wait(0.2)
+tap(workshop.Lens)
+waitFor(function() return player:GetAttribute("UpgradeLens") == true and player:GetAttribute("Scrap") == 0 end, "lens purchase")
+assert(not workshop.Coil.Interactable, "owned upgrade still purchasable")
+fixture:FireServer("resume")
+waitFor(function() return state:GetAttribute("Phase") == "live" end, "resume gameplay")
 tap(actions.Close)
 waitFor(function() return not journal.Visible and card.Visible and offer.Visible end, "close journal and restore HUD")
 

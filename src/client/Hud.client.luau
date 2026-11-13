@@ -256,7 +256,7 @@ end
 local function toggleJournal()
 	journalPanel.Visible = not journalPanel.Visible
 	if journalPanel.Visible then
-		journalPanel.CanvasPosition = Vector2.zero
+		journalPanel.CanvasPosition = state:GetAttribute("Phase") == "briefing" and Vector2.new(0, 10000) or Vector2.zero
 	end
 end
 journalButton.Activated:Connect(toggleJournal)
@@ -311,6 +311,8 @@ local function formatClearTime(seconds)
 	return string.format("%d:%02d", math.floor(seconds / 60), seconds % 60)
 end
 
+local progressionPanel = require(script.Parent.ProgressionPanel).mount(journalPanel, player, state, shared, colors, add, t)
+
 local function drawJournal()
 	local broadcast = player:GetAttribute("EndingBroadcast") == true
 	local shelter = player:GetAttribute("EndingShelter") == true
@@ -319,6 +321,10 @@ local function drawJournal()
 	local east = player:GetAttribute("ArchiveEast") == true
 	local records = (west and 1 or 0) + (east and 1 or 0)
 	local progress = count == 2 and (t("Archive", "Архив") .. "  " .. records .. "/2") or (t("Log", "Журнал") .. "  " .. count .. "/2")
+	local phase = state:GetAttribute("Phase")
+	local earned = player:GetAttribute("LastScrapAward") or 0
+	if phase == "briefing" then progress = t("Prepare", "Сборы")
+	elseif (phase == "won" or phase == "lost") and earned > 0 then progress = "+" .. earned .. " Scrap" end
 	journalButton.Text = journalPanel.Visible and t("Close log", "Закрыть журнал") or progress
 	broadcastLine.Text = (broadcast and "✓  " or "○  ") .. t("01   Evidence on air", "01   Запись в эфире")
 	shelterLine.Text = (shelter and "✓  " or "○  ") .. t("02   Shelter powered", "02   Укрытие под светом")
@@ -371,6 +377,7 @@ local function drawJournal()
 		blackBoxRecord.Text = t("BLACK BOX\nFind the red case in West Bypass.", "ЧЁРНЫЙ ЯЩИК\nНайди красный кейс на Западном обходе.")
 	end
 	local contentHeight = contentEnd + (blackBoxRecord.Visible and 160 or 102)
+	contentHeight = progressionPanel.draw(contentHeight + 8)
 	if compact then
 		journalPanel.CanvasSize = UDim2.fromOffset(0, contentHeight)
 	else
@@ -724,6 +731,10 @@ local function draw()
 				hint.Text = announcement
 			end
 		end
+	elseif phase == "briefing" then
+		objective.Text = compact and t("Next shift", "Подготовка") or t("Prepare your crew", "Подготовка экипажа")
+		hint.Text = t("Open the log: choose Heat and workshop upgrades.", "Открой журнал: выбери Тревогу и улучшения.")
+		radio.Text = string.format(t("Scrap +%d · balance %d", "Scrap +%d · всего %d"), player:GetAttribute("LastScrapAward") or 0, player:GetAttribute("Scrap") or 0)
 	elseif phase == "lost" then
 		objective.Text = t("Signal lost", "Сигнал потерян")
 		hint.Text = string.format(t("Crew charge %d/%d. You delivered %d.", "Заряд команды %d/%d. Твои доставки: %d."), count, target, deliveries)
@@ -736,7 +747,7 @@ local function draw()
 		radio.Text = t("Mira: I’m at dispatch. Follow the amber lights home.", "Мира: Я в диспетчерской. Янтарный свет ведёт обратно.")
 	end
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-	local safeToBrowse = phase == "won" or phase == "lost"
+	local safeToBrowse = phase == "won" or phase == "lost" or phase == "briefing"
 		or (phase == "live" and root ~= nil and root.Position.Z >= Config.AirlockSafeZ)
 	if carrying or not safeToBrowse or journalPanel.Visible then
 		preview.Visible = false

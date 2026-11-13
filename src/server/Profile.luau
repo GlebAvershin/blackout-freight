@@ -67,6 +67,12 @@ function Profile:transact(userId, sequence, operation)
 		if operation.kind == "reward" then
 			local amount = operation.amount
 			assert(type(amount) == "number" and amount >= 0 and amount <= 100 and amount % 1 == 0)
+			-- Fixed UTC-hour cap persists across rejoining and server changes.
+			local hour = math.floor(time / 3600)
+			local earned = data.rewardHour == hour and (data.hourEarned or 0) or 0
+			amount = math.min(amount, math.max(0, 600 - earned))
+			data.rewardHour, data.hourEarned = hour, earned + amount
+			data.lastAward = amount
 			data.scrap += amount
 			data.rankXP += amount
 			data.lastResult = "rewarded"

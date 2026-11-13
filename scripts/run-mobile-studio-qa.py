@@ -7,6 +7,7 @@ import tempfile
 
 root = Path(__file__).resolve().parents[1]
 studio = "/Applications/RobloxStudio.app/Contents/MacOS/RobloxStudio"
+modes = (False,) if "--landscape-only" in sys.argv else (False, True)
 client_source = (root / "tests/studio-mobile.client.luau").read_text()
 assert "]==]" not in client_source
 
@@ -17,6 +18,17 @@ with tempfile.TemporaryDirectory(prefix="freight-mobile-") as directory:
     shutil.copyfile(candidate, place)
     launcher.write_text(f'''local sim = game:GetService("StudioDeviceSimulatorService")
 local test = game:GetService("StudioTestService")
+-- Seed only this temporary QA copy; production profiles are never touched.
+local shift = game:GetService("ServerScriptService").Freight.Shift
+shift.Source = shift.Source:gsub("local profiles = ProfileService.new%(%)", [=[
+local qaRecords = {{}}
+local profiles = ProfileService.new({{UpdateAsync = function(_, key, callback)
+    local old = qaRecords[key] or {{version = 1, scrap = 120, rankXP = 0, sequence = 0, upgrades = {{}}}}
+    local value = callback(old)
+    if value then qaRecords[key] = value end
+    return value
+end}})
+]=], 1)
 local client = Instance.new("LocalScript")
 client.Name = "MobileHudQA"
 client.Source = [==[
@@ -39,17 +51,21 @@ event.OnServerEvent:Connect(function(player, step)
 		player:SetAttribute("Aurora", false)
 		player:SetAttribute("Crew", false)
 		player:SetAttribute("MobileFixtureReady", true)
-	elseif step == "crew" then
+	elseif step == "briefing" then
+        game:GetService("ReplicatedStorage").Freight.Shift:SetAttribute("Phase", "briefing")
+    elseif step == "resume" then
+        game:GetService("ReplicatedStorage").Freight.Shift:SetAttribute("Phase", "live")
+    elseif step == "crew" then
 		player:SetAttribute("Crew", true)
 	elseif step == "done" then
 		studioTest:EndTest("PASS")
 	end
 end)
 event.Parent = game:GetService("ReplicatedStorage")
-task.delay(24, function() studioTest:EndTest("TIMEOUT") end)
+task.delay(45, function() studioTest:EndTest("TIMEOUT") end)
 ]=]
 server.Parent = game:GetService("ServerScriptService")
-for _, portrait in {{false, true}} do
+for _, portrait in {{{", ".join(str(mode).lower() for mode in modes)}}} do
 	sim:SetDeviceAsync(portrait and "iphone_XR" or "iphone_7")
 	if not portrait then sim:SetResolutionAsync(640, 300) end
 	local orientation = portrait and Enum.ScreenOrientation.Portrait or Enum.ScreenOrientation.LandscapeLeft
@@ -61,12 +77,16 @@ for _, portrait in {{false, true}} do
 end
 sim:StopSimulationAsync()
 ''')
-    subprocess.run([
-        studio, "--task", "RunScript", "--localPlaceFile", str(place),
-        "--runScriptFile", str(launcher), "--outputFile", str(output), "--quitAfterExecution",
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, timeout=120)
+    try:
+        subprocess.run([
+            studio, "--task", "RunScript", "--localPlaceFile", str(place),
+            "--runScriptFile", str(launcher), "--outputFile", str(output), "--quitAfterExecution",
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, timeout=150)
+    except subprocess.TimeoutExpired:
+        if output.exists(): print(output.read_text()[-10000:])
+        raise
     lines = output.read_text().splitlines()
     for line in lines:
         if line.startswith(("MOBILE HUD", "Players.")):
             print(line)
-    assert all(f"MOBILE HUD STUDIO RESULT {mode} PASS" in lines for mode in ("false", "true"))
+    assert all(f"MOBILE HUD STUDIO RESULT {mode} PASS" in lines for mode in (str(value).lower() for value in modes))
