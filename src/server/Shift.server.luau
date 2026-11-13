@@ -579,6 +579,17 @@ if Config.CosmeticPassId > 0 then
 	commerce.Parent = shared
 end
 
+local audioSettings = Instance.new("RemoteEvent")
+audioSettings.Name = "AudioSettings"
+audioSettings.OnServerEvent:Connect(function(player, musicMuted, effectsMuted, extra)
+	local data = players[player]
+	if not data or extra ~= nil or type(musicMuted) ~= "boolean" or type(effectsMuted) ~= "boolean" then return end
+	local time = now()
+	if time < (data.nextAudioSetting or 0) then return end
+	data.nextAudioSetting = time + 1
+	profiles:enqueue(player, {kind="audio",musicMuted=musicMuted,effectsMuted=effectsMuted})
+end)
+audioSettings.Parent = shared
 local scan = Instance.new("RemoteEvent")
 scan.Name = "SentinelScan"
 scan.Parent = shared
@@ -636,6 +647,7 @@ preparation.OnServerEvent:Connect(function(player, action, value)
 		player:SetAttribute("MapVote", value)
 	elseif action == "role" then
 		if not between or type(value) ~= "string" or not Roles.Catalog[value] then return end
+		if not profiles:enqueue(player, {kind="role",role=value}) then return end
 		player:SetAttribute("NextCrewRole", value)
 		log(AnalyticsService.LogCustomEvent, player, "RoleSelected", 1, {
 			[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = value,
@@ -735,6 +747,14 @@ local function moveDrone(dt)
 end
 
 local function startShift()
+	-- Let a new player's saved role load before choosing the first shift's roles.
+	local loadDeadline = now() + 8
+	repeat
+		local loading = false
+		for player in players do if player:GetAttribute("ProfileStatus") == "loading" then loading = true end end
+		if not loading then break end
+		task.wait(0.1)
+	until now() >= loadDeadline
 	shelters.clear()
 	local votes, novice = {}, false
 	local mapVotes, yardEligible = {}, true

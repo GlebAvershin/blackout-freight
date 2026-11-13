@@ -6,7 +6,7 @@ local LeaseSeconds = 120
 
 local function copy(old)
 	if old == nil then
-		return {version = 1, scrap = 0, rankXP = 0, upgrades = {}, sequence = 0}
+		return {version = 1, scrap = 0, rankXP = 0, upgrades = {}, preferences = {role="Carrier",musicMuted=false,effectsMuted=false}, sequence = 0}
 	end
 	assert(type(old) == "table" and old.version == 1, "Unsupported profile version")
 	assert(type(old.scrap) == "number" and old.scrap >= 0 and old.scrap % 1 == 0, "Invalid balance")
@@ -14,6 +14,8 @@ local function copy(old)
 	assert(type(old.upgrades) == "table", "Invalid upgrades")
 	local result = table.clone(old)
 	result.upgrades = table.clone(old.upgrades)
+	assert(old.preferences == nil or type(old.preferences) == "table", "Invalid preferences")
+	result.preferences = old.preferences and table.clone(old.preferences) or {role="Carrier",musicMuted=false,effectsMuted=false}
 	return result
 end
 
@@ -76,6 +78,14 @@ function Profile:transact(userId, sequence, operation)
 			data.scrap += amount
 			data.rankXP += amount
 			data.lastResult = "rewarded"
+		elseif operation.kind == "role" then
+			assert(({Carrier=true,Lure=true,Scout=true,Technician=true})[operation.role], "Invalid role")
+			data.preferences.role = operation.role
+			data.lastResult = "preferences"
+		elseif operation.kind == "audio" then
+			assert(type(operation.musicMuted)=="boolean" and type(operation.effectsMuted)=="boolean", "Invalid audio settings")
+			data.preferences.musicMuted, data.preferences.effectsMuted = operation.musicMuted, operation.effectsMuted
+			data.lastResult = "preferences"
 		elseif operation.kind == "upgrade" then
 			local id, price = operation.id, operation.price
 			assert(type(id) == "string" and #id > 0 and #id <= 64)

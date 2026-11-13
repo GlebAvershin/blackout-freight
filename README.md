@@ -28,7 +28,7 @@
 Понадобятся [Rojo](https://rojo.space/) версии из [rokit.toml](rokit.toml) и [Luau CLI](https://github.com/luau-lang/luau). Для мобильного прогона нужны macOS, Roblox Studio и Python 3.
 
 ```sh
-rojo build -o 'dist/Blackout Freight Closed Test.rbxl'
+rojo build -o 'dist/Blackout Freight Progression Preview.rbxl'
 luau-compile --null src tests
 for test in tests/*.test.luau; do luau "$test" || exit 1; done
 python3 scripts/run-mobile-studio-qa.py
@@ -53,3 +53,11 @@ python3 scripts/run-mobile-studio-qa.py
 [План расширения](docs/expansion-plan-2026-11.md) · [Фактическое состояние этапов](docs/expansion-status.md). В ветке разработки доступны Scrap за доставки, бесплатные позывные и нарукавные знаки за ранг, выбор Тревоги 1–3, Мастерская, четыре роли (Носильщик, Приманка, Разведчик и Техник), а также Грузовой двор с движущимся составом и новой записью Миры. Карта выбирается в журнале после обеих концовок у всего экипажа. На Тревоге 2–3 такой экипаж встречает Следопыта: он видит груз по прямой и ищет последнее замеченное место после потери цели. Эти изменения пока не опубликованы в закрытом тесте.
 
 [Предварительная сборка прогрессии для Studio](dist/Blackout%20Freight%20Progression%20Preview.rbxl). В Studio прогресс хранится только до завершения тестового сервера.
+
+## Проверенный кандидат расширения
+
+Роль экипажа и настройки музыки/эффектов теперь сохраняются вместе с профилем. Проверки собственных аналитических событий исключают владельца и тестовые аккаунты.
+
+[Отчёт QA от 13 ноября](docs/release-qa-2026-11-13.md) · [Комплект внешнего теста и Share Links](docs/playtest/README.md) · [Проверка DevEx](docs/devex-review-2026-11-13.md).
+
+Полный локальный прогон: `python3 scripts/run-release-qa.py`. Он последовательно запускает Studio, сохраняет результаты в `.tools/release-qa-*` и ничего не публикует. Разработка находится в `codex/expansion-foundation`; опубликованная версия 16 и файл Closed Test пока относятся к предыдущей стабильной версии.

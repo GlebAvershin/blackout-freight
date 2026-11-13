@@ -20,12 +20,19 @@ function Service.new(store)
 	return setmetatable({store = store or DataStoreService:GetDataStore("FreightProfile_v1"), sessions = {}, closing = false}, Service)
 end
 
-local function publish(player, data)
+local function publish(player, data, preferenceKind)
 	player:SetAttribute("Scrap", data.scrap)
 	player:SetAttribute("RankXP", data.rankXP)
 	local title = RankTrack.progress(data.rankXP)
 	player:SetAttribute("CrewTitle", title and title.id or "Rookie")
 	player:SetAttribute("CrewRank", 1 + math.floor(data.rankXP / 250))
+	if preferenceKind == "initial" or preferenceKind == "role" then
+		player:SetAttribute("NextCrewRole", data.preferences.role or "Carrier")
+	end
+	if preferenceKind == "initial" or preferenceKind == "audio" then
+		player:SetAttribute("SavedMusicMuted", data.preferences.musicMuted == true)
+		player:SetAttribute("SavedEffectsMuted", data.preferences.effectsMuted == true)
+	end
 	for _, id in {"Coil", "Lens"} do player:SetAttribute("Upgrade" .. id, data.upgrades[id] == true) end
 end
 
@@ -48,7 +55,7 @@ function Service:join(player)
 		local data = retry(function() return session.profile:acquire(player.UserId) end)
 		if data then
 			session.ready = true
-			publish(player, data)
+			publish(player, data, "initial")
 			player:SetAttribute("ProfileStatus", RunService:IsStudio() and "local" or "ready")
 			local sequence, refreshedAt = data.sequence, os.clock()
 			local previousXP = data.rankXP
@@ -62,7 +69,7 @@ function Service:join(player)
 					sequence += 1
 					refreshedAt = os.clock()
 					table.remove(session.queue, 1)
-					publish(player, result)
+					publish(player, result, item.operation.kind)
 					local unlocked = RankTrack.unlocked(previousXP, result.rankXP)
 					previousXP = result.rankXP
 					if unlocked then
@@ -72,7 +79,7 @@ function Service:join(player)
 					if item.operation.kind == "reward" then
 						player:SetAttribute("LastScrapAward", result.lastAward or 0)
 						Analytics.log(AnalyticsService.LogCustomEvent, player, "ScrapAwarded", result.lastAward or 0)
-					else
+					elseif item.operation.kind == "upgrade" then
 						player:SetAttribute("WorkshopResult", result.lastResult)
 						if result.lastResult == "purchased" then
 							Analytics.log(AnalyticsService.LogCustomEvent, player, "WorkshopPurchased", item.operation.price, {
