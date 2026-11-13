@@ -474,6 +474,10 @@ local function draw()
 	if phase == "live" then
 		objective.Text = if compact and tracked then t("RUN!", "БЕГИ!")
 			else string.format(t("Power  %d/%d", "Питание  %d/%d"), count, target)
+		if state:GetAttribute("DailyDay") then
+			brand.Text = t("DAILY SHIFT / DEPOT 07", "ЕЖЕДНЕВНАЯ СМЕНА / ДЕПО 07")
+			if compact and not tracked then objective.Text = string.format(t("Daily %d/%d", "День %d/%d"), count, target) end
+		end
 		if carrying and decoyActive then
 			hint.TextColor3 = colors.cyan
 			hint.Text = t("Sentinel diverted. Get to the airlock!", "Sentinel отвлечён. Беги в шлюз!")
@@ -552,6 +556,15 @@ local function draw()
 				brand.Text = announcement
 			elseif not player:GetAttribute("DispatchCompletedThisShift") then
 				hint.Text = announcement
+			end
+		end
+		if state:GetAttribute("DailyDay") then
+			local seconds = state:GetAttribute("DailyResultSeconds")
+			hint.Text = if seconds then string.format(t("Daily · %s · Heat 1 · crew %d", "День · %s · Тревога 1 · экипаж %d"),
+				JournalPanel.formatClearTime(seconds), state:GetAttribute("DailyCrew") or 1)
+				else t("Daily shift finished without a ranked time.", "Ежедневная смена завершена без зачёта времени.")
+			if compact and not detailsExpanded then
+				objective.Text = if seconds then t("Daily ", "День ") .. JournalPanel.formatClearTime(seconds) else t("Daily finished", "День завершён")
 			end
 		end
 	elseif phase == "briefing" then

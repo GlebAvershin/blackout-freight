@@ -5,6 +5,7 @@ local Progression = require(game:GetService("ReplicatedStorage").Freight.Progres
 local Profile = require(script.Parent.Profile)
 local RankTrack = require(game:GetService("ReplicatedStorage").Freight.RankTrack)
 local Season = require(game:GetService("ReplicatedStorage").Freight.Season)
+local Roles = require(game:GetService("ReplicatedStorage").Freight.Roles)
 local Analytics = require(script.Parent.Analytics)
 local AnalyticsService = game:GetService("AnalyticsService")
 local Service = {}
@@ -25,6 +26,15 @@ end
 local function publish(player, data, preferenceKind)
 	player:SetAttribute("Scrap", data.scrap)
 	player:SetAttribute("RankXP", data.rankXP)
+	for _, role in Roles.Order do
+		player:SetAttribute("Mastery" .. role, data.roleDeliveries and data.roleDeliveries[role] or 0)
+	end
+	player:SetAttribute("DailyTitle", data.dailyTitle == true)
+	player:SetAttribute("RoleBonusWeek", data.roleBonusWeek)
+	player:SetAttribute("DailyRecordDay", data.daily and data.daily.day)
+	for crew = 1, 4 do
+		player:SetAttribute("DailyBest" .. crew, data.daily and data.daily.times[tostring(crew)])
+	end
 	local season = data.seasons[Season.Id] or Season.copy(nil)
 	player:SetAttribute("SeasonDeliveries", season.deliveries)
 	player:SetAttribute("SeasonBroadcast", season.broadcast)

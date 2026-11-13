@@ -17,6 +17,7 @@ local RailCycle = require(shared.RailCycle)
 local FreightYard = require(script.Parent.FreightYard)
 local Config = require(shared.Config)
 local SectorBlackout = require(shared.SectorBlackout)
+local Challenges = require(shared.CrewChallenges)
 local Operations = require(shared.Operations)
 local Dispatch = require(shared.Dispatch)
 local PowerCell = require(shared.PowerCell)
@@ -53,6 +54,7 @@ state:SetAttribute("DecoyUntil", 0)
 state:SetAttribute("DecoyReady", false)
 state:SetAttribute("BlackBoxStatus", "")
 state.Parent = shared
+local hallOfFame = require(script.Parent.HallOfFame).new(world, Depot, state)
 
 local random = Random.new()
 local round
@@ -76,6 +78,7 @@ end
 local roundGuid
 local roundStartedAt
 local blackoutStartsAt
+local daily
 local dispatchWeek
 local decoyUntil, decoyReadyAt = 0, 0
 local operation, lastOperation, layout
@@ -119,6 +122,7 @@ local function verifyMovement(player, root)
 	local valid = data.movement:sample(position.X, position.Z, time, speed)
 	player:SetAttribute("MovementVerified", valid)
 	if not valid then
+		if daily and daily.crew[player] then daily.valid = false end
 		data.cargoVerified = false
 		if data.reserveProof then data.reserveProof.verified = false end
 		if time >= (data.nextMoveLog or 0) then
@@ -305,7 +309,8 @@ for ending, console in consoles do
 	prompt.RequiresLineOfSight = false
 	routePrompts[ending] = prompt
 	prompt.Triggered:Connect(function(player)
-		if round and player ~= pilot and players[player] and prompt.Enabled and within(player, anchor) and round:choose(ending, now()) then
+		if round and player ~= pilot and players[player] and (not daily or daily.crew[player])
+			and prompt.Enabled and within(player, anchor) and round:choose(ending, now()) then
 			players[player].choseRoute = true
 			log(AnalyticsService.LogCustomEvent, player, "Route_" .. ending)
 		end
@@ -341,11 +346,12 @@ end
 decoy.Triggered:Connect(function(player)
 	local time = now()
 	if not round or round.outcome ~= "live" or time >= round.deadline or time < decoyReadyAt
-		or not sentinel.trackedPlayer() or carried[player] or not players[player] or not within(player, decoyAnchor) then
+		or not sentinel.trackedPlayer() or carried[player] or not players[player]
+		or (daily and not daily.crew[player]) or not within(player, decoyAnchor) then
 		return
 	end
-	decoyUntil = time + (player:GetAttribute("UpgradeLens") and 6 or Config.DecoySeconds)
-	decoyReadyAt = time + (player:GetAttribute("UpgradeCoil") and 20 or Config.DecoyCooldown)
+	decoyUntil = time + (not daily and player:GetAttribute("UpgradeLens") and 6 or Config.DecoySeconds)
+	decoyReadyAt = time + (not daily and player:GetAttribute("UpgradeCoil") and 20 or Config.DecoyCooldown)
 	state:SetAttribute("DecoyReadyAt", decoyReadyAt)
 	round:assistBonus(sentinel.trackedPlayer().UserId, player.UserId)
 	setDecoyReady(false)
@@ -538,7 +544,7 @@ local function readyCharacter(player, character)
 	local data = players[player]
 	local lamp = Instance.new("PointLight")
 	lamp.Name, lamp.Range, lamp.Brightness = "WorkshopLamp", 16, 0.8
-	lamp.Enabled = player:GetAttribute("UpgradeLamp") == true
+	lamp.Enabled = not daily and player:GetAttribute("UpgradeLamp") == true
 	lamp.Parent = root
 	if data and not data.spawned then
 		data.spawned = true
@@ -556,7 +562,8 @@ local function join(player)
 		return
 	end
 	players[player] = {onboard = 0, picked = false, delivered = false, activeShifts = 0, startedAt = now(), shiftCatches = 0}
-	if blackoutStartsAt and not state:GetAttribute("BlackoutPhase") then blackoutStartsAt = nil end
+	if daily then daily.valid = false end
+	if not daily and blackoutStartsAt and not state:GetAttribute("BlackoutPhase") then blackoutStartsAt = nil end
 	player:SetAttribute("Carrying", false)
 	player:SetAttribute("BlackBoxCarrying", false)
 	player:SetAttribute("Tracked", false)
@@ -576,7 +583,7 @@ local function join(player)
 	player:GetAttributeChangedSignal("UpgradeLamp"):Connect(function()
 		local root = rootOf(player)
 		local lamp = root and root:FindFirstChild("WorkshopLamp")
-		if lamp then lamp.Enabled = player:GetAttribute("UpgradeLamp") == true end
+		if lamp then lamp.Enabled = not daily and player:GetAttribute("UpgradeLamp") == true end
 	end)
 	journal:join(player)
 	profiles:join(player)
@@ -622,6 +629,7 @@ end
 
 Players.PlayerAdded:Connect(join)
 Players.PlayerRemoving:Connect(function(player)
+	if daily and daily.crew[player] then daily.valid = false end
 	shelters.remove(player)
 	recover(player)
 	journal:leave(player)
@@ -713,7 +721,8 @@ preparation.OnServerEvent:Connect(function(player, action, value)
 	local between = phase == "won" or phase == "lost" or phase == "briefing"
 	if action == "ability" then
 		local role = player:GetAttribute("CrewRole")
-		if value ~= nil or not root or not round or time < (player:GetAttribute("RecoveryUntil") or 0) or time >= round.deadline
+		if (daily and not daily.crew[player]) or value ~= nil or not root or not round
+			or time < (player:GetAttribute("RecoveryUntil") or 0) or time >= round.deadline
 			or not Roles.canUse(role, round.outcome, time, data.abilityReadyAt or 0, carried[player] ~= nil,
 				root.Position.Z < Config.AirlockSafeZ, sentinel.trackedPlayer() ~= nil and time >= decoyReadyAt and time >= decoyUntil)
 			or not verifyMovement(player, root) then return end
@@ -740,8 +749,8 @@ preparation.OnServerEvent:Connect(function(player, action, value)
 			activeDecoyAnchor.Position = Vector3.new(0, 1.5, 0)
 			local light = Instance.new("PointLight", portableBeacon)
 			light.Color, light.Range, light.Brightness = Depot.Cyan, 10, 1.5
-			decoyUntil = time + definition.duration + (player:GetAttribute("UpgradeLens") and 1 or 0)
-			decoyReadyAt = time + (player:GetAttribute("UpgradeCoil") and 20 or Config.DecoyCooldown)
+			decoyUntil = time + definition.duration + (not daily and player:GetAttribute("UpgradeLens") and 1 or 0)
+			decoyReadyAt = time + (not daily and player:GetAttribute("UpgradeCoil") and 20 or Config.DecoyCooldown)
 			state:SetAttribute("DecoyReadyAt", decoyReadyAt)
 			round:assistBonus(sentinel.trackedPlayer().UserId, player.UserId)
 			state:SetAttribute("DecoyUntil", decoyUntil)
@@ -757,6 +766,9 @@ preparation.OnServerEvent:Connect(function(player, action, value)
 		if not between or (value ~= "depot" and value ~= "yard") then return end
 		if value == "yard" and not journal:eligible(player) then return end
 		player:SetAttribute("MapVote", value)
+	elseif action == "daily" then
+		if not Config.DailyShiftEnabled or not Config.SectorBlackoutEnabled or not between or type(value) ~= "boolean" then return end
+		player:SetAttribute("DailyVote", value)
 	elseif action == "role" then
 		if not between or type(value) ~= "string" or not Roles.Catalog[value] then return end
 		if not profiles:enqueue(player, {kind="role",role=value}) then return end
@@ -813,7 +825,11 @@ local function startShift()
 	local votes, novice = {}, false
 	local mapVotes, yardEligible = {}, true
 	local volunteers = {}
+	local crew, dailyVotes = {}, 0
 	for player in players do
+		crew[player] = true
+		if player:GetAttribute("DailyVote") and rootOf(player) then dailyVotes += 1 end
+		player:SetAttribute("DailyVote", false)
 		table.insert(votes, player:GetAttribute("HeatVote") or 1)
 		table.insert(mapVotes, player:GetAttribute("MapVote") or "depot")
 		if player:GetAttribute("PilotVolunteer") and rootOf(player) then table.insert(volunteers, player) end
@@ -821,15 +837,22 @@ local function startShift()
 		if not player:GetAttribute("FirstDelivery") and not player:GetAttribute("EndingBroadcast")
 			and not player:GetAttribute("EndingShelter") then novice = true end
 	end
+	local timestamp = os.time()
+	daily = if Config.DailyShiftEnabled and Config.SectorBlackoutEnabled and #votes > 0 and dailyVotes == #votes then {
+		day = Challenges.day(timestamp), week = Challenges.week(timestamp), crew = crew, size = #votes, valid = true,
+	} else nil
+	state:SetAttribute("DailyDay", daily and daily.day)
+	state:SetAttribute("DailyCrew", daily and daily.size)
+	state:SetAttribute("DailyResultSeconds", nil)
 	pilot = nil
-	if Config.SentinelPilotEnabled and yardEligible and #votes >= 3 and #volunteers > 0 then
+	if not daily and Config.SentinelPilotEnabled and yardEligible and #votes >= 3 and #volunteers > 0 then
 		pilot = volunteers[random:NextInteger(1,#volunteers)]
 	end
-	heatLevel = Progression.chooseHeat(votes, novice, yardEligible)
+	heatLevel = if daily then Challenges.Heat else Progression.chooseHeat(votes, novice, yardEligible)
 	heat = Config.Heat[heatLevel]
 	state:SetAttribute("Heat", heatLevel)
 	Lighting.ExposureCompensation = if heatLevel == 5 then -0.27 else 0.22
-	sentinel.configure(heatLevel, yardEligible)
+	sentinel.configure(heatLevel, not daily and yardEligible)
 	local eligible = false
 	for player in players do
 		if journal:eligible(player) then
@@ -841,26 +864,28 @@ local function startShift()
 	local replayWest = crewReplay and players[crewReplay[1]] and players[crewReplay[2]]
 	crewReplay = nil
 	local previousMap = currentMap
-	currentMap = replayWest and "depot" or RailCycle.choose(mapVotes, yardEligible)
+	currentMap = (daily or replayWest) and "depot" or RailCycle.choose(mapVotes, yardEligible)
 	if yard then yard.destroy(); yard = nil end
 	positions = depotPositions
 	if currentMap == "yard" then yard = FreightYard.build(world, Depot); positions = yard.positions end
 	state:SetAttribute("Map", currentMap)
 	state:SetAttribute("TrainStatus", "clear")
-	operation = currentMap == "depot" and Operations.next(eligible, operation, lastOperation, replayWest) or nil
+	operation = not daily and currentMap == "depot" and Operations.next(eligible, operation, lastOperation, replayWest) or nil
 	if layout then
 		layout:Destroy()
 		layout = nil
 	end
-	if operation or previousOperation or currentMap ~= previousMap then
+	if daily or operation or previousOperation or currentMap ~= previousMap then
 		for player in players do
 			if rootOf(player) then
-				movePlayer(player, depotSpawn * CFrame.new(random:NextNumber(-6, 6), 0, 0))
+				movePlayer(player, if daily then depotSpawn else depotSpawn * CFrame.new(random:NextNumber(-6, 6), 0, 0))
 			end
 		end
 	end
 	local ids
-	if yard then
+	if daily then
+		ids = Challenges.cells(daily.day, Config.CellCount, #positions)
+	elseif yard then
 		ids = {1,2,3,4,5,6,7,8}
 	elseif operation then
 		lastOperation = operation
@@ -881,7 +906,9 @@ local function startShift()
 	roundStartedAt = now()
 	-- A new crew member gets a full introductory shift before the first outage.
 	blackoutStartsAt = nil
-	if Config.SectorBlackoutEnabled and not yard and not pilot and Config.ShiftSeconds > SectorBlackout.EarliestSeconds + 15 then
+	if daily then
+		blackoutStartsAt = roundStartedAt + Challenges.BlackoutAt
+	elseif Config.SectorBlackoutEnabled and not yard and not pilot and Config.ShiftSeconds > SectorBlackout.EarliestSeconds + 15 then
 		local ready = true
 		for _, data in players do
 			if not data.finishedShift then ready = false; break end
@@ -914,9 +941,9 @@ local function startShift()
 			end
 			local root = within(player, anchor)
 			local data = players[player]
-			if data and player ~= pilot and root and clearPath(root.Position, anchor.WorldPosition)
+			if data and (not daily or daily.crew[player]) and player ~= pilot and root and clearPath(root.Position, anchor.WorldPosition)
 				and round:pickup(player.UserId, id, now(), player:GetAttribute("CrewRole") == "Carrier"
-					and player:GetAttribute("UpgradeRack") == true) then
+					and not daily and player:GetAttribute("UpgradeRack") == true) then
 				local second = carried[player] ~= nil
 				local verified = verifyMovement(player, root)
 				if second then
@@ -977,6 +1004,9 @@ local function startShift()
 		data.verifiedDeliveries = 0
 		data.abilityReadyAt, data.sprintUntil = 0, 0
 		player:SetAttribute("CrewRole", player:GetAttribute("NextCrewRole") or "Carrier")
+		local root = rootOf(player)
+		local lamp = root and root:FindFirstChild("WorkshopLamp")
+		if lamp then lamp.Enabled = not daily and player:GetAttribute("UpgradeLamp") == true end
 		player:SetAttribute("AbilityReadyAt", 0)
 		player:SetAttribute("SprintUntil", 0)
 		player:SetAttribute("LastScrapAward", 0)
@@ -1018,6 +1048,28 @@ local function finishShift()
 	end
 	showPower(round.delivered, false, round.ending)
 	local elapsed = math.max(0, now() - roundStartedAt)
+	local dailyResult
+	if daily and daily.valid and round.outcome == "won" and round.routeSource == "chosen"
+		and elapsed >= Challenges.MinimumSeconds then
+		local verified = 0
+		for member in daily.crew do
+			local deliveries = players[member].verifiedDeliveries or 0
+			if deliveries == 0 then
+				verified = 0
+				break
+			end
+			verified += deliveries
+		end
+		if verified == Config.Target then
+			dailyResult = {day = daily.day, crew = daily.size, seconds = math.ceil(elapsed)}
+			state:SetAttribute("DailyResultSeconds", dailyResult.seconds)
+			hallOfFame:record(daily.week, daily.crew, dailyResult.seconds)
+		end
+	end
+	if daily then
+		state:SetAttribute("LastDailyResultSeconds", dailyResult and dailyResult.seconds)
+		state:SetAttribute("LastDailyResultCrew", daily.size)
+	end
 	local resultReason = if round.outcome == "won" then (round.routeSource or "chosen")
 		else "shift_timeout"
 	for player, data in players do
@@ -1027,6 +1079,8 @@ local function finishShift()
 			profiles:enqueue(player, {kind = "reward", amount = reward,
 				doubleScrap = player:GetAttribute("DoubleScrap") == true, club = player:GetAttribute("DepotClub") == true,
 				deliveries = math.clamp(data.verifiedDeliveries or 0, 0, 5),
+				role = player:GetAttribute("CrewRole"),
+				daily = if dailyResult and daily.crew[player] then dailyResult else nil,
 				ending = if round.outcome == "won" then round.ending else nil}, roundGuid)
 		end
 		clearCargo(player)
@@ -1079,6 +1133,7 @@ local function finishShift()
 	state:SetAttribute("EndsAt", now() + 8)
 	state:SetAttribute("Phase", round.outcome)
 	round = nil
+	daily = nil
 end
 
 while true do

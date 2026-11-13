@@ -2,6 +2,8 @@
 -- A lease excludes another server; sequence numbers make ambiguous retries safe.
 local Progression = if script then require(game:GetService("ReplicatedStorage").Freight.Progression) else require("../shared/Progression")
 local Season = if script then require(game:GetService("ReplicatedStorage").Freight.Season) else require("../shared/Season")
+local Challenges = if script then require(game:GetService("ReplicatedStorage").Freight.CrewChallenges) else require("../shared/CrewChallenges")
+local Roles = if script then require(game:GetService("ReplicatedStorage").Freight.Roles) else require("../shared/Roles")
 local Profile = {}
 Profile.__index = Profile
 local LeaseSeconds = 120
@@ -80,14 +82,31 @@ function Profile:transact(userId, sequence, operation)
 			local earned = sameHour and (data.hourEarned or 0) or 0
 			local xpEarned = sameHour and (data.hourXP or earned) or 0
 			local wallet = Progression.walletReward(amount, operation.doubleScrap == true, operation.club == true)
+			local earnedAt = operation.earnedAt or time -- legacy/internal callers
+			assert(type(earnedAt)=="number" and earnedAt>=0 and earnedAt<=time and earnedAt%1==0, "Invalid award timestamp")
+			local week = Challenges.week(earnedAt)
+			if operation.role == Challenges.roleOfWeek(week) and (operation.deliveries or 0) >= 2
+				and operation.ending and (data.roleBonusWeek or -1) < week
+				and earned + wallet + Challenges.WeeklyBonus <= 600 then
+				wallet += Challenges.WeeklyBonus
+				data.roleBonusWeek = week
+			end
 			amount = math.min(amount, math.max(0, 600 - xpEarned))
 			wallet = math.min(wallet, math.max(0, 600 - earned))
 			data.rewardHour, data.hourEarned, data.hourXP = hour, earned + wallet, xpEarned + amount
 			data.lastAward = wallet
 			data.scrap += wallet
 			data.rankXP += amount
-			local earnedAt = operation.earnedAt or time -- legacy/internal callers
-			assert(type(earnedAt)=="number" and earnedAt>=0 and earnedAt<=time and earnedAt%1==0, "Invalid award timestamp")
+			if operation.role and Roles.Catalog[operation.role] then
+				data.roleDeliveries = table.clone(data.roleDeliveries or {})
+				local deliveries = math.clamp(operation.deliveries or 0, 0, 5)
+				data.roleDeliveries[operation.role] = math.min(Challenges.Milestones[#Challenges.Milestones],
+					(data.roleDeliveries[operation.role] or 0) + deliveries)
+			end
+			if operation.daily then
+				data.daily = Challenges.dailyRecord(data.daily, operation.daily)
+				data.dailyTitle = true
+			end
 			data.seasons[Season.Id] = Season.advance(data.seasons[Season.Id], operation.deliveries or 0, operation.ending, earnedAt)
 			data.lastResult = "rewarded"
 		elseif operation.kind == "adReward" then

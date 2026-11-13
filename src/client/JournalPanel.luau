@@ -96,7 +96,7 @@ function JournalPanel.mount(gui, journalButton, player, state, shared, colors, a
 		journalPanel.Visible = not journalPanel.Visible
 		if journalPanel.Visible then
 			local section = if (player:GetAttribute("LastSeasonUnlocked") or 0)>0 and (player:GetAttribute("LastRankUnlocked") or 0)==0 then journalPanel:FindFirstChild("Season")
-				elseif state:GetAttribute("Phase") == "briefing" then journalPanel:FindFirstChild("Workshop") else nil
+				elseif state:GetAttribute("Phase") == "briefing" then journalPanel:FindFirstChild("OpenCrewChallenges") else nil
 			journalPanel.CanvasPosition = section and Vector2.new(0,section.Position.Y.Offset) or Vector2.zero
 		end
 	end
@@ -110,6 +110,16 @@ function JournalPanel.mount(gui, journalButton, player, state, shared, colors, a
 
 	local progressionPanel = require(script.Parent.ProgressionPanel).mount(journalPanel, player, state, shared, colors, add, t)
 	local seasonPanel = require(script.Parent.SeasonPanel).mount(journalPanel, player, shared, colors, add, t)
+	local drawChallenges = require(script.Parent.ChallengePanel).mount(journalPanel, player, state, shared, colors, add, label, t)
+	local challengesButton = add("TextButton", journalPanel, {
+		Name = "OpenCrewChallenges", Size = UDim2.new(1, -24, 0, 44), BackgroundColor3 = colors.slate,
+		TextColor3 = colors.amber, Text = t("Daily shift & rankings", "Ежедневная смена и рейтинг"),
+		TextSize = 13, Font = Enum.Font.GothamBold, AutoLocalize = false,
+	})
+	add("UICorner", challengesButton, {CornerRadius = UDim.new(0, 5)})
+	challengesButton.Activated:Connect(function()
+		journalPanel.CanvasPosition = Vector2.new(0, journalPanel.CrewChallenges.Position.Y.Offset)
+	end)
 
 	local function draw(compact)
 		local broadcast = player:GetAttribute("EndingBroadcast") == true
@@ -188,11 +198,14 @@ function JournalPanel.mount(gui, journalButton, player, state, shared, colors, a
 			yardRecord.Text = t("FREIGHT YARD\nMira: The relay key is on train 07. Its destination was erased.", "ГРУЗОВОЙ ДВОР\nМира: Ключ на составе 07. Его пункт назначения стёрли.")
 			contentHeight += 60
 		end
-		contentHeight = progressionPanel.draw(contentHeight + 8)
+		local workshopTop = contentHeight + 8
+		contentHeight = progressionPanel.draw(workshopTop + 52)
+		challengesButton.Position = UDim2.fromOffset(12, workshopTop)
 		contentHeight = seasonPanel.draw(contentHeight + 8)
 		if lightsToggle then lightsToggle.Position = UDim2.fromOffset(12, contentHeight) end
 		if pingsToggle then pingsToggle.Position = UDim2.new(0.5, 6, 0, contentHeight) end
 		if lightsToggle or pingsToggle then contentHeight += 52 end
+		contentHeight = drawChallenges(contentHeight + 8)
 		if compact then
 			journalPanel.CanvasSize = UDim2.fromOffset(0, contentHeight)
 		else
