@@ -3,8 +3,9 @@ local Panel = {}
 function Panel.mount(parent, player, state, shared, colors, add, t)
 	local catalog = require(shared.Progression).Catalog
 	local roles = require(shared.Roles)
+	local rankTrack = require(shared.RankTrack)
 	local remote = shared:WaitForChild("Preparation")
-	local frame = add("Frame", parent, {Name = "Workshop", BackgroundTransparency = 1, Size = UDim2.new(1, -24, 0, 490)})
+	local frame = add("Frame", parent, {Name = "Workshop", BackgroundTransparency = 1, Size = UDim2.new(1, -24, 0, 580)})
 	local heading = add("TextLabel", frame, {Name = "Balance", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 28),
 		TextColor3 = colors.cyan, TextSize = 13, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Left})
 	local function button(name, text, position, size)
@@ -48,6 +49,12 @@ function Panel.mount(parent, player, state, shared, colors, add, t)
 	local mapDetail = add("TextLabel", frame, {Name = "MapDetail", Position = UDim2.fromOffset(0,442), Size = UDim2.new(1,0,0,48),
 		BackgroundTransparency = 1, TextColor3 = colors.muted, TextSize = 12, TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left, Font = Enum.Font.Gotham})
+	local rankTitle = add("TextLabel", frame, {Name="RankTitle", Position=UDim2.fromOffset(0,490), Size=UDim2.new(1,0,0,24),
+		BackgroundTransparency=1, TextColor3=colors.cyan, TextSize=13, Font=Enum.Font.GothamBold, TextXAlignment=Enum.TextXAlignment.Left})
+	local rankGoal = add("TextLabel", frame, {Name="RankGoal", Position=UDim2.fromOffset(0,518), Size=UDim2.new(1,0,0,48),
+		BackgroundTransparency=1, TextColor3=colors.muted, TextSize=12, Font=Enum.Font.Gotham, TextWrapped=true, TextXAlignment=Enum.TextXAlignment.Left})
+	local rankBar = add("Frame", frame, {Name="RankProgress", Position=UDim2.fromOffset(0,572), Size=UDim2.new(1,0,0,4), BackgroundColor3=colors.slate, BorderSizePixel=0})
+	local rankFill = add("Frame", rankBar, {Name="Fill", Size=UDim2.fromScale(0,1), BackgroundColor3=colors.cyan, BorderSizePixel=0})
 	local api = {}
 	function api.draw(y)
 		frame.Position = UDim2.fromOffset(12, y)
@@ -89,7 +96,13 @@ function Panel.mount(parent, player, state, shared, colors, add, t)
 		end
 		mapDetail.Text = unlocked and t("Crew majority chooses the yard. Everyone needs both endings.", "Двор выбирает большинство. У всех должны быть обе концовки.")
 			or t("Complete both endings to unlock the freight yard.", "Пройди обе концовки, чтобы открыть Грузовой двор.")
-		return y + 498
+		local xp = player:GetAttribute("RankXP") or 0
+		local title, nextReward, fraction = rankTrack.progress(xp)
+		rankTitle.Text = t("CAREER · ", "КАРЬЕРА · ") .. (title and t(title.en,title.ru) or t("Rookie", "Новичок"))
+		rankGoal.Text = nextReward and string.format(t("Next: %s · %d/%d XP. Title + sleeve badge. Earn XP by delivering.", "Далее: %s · %d/%d XP. Позывной и знак за доставки."), t(nextReward.en,nextReward.ru), xp,nextReward.xp)
+			or t("All career badges earned. Keep improving your crew time.", "Все знаки карьеры получены. Улучшай время экипажа.")
+		rankFill.Size = UDim2.fromScale(fraction,1)
+		return y + 588
 	end
 	return api
 end

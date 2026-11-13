@@ -2,6 +2,7 @@ local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 local DataStoreService = game:GetService("DataStoreService")
 local Profile = require(script.Parent.Profile)
+local RankTrack = require(game:GetService("ReplicatedStorage").Freight.RankTrack)
 local Analytics = require(script.Parent.Analytics)
 local AnalyticsService = game:GetService("AnalyticsService")
 local Service = {}
@@ -22,6 +23,8 @@ end
 local function publish(player, data)
 	player:SetAttribute("Scrap", data.scrap)
 	player:SetAttribute("RankXP", data.rankXP)
+	local title = RankTrack.progress(data.rankXP)
+	player:SetAttribute("CrewTitle", title and title.id or "Rookie")
 	player:SetAttribute("CrewRank", 1 + math.floor(data.rankXP / 250))
 	for _, id in {"Coil", "Lens"} do player:SetAttribute("Upgrade" .. id, data.upgrades[id] == true) end
 end
@@ -48,6 +51,7 @@ function Service:join(player)
 			publish(player, data)
 			player:SetAttribute("ProfileStatus", RunService:IsStudio() and "local" or "ready")
 			local sequence, refreshedAt = data.sequence, os.clock()
+			local previousXP = data.rankXP
 			while true do
 				local item = session.queue[1]
 				if item then
@@ -59,6 +63,12 @@ function Service:join(player)
 					refreshedAt = os.clock()
 					table.remove(session.queue, 1)
 					publish(player, result)
+					local unlocked = RankTrack.unlocked(previousXP, result.rankXP)
+					previousXP = result.rankXP
+					if unlocked then
+						player:SetAttribute("LastRankUnlocked", unlocked.rank)
+						Analytics.log(AnalyticsService.LogCustomEvent, player, "RankMilestone", unlocked.rank)
+					end
 					if item.operation.kind == "reward" then
 						player:SetAttribute("LastScrapAward", result.lastAward or 0)
 						Analytics.log(AnalyticsService.LogCustomEvent, player, "ScrapAwarded", result.lastAward or 0)

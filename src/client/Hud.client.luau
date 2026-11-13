@@ -328,6 +328,10 @@ local function drawJournal()
 	local earned = player:GetAttribute("LastScrapAward") or 0
 	if phase == "briefing" then progress = t("Prepare", "Сборы")
 	elseif (phase == "won" or phase == "lost") and earned > 0 then progress = "+" .. earned .. " Scrap" end
+	local unlockedRank = player:GetAttribute("LastRankUnlocked") or 0
+	if unlockedRank > 0 and (phase == "won" or phase == "lost" or phase == "briefing") then
+		progress = t("Rank ", "Ранг ") .. unlockedRank .. "!"
+	end
 	journalButton.Text = journalPanel.Visible and t("Close log", "Закрыть журнал") or progress
 	broadcastLine.Text = (broadcast and "✓  " or "○  ") .. t("01   Evidence on air", "01   Запись в эфире")
 	shelterLine.Text = (shelter and "✓  " or "○  ") .. t("02   Shelter powered", "02   Укрытие под светом")
@@ -757,6 +761,10 @@ local function draw()
 		objective.Text = t("Night shift", "Ночная смена")
 		hint.Text = t("Restore the relay. Start with a blue cell.", "Верни связь. Начни с синей батареи.")
 		radio.Text = t("Mira: I’m at dispatch. Follow the amber lights home.", "Мира: Я в диспетчерской. Янтарный свет ведёт обратно.")
+	end
+	local unlockedRank = player:GetAttribute("LastRankUnlocked") or 0
+	if unlockedRank > 0 and (phase == "won" or phase == "lost" or phase == "briefing") then
+		radio.Text = string.format(t("Rank %d! New title and sleeve badge. Open the log.", "Ранг %d! Новый позывной и знак. Открой журнал."), unlockedRank)
 	end
 	if phase == "live" and state:GetAttribute("SentinelVariant") == "Tracker" then
 		if tracked then

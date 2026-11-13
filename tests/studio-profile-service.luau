@@ -36,3 +36,26 @@ assert(returning.Scrap == 85 and returning.UpgradeCoil and returning.RankXP == 1
 second:close()
 assert(next(second.sessions) == nil)
 print("EXPANSION PROFILE PASS serialized queue, ambiguous write, duplicate upgrade, drain, second-session restore")
+-- Rank rewards derive only from confirmed lifetime XP, including after a lost reply.
+records.Player_40002={version=1,scrap=240,rankXP=240,upgrades={},sequence=0}
+local rankService,rankPlayer=Service.new(store),actor()
+rankPlayer.UserId=40002
+rankService:join(rankPlayer)
+waitFor(function() return rankPlayer.ProfileStatus=="local" end)
+assert(rankPlayer.CrewTitle=="Rookie")
+failOnce=true
+assert(rankService:enqueue(rankPlayer,{kind="reward",amount=10},"rank-shift"))
+waitFor(function() return rankPlayer.LastRankUnlocked==2 and rankPlayer.ProfileStatus=="local" end)
+assert(rankPlayer.RankXP==250 and rankPlayer.CrewTitle=="Runner")
+rankPlayer.LastRankUnlocked=0
+assert(rankService:enqueue(rankPlayer,{kind="upgrade",id="Coil",price=40}))
+waitFor(function() return rankPlayer.UpgradeCoil and rankPlayer.ProfileStatus=="local" end)
+assert(rankPlayer.RankXP==250 and rankPlayer.LastRankUnlocked==0,"spending changed rank or repeated unlock")
+rankService:close()
+local restoredService,restored=Service.new(store),actor()
+restored.UserId=40002
+restoredService:join(restored)
+waitFor(function() return restored.ProfileStatus=="local" end)
+assert(restored.RankXP==250 and restored.CrewTitle=="Runner" and restored.LastRankUnlocked==nil,"rank restore or duplicate celebration")
+restoredService:close()
+print("EXPANSION RANK PASS confirmed milestone, response loss, spending, second-session restore")
