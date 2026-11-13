@@ -1,6 +1,6 @@
 # Закрытый тест опубликованного Blackout Freight
 
-Сборка: [место в Creator Hub](https://create.roblox.com/dashboard/creations/experiences/10775560304/places/111633787401180/configure), исходники `629e82c`. Для сценария нужны четыре разрешённых аккаунта и четыре одновременно работающих клиента Roblox Player, один из них — слабый Android. Внешние первые сессии записываются отдельно в `observations.csv`.
+Сборка: [место в Creator Hub](https://create.roblox.com/dashboard/creations/experiences/10775560304/places/111633787401180/configure), версия 20, исходники `860c77c`. Для сценария нужны четыре разрешённых аккаунта и четыре одновременно работающих клиента Roblox Player, один из них — слабый Android. Внешние первые сессии записываются отдельно в `observations.csv`.
 
 | Проверка | Действие | Что записать |
 | --- | --- | --- |
