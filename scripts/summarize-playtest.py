@@ -41,6 +41,7 @@ def summarize(rows):
     for line, row in enumerate(rows, start=2):
         if any(row.get(field) is None for field in FIELDS):
             raise ValueError(f'Line {line}: missing column value; use an empty cell for unknown')
+        entry_channel = (row.get('entry_channel') or '').strip()
         row = {field: row[field].strip() for field in FIELDS}
         if row['is_test'] not in ('0', '1'):
             raise ValueError(f'Line {line}: is_test must be 0 or 1')
@@ -79,8 +80,27 @@ def summarize(rows):
                 if not math.isfinite(seconds) or seconds < 0:
                     raise ValueError(f'Line {line}: invalid {field}')
                 row[field] = seconds
-        players.append(row)
+        players.append({**row, 'entry_channel': entry_channel})
 
+    channels = {}
+    unknown_channel = []
+    for player in players:
+        channel = player['entry_channel']
+        if channel:
+            channels.setdefault(channel, []).append(player)
+        else:
+            unknown_channel.append(player)
+
+    report = session_metrics(players)
+    report['byEntryChannel'] = {
+        channel: session_metrics(channels[channel], include_thresholds=False)
+        for channel in sorted(channels)
+    }
+    report['unknownEntryChannel'] = session_metrics(unknown_channel, include_thresholds=False)
+    return report
+
+
+def session_metrics(players, *, include_thresholds=True):
     def within(field, limit):
         return count_outcomes([
             None if row[field] is None else row[field] <= limit for row in players
@@ -97,6 +117,23 @@ def summarize(rows):
     pickup = within('pickup_seconds', 45)
     delivery = within('delivery_seconds', 90)
     repeat = binary('second_shift_started', picked)
+    report = {
+        'externalFirstSessions': len(players),
+        'sessionSeconds': {
+            'mean': statistics.mean(durations) if durations else None,
+            'median': statistics.median(durations) if durations else None,
+            'observed': len(durations),
+            'unknown': len(players) - len(durations),
+        },
+        'pickupWithin45': pickup,
+        'deliveryWithin90': delivery,
+        'secondShiftAmongPickups': {**repeat, 'unknownPickup': len(unknown_pickup)},
+        'd1': binary('returned_d1', players),
+        'd7': binary('returned_d7', players),
+    }
+    if not include_thresholds:
+        return report
+
     # Unknown pickup only affects a bound if including that player could move it.
     possible_repeat_failures = sum(row['second_shift_started'] != '1' for row in unknown_pickup)
     possible_repeat_successes = sum(row['second_shift_started'] != '0' for row in unknown_pickup)
@@ -117,26 +154,13 @@ def summarize(rows):
             target,
             len(players),
         )
-    return {
-        'externalFirstSessions': len(players),
-        'sessionSeconds': {
-            'mean': statistics.mean(durations) if durations else None,
-            'median': statistics.median(durations) if durations else None,
-            'observed': len(durations),
-            'unknown': len(players) - len(durations),
-        },
-        'pickupWithin45': pickup,
-        'deliveryWithin90': delivery,
-        'secondShiftAmongPickups': {**repeat, 'unknownPickup': len(unknown_pickup)},
-        'd1': binary('returned_d1', players),
-        'd7': binary('returned_d7', players),
-        'workingThresholds': {
-            'minimumExternalFirstSessions': MINIMUM_COHORT,
-            'pickupWithin45': cohort_threshold(pickup, 0.7),
-            'deliveryWithin90': cohort_threshold(delivery, 0.5),
-            'secondShiftAmongPickups': threshold_status(worst_repeat_rate, best_repeat_rate, 0.3, len(players)),
-        },
+    report['workingThresholds'] = {
+        'minimumExternalFirstSessions': MINIMUM_COHORT,
+        'pickupWithin45': cohort_threshold(pickup, 0.7),
+        'deliveryWithin90': cohort_threshold(delivery, 0.5),
+        'secondShiftAmongPickups': threshold_status(worst_repeat_rate, best_repeat_rate, 0.3, len(players)),
     }
+    return report
 
 
 if __name__ == '__main__':
