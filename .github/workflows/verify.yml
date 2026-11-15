@@ -1,0 +1,52 @@
+name: Verify Blackout Freight
+
+on:
+  pull_request:
+  push:
+    branches: [main, "codex/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  game:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Install verified Luau and Rojo releases
+        run: |
+          curl -fsSLo "$RUNNER_TEMP/luau.zip" https://github.com/luau-lang/luau/releases/download/0.747/luau-ubuntu.zip
+          curl -fsSLo "$RUNNER_TEMP/rojo.zip" https://github.com/rojo-rbx/rojo/releases/download/v7.7.1/rojo-7.7.1-linux-x86_64.zip
+          cd "$RUNNER_TEMP"
+          sha256sum -c <<'CHECKSUMS'
+          6a740240248e872815865a2cb03b0c327f24939478f1d0081a0540cdfd77fdaa  luau.zip
+          00feb4fa0829a1dd72b49df2639da519a352bfe13cadcd83969e2ba2bb5693c4  rojo.zip
+          CHECKSUMS
+          unzip -q luau.zip -d luau
+          unzip -q rojo.zip -d rojo
+          chmod +x luau/luau luau/luau-compile rojo/rojo
+          echo "$RUNNER_TEMP/luau" >> "$GITHUB_PATH"
+          echo "$RUNNER_TEMP/rojo" >> "$GITHUB_PATH"
+      - name: Compile and test Luau
+        run: |
+          luau-compile --null src tests
+          for test in tests/*.test.luau; do luau "$test" || exit 1; done
+      - name: Build and verify a Roblox Studio place
+        run: |
+          rojo build -o "$RUNNER_TEMP/Blackout Freight.rbxl"
+          python3 scripts/check-release.py --artifact "$RUNNER_TEMP/Blackout Freight.rbxl" --rojo rojo
+
+  analytics:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+      - name: Sync Python 3.12 dependencies
+        run: uv sync --project analysis --locked --python 3.12 --group notebook
+      - name: Check data contract, experiment and stdio MCP
+        run: uv run --project analysis --locked --group notebook python -m unittest discover -s analysis
+      - name: Execute the portfolio notebook
+        env:
+          MPLBACKEND: Agg
+        run: uv run --project analysis --locked --group notebook jupyter nbconvert --execute --to html --output-dir "$RUNNER_TEMP" analysis/first_shift_compass.ipynb

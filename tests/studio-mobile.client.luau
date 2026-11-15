@@ -69,8 +69,16 @@ assert(card.Hint.TextFits and card.Radio.TextFits, "first shift HUD text clipped
 assert(card.AbsolutePosition.Y >= (portrait and 0 or -36) and inside(dock), "first shift HUD outside viewport")
 assert(card.AbsoluteSize.Y <= 32 and card.AbsoluteSize.X <= 188, "collapsed card takes too much screen space")
 assert(not card.Hint.Visible and not card.Radio.Visible, "mobile details cover the scene at spawn")
+local compass = card:WaitForChild("FirstShiftCompass")
+local camera, guide = workspace.CurrentCamera, gui.FirstDeliveryGuide
+local eye = player.Character.HumanoidRootPart.Position + Vector3.new(0, 4, 0)
+camera.CameraType = Enum.CameraType.Scriptable
+camera.CFrame = CFrame.lookAt(eye, eye * 2 - guide.Adornee.Position)
+waitFor(function() return compass.Visible end, "off-screen compass is visible")
+assert(inside(compass) and compass.Destination.TextFits, "collapsed compass clipped")
 tap(card.ShiftDetails)
 waitFor(function() return card.Hint.Visible and card.Radio.Visible and card.AbsoluteSize.Y == 80 end, "expand shift details")
+assert(inside(compass) and compass.Destination.TextFits, "expanded compass clipped")
 state:SetAttribute("SentinelVariant", "Tracker")
 state:SetAttribute("SentinelMode", "search")
 waitFor(function() return card.Radio.Text:find("Tracker",1,true) or card.Radio.Text:find("Следопыт",1,true) end, "tracker advice")
@@ -90,18 +98,21 @@ assert(inside(ping) and ping.AbsoluteSize.Y >= 44, "ping button outside safe are
 tap(ping)
 local pingMenu = gui.CrewPingMenu
 assert(pingMenu.Visible and gui.CrewPingAim.Visible and inside(pingMenu), "ping menu outside safe area")
+waitFor(function() return not compass.Visible end, "ping menu takes precedence over compass")
 assert(pingMenu.AbsolutePosition.Y >= card.AbsolutePosition.Y + card.AbsoluteSize.Y, "ping menu overlaps shift card")
 for _, option in pingMenu:GetChildren() do
 	assert(inside(option) and option.TextFits and option.AbsoluteSize.Y >= 44, "ping option clipped")
 end
 tap(ping)
 assert(not pingMenu.Visible and not gui.CrewPingAim.Visible, "cancel leaves ping menu visible")
+camera.CameraType = Enum.CameraType.Custom
 state:SetAttribute("BlackoutPhase", "warning")
 waitFor(function() return card.Objective.Text == "Power fault" or card.Objective.Text == "Сбой света" end, "collapsed blackout warning")
 assert(card.Objective.TextFits, "blackout warning clipped")
 state:SetAttribute("BlackoutPhase", nil)
 tap(dock)
 waitFor(function() return journal.Visible end, "open the introductory journal")
+waitFor(function() return not compass.Visible end, "journal takes precedence over compass")
 assert(not journal.Workshop.Visible and not journal.Season.Visible and not journal.CrewChallenges.Visible
 	and not journal.DispatchTitle.Visible and not journal.OpenCrewChallenges.Visible, "novice sees advanced progression")
 assert(journal.CanvasSize.Y.Offset == 152 and journal.BlackoutTransitionToggle.Visible and journal.CrewPingToggle.Visible,

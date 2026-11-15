@@ -6,7 +6,8 @@ local state = shared:WaitForChild("Shift")
 local collection = game:GetService("CollectionService")
 local gui = player:WaitForChild("PlayerGui"):WaitForChild("FreightHUD")
 assert(gui:WaitForChild("InviteFriends"):IsA("TextButton"))
-assert(gui:WaitForChild("EndingJournal"):WaitForChild("ArchiveReward"):IsA("TextLabel"))
+local journal = gui:WaitForChild("MobileJournal"):WaitForChild("EndingJournal")
+assert(journal:WaitForChild("ArchiveReward"):IsA("TextLabel"))
 
 local prompted = 0
 local platform = {

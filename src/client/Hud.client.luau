@@ -186,6 +186,7 @@ end)
 local JournalPanel = require(script.Parent.JournalPanel)
 local journal = JournalPanel.mount(gui, journalButton, player, state, shared, colors, add, label, t)
 local journalPanel, journalShell = journal.panel, journal.shell
+local updateCompass = require(script.Parent.FirstShiftCompass).mount(card, colors, add, label, t)
 local compact = false
 local dockBottom = 40
 
@@ -217,6 +218,7 @@ local function drawGuide(phase, carrying, route, findNext)
 	markerText.TextColor3 = carrying and colors.amber or colors.cyan
 	markerText.Text = passage and t("▼  PASSAGE", "▼  ПРОХОД")
 		or carrying and t("▼  AIRLOCK", "▼  ШЛЮЗ") or t("▼  BATTERY", "▼  БАТАРЕЯ")
+	return marker.Enabled and not passage and target or nil
 end
 
 local nextObjectives = {
@@ -422,6 +424,7 @@ local drawCrewPings
 if Config.CrewPingsEnabled then
 	drawCrewPings = require(script.Parent.CrewPings).mount(gui, player, state, shared:WaitForChild("CrewPing"), colors, add, t)
 end
+local crewPingMenu = gui:FindFirstChild("CrewPingMenu")
 local sawBlackoutWarning = false
 
 local function draw()
@@ -462,7 +465,12 @@ local function draw()
 		decoyPrompt.Enabled = decoyReady
 	end
 	local heat = state:GetAttribute("Heat") or 1
-	drawGuide(heat == 5 and "" or phase, carrying, route, deliveries == 0 or needsRecoveryGuide or justDelivered)
+	local guideTarget = drawGuide(heat == 5 and "" or phase, carrying, route, deliveries == 0 or needsRecoveryGuide or justDelivered)
+	local compassActive = serverTime < (player:GetAttribute("FirstShiftCompassUntil") or 0)
+		and not player:GetAttribute("FirstDelivery") and not journalPanel.Visible and not preview.Visible
+		and not (crewPingMenu and crewPingMenu.Visible)
+	local guideRoot = compassActive and player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	updateCompass(compassActive and guideTarget or nil, guideRoot, carrying, compact)
 	journal.draw(compact)
 	brand.Text = state:GetAttribute("Map") == "yard" and t("07 / FREIGHT YARD", "07 / ГРУЗОВОЙ ДВОР") or route and string.upper(localized(route.name)) or t("DEPOT 07   /   THE LAST SIGNAL", "ДЕПО 07   /   ПОСЛЕДНИЙ СИГНАЛ")
 	timer.Text = phase == "waiting" and "—" or string.format("%d:%02d", remaining // 60, remaining % 60)

@@ -34,6 +34,24 @@ with tempfile.TemporaryDirectory(prefix="freight-qa-", dir=work) as directory:
     if solo:
         scenario = qa / "server/Scenario.server.luau"
         scenario.write_text(scenario.read_text().replace("local expectedPlayers = 2", "local expectedPlayers = 1"))
+        analytics = qa / "server/Analytics.luau"
+        source = analytics.read_text()
+        assert source.count("return Analytics") == 1
+        analytics.write_text(source.replace("return Analytics", '''local log = Analytics.log
+local events = {}
+function Analytics.log(...)
+	local method, _, name, value, fields = ...
+	if name == "FirstShiftCompassV1" then
+		assert(method == AnalyticsService.LogCustomEvent and value == 1)
+		assert(fields.CustomField01 == "compass" and fields.CustomField03 == "solo")
+		if fields.CustomField02 ~= "caught_90" then
+			table.insert(events, fields.CustomField02)
+		end
+	end
+	log(...)
+end
+Analytics.qaCompassEvents = events
+return Analytics'''))
     shutil.copyfile(root / "tests/studio-journal.luau", qa / "server/JournalScenario.luau")
     shutil.copytree(root / "src/client", qa / "client")
     shutil.copyfile(root / "tests/studio-operations.client.luau", qa / "client/OperationsScenario.client.luau")

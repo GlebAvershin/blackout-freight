@@ -17,6 +17,7 @@ return table.freeze({
 	DailyShiftEnabled = true,
 	WeeklyRankingEnabled = true,
 	CrewPingsEnabled = true,
+	FirstShiftCompassEnabled = true,
 	Target = 5,
 	ShiftSeconds = 165,
 	CellCount = 8,

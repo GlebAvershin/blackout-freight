@@ -22,13 +22,15 @@ local Operations = require(shared.Operations)
 local Dispatch = require(shared.Dispatch)
 local PowerCell = require(shared.PowerCell)
 local FriendInvite = require(shared.FriendInvite)
+local FirstShiftExperiment = require(script.Parent.FirstShiftExperiment)
 local Depot = require(script.Parent.Depot)
 local EndingJournal = require(script.Parent.EndingJournal)
 local ProfileService = require(script.Parent.ProfileService)
 local profiles = ProfileService.new()
 local blackBoxId = "blackBox"
 local CommerceService = require(script.Parent.CommerceService)
-local log = require(script.Parent.Analytics).log
+local Analytics = require(script.Parent.Analytics)
+local log = Analytics.log
 local journal = EndingJournal.new(not RunService:IsStudio() and DataStoreService:GetDataStore("FreightEndings_v1") or nil)
 game:BindToClose(function() profiles:close() end)
 game:BindToClose(function()
@@ -100,6 +102,38 @@ local function funnel(player, n, label)
 	log(AnalyticsService.LogFunnelStepEvent, player, "Shift", roundGuid, n, label)
 end
 
+local function compassEvent(player, event, time)
+	local data = players[player]
+	local experiment = data and data.compass
+	if not experiment or experiment.roundGuid ~= roundGuid or not experiment:record(event, time) then return end
+	if data.compassQA then
+		Analytics.logCompassQA(player, experiment.variant, event, experiment.segment)
+		return
+	end
+	log(AnalyticsService.LogCustomEvent, player, "FirstShiftCompassV1", 1, {
+		[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = experiment.variant,
+		[Enum.AnalyticsCustomFieldKeys.CustomField02.Name] = event,
+		[Enum.AnalyticsCustomFieldKeys.CustomField03.Name] = experiment.segment,
+	})
+end
+
+local function enrollCompass(player, data)
+	if not Config.FirstShiftCompassEnabled or data.compass or data.onboard ~= 1 or not data.spawned
+		or not round or round.outcome ~= "live" or heatLevel ~= 1 or currentMap ~= "depot" or daily or operation then return end
+	local status = player:GetAttribute("JournalStatus")
+	local time = now()
+	if (status ~= "ready" and status ~= "local") or round.deadline - time < FirstShiftExperiment.WindowSeconds
+		or (not data.compassQA and (player:GetAttribute("EndingBroadcast") or player:GetAttribute("EndingShelter"))) then return end
+
+	local variant = data.compassQA or (if RunService:IsStudio() then "compass" else FirstShiftExperiment.variant(player.UserId))
+	data.compass = FirstShiftExperiment.start(variant, time, #Players:GetPlayers())
+	data.compass.roundGuid = roundGuid
+	compassEvent(player, "exposed", time)
+	if variant == "compass" then
+		player:SetAttribute("FirstShiftCompassUntil", time + FirstShiftExperiment.WindowSeconds)
+	end
+end
+
 local function challengesUnlocked(player)
 	return Challenges.unlocked(player:GetAttribute("EndingBroadcast"), player:GetAttribute("EndingShelter"),
 		player:GetAttribute("Wins"))
@@ -145,6 +179,7 @@ RunService.Heartbeat:Connect(function(dt)
 	for player, data in players do
 		local root = rootOf(player)
 		if root then
+			enrollCompass(player, data)
 			local speed = Roles.speed(data.sprintUntil or 0, now(), carried[player] ~= nil)
 			root.Parent.Humanoid.WalkSpeed = speed
 			verifyMovement(player, root)
@@ -481,6 +516,7 @@ deliver.Triggered:Connect(function(player)
 			state:SetAttribute("Phase", "routing")
 		end
 		local data = players[player]
+		compassEvent(player, "delivered_90", now())
 		if data and not data.delivered then
 			data.delivered = true
 			funnel(player, 3, "Cell delivered")
@@ -506,6 +542,7 @@ local function catch(player)
 	players[player].shiftCatches += 1
 	if heatLevel >= 3 then player:SetAttribute("RecoveryUntil", now() + 10) end
 	movePlayer(player, depotSpawn)
+	compassEvent(player, "caught_90", now())
 	log(AnalyticsService.LogCustomEvent, player, "Caught")
 end
 
@@ -576,6 +613,7 @@ local function join(player)
 		return
 	end
 	players[player] = {onboard = 0, picked = false, delivered = false, activeShifts = 0, startedAt = now(), shiftCatches = 0}
+	players[player].compassQA = Analytics.compassQAVariant(player)
 	if daily then daily.valid = false end
 	if not daily and blackoutStartsAt and not state:GetAttribute("BlackoutPhase") then blackoutStartsAt = nil end
 	player:SetAttribute("Carrying", false)
@@ -898,7 +936,10 @@ local function startShift()
 	if currentMap == "yard" then yard = FreightYard.build(world, Depot); positions = yard.positions end
 	state:SetAttribute("Map", currentMap)
 	state:SetAttribute("TrainStatus", "clear")
-	operation = not daily and currentMap == "depot" and Operations.next(eligible, operation, lastOperation, replayWest) or nil
+	local soloData = #votes == 1 and players[next(crew)]
+	local compassQA = soloData and soloData.compassQA and not soloData.compass and soloData.onboard < 2
+	operation = not compassQA and not daily and currentMap == "depot"
+		and Operations.next(eligible, operation, lastOperation, replayWest) or nil
 	if layout then
 		layout:Destroy()
 		layout = nil
@@ -1017,6 +1058,7 @@ local function startShift()
 						[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = if seconds <= 45 then "Within 45s" else "Over 45s",
 					})
 				end
+				compassEvent(player, "pickup_90", now())
 			end
 		end)
 	end
@@ -1073,6 +1115,11 @@ local function startShift()
 end
 
 local function finishShift()
+	for player, data in players do
+		if data.compass and data.compass.roundGuid == roundGuid then
+			player:SetAttribute("FirstShiftCompassUntil", nil)
+		end
+	end
 	state:SetAttribute("BlackoutPhase", nil)
 	if pilot then
 		pilot:SetAttribute("PilotingSentinel", false)

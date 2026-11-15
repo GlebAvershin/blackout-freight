@@ -1,0 +1,15 @@
+[project]
+name = "blackout-freight-analysis"
+version = "0.1.0"
+description = "First-shift experiment analytics and read-only MCP tools"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "duckdb>=1.4,<2",
+  "mcp>=1.26,<2",
+  "pandas>=2.2,<4",
+  "scipy>=1.15,<2",
+  "statsmodels>=0.14,<1",
+]
+
+[dependency-groups]
+notebook = ["ipykernel>=6,<8", "nbconvert>=7,<8", "matplotlib>=3.10,<4"]

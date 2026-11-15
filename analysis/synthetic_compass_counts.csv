@@ -1,0 +1,17 @@
+segment,variant,event,count
+solo,control,exposed,1200
+solo,control,pickup_90,940
+solo,control,delivered_90,735
+solo,control,caught_90,290
+solo,compass,exposed,1200
+solo,compass,pickup_90,1023
+solo,compass,delivered_90,840
+solo,compass,caught_90,288
+crew,control,exposed,450
+crew,control,pickup_90,360
+crew,control,delivered_90,285
+crew,control,caught_90,111
+crew,compass,exposed,452
+crew,compass,pickup_90,369
+crew,compass,delivered_90,303
+crew,compass,caught_90,115

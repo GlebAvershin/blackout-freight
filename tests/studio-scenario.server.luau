@@ -102,6 +102,12 @@ waitFor(function()
 	return true
 end, "test clients ready", 20)
 phase("live")
+local compassEvents
+if expectedPlayers == 1 then
+	compassEvents = require(script.Parent.Analytics).qaCompassEvents
+	waitFor(function() return a:GetAttribute("FirstShiftCompassUntil") end, "solo compass enrolled")
+	assert(compassEvents[1] == "exposed", "missing experiment denominator")
+end
 local deliver = promptOn("Delivery console")
 local broadcast = promptOn("01   BROADCAST")
 local shelter = promptOn("02   SHELTER")
@@ -173,6 +179,7 @@ if b then
 	other = winner == a and b or a
 else
 	press(winner, same)
+	assert(compassEvents[2] == "pickup_90", "missing valid pickup event")
 end
 if other then
 	waitFor(function() return winner:GetAttribute("Tracked") and decoy.Enabled end, "beacon ready during pursuit")
@@ -193,6 +200,10 @@ if other then
 end
 winner:SetAttribute("Aurora", true)
 deposit(winner, 1)
+if compassEvents then
+	assert(compassEvents[3] == "delivered_90", "missing valid delivery event")
+	print("COMPASS QA PASS: server emitted exposure, pickup and delivery")
+end
 local pulse = assert(world:FindFirstChild("Delivery pulse"), "missing delivery effect")
 assert(pulse.Color == Color3.fromRGB(215, 127, 255), "Aurora delivery effect must be violet")
 winner:SetAttribute("Aurora", false)
@@ -213,6 +224,9 @@ assert(state:GetAttribute("Delivered") == 1)
 for i = 2, 5 do
 	carry(winner)
 	deposit(winner, i)
+end
+if compassEvents then
+	assert(table.concat(compassEvents, ",") == "exposed,pickup_90,delivered_90", "duplicate first-shift stages")
 end
 phase("routing")
 assert(not deliver.Enabled and broadcast.Enabled and shelter.Enabled)

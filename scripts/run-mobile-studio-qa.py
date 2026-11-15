@@ -16,7 +16,8 @@ with tempfile.TemporaryDirectory(prefix="freight-mobile-") as directory:
     place, launcher, output = (folder / name for name in ("Mobile QA.rbxl", "run.luau", "results.log"))
     candidate = Path(sys.argv[1]) if len(sys.argv) > 1 else root / "dist/Blackout Freight Closed Test.rbxl"
     shutil.copyfile(candidate, place)
-    launcher.write_text(f'''local sim = game:GetService("StudioDeviceSimulatorService")
+    launcher.write_text(f'''task.wait(3)
+local sim = game:GetService("StudioDeviceSimulatorService")
 local test = game:GetService("StudioTestService")
 -- Seed only this temporary QA copy; production profiles are never touched.
 local shift = game:GetService("ServerScriptService").Freight.Shift
