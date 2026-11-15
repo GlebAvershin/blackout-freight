@@ -1,5 +1,15 @@
 # Blackout Freight
 
+Blackout Freight is a 1–4 player co-op Roblox game. Recover batteries from Depot 07 while evading a security drone, then decide where to send the last of the depot’s power.
+
+**Portfolio case study** · I shipped a first-shift compass to the Roblox closed test and instrumented a randomized experiment around the first delivery. In v24, Roblox Analytics received all four event stages for each variant during internal QA. The public notebook demonstrates the analysis on synthetic data.
+
+[Read the case study](docs/portfolio.md) · [Watch the v24 demo](dist/blackout-freight-v24-demo.mp4) · [Download the Studio build](https://raw.githubusercontent.com/GlebAvershin/blackout-freight/main/dist/Blackout%20Freight%20Portfolio%20Preview.rbxl) · [Open the notebook](analysis/first_shift_compass.ipynb) · [View GitHub Actions](https://github.com/GlebAvershin/blackout-freight/actions/workflows/verify.yml)
+
+[![Gameplay from v24 showing the off-screen airlock bearing and the first successful battery delivery](dist/blackout-freight-v24-preview.gif)](dist/blackout-freight-v24-demo.mp4)
+
+## Об игре
+
 Кооперативная игра Roblox для 1–4 игроков. В ночном Депо 07 нужно пронести пять батарей мимо дрона Sentinel и выбрать, куда направить последний резерв энергии: передать доказательства в эфир или запитать укрытие.
 
 ![Blackout Freight — погоня в Депо 07](dist/blackout-freight-chase-cover.jpg)
