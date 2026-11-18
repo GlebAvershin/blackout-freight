@@ -41,30 +41,11 @@ Blackout Freight is a 1–4 player co-op Roblox game. Recover batteries from Dep
 
 В закрытом тесте Roblox опубликована версия 24 с компасом первой смены. Сборки Closed Test, Progression Preview и Portfolio Preview в `dist/` совпадают с проектом Rojo. В локальном тесте журнал хранится до остановки сервера, а приглашения Roblox доступны в опубликованной игре. [Отчёт по версии 24](docs/portfolio-release-2026-11-16.md) · [Сценарий живой проверки](docs/playtest/live-checklist.md)
 
-## Сборка и проверки
+## Документация
 
-Понадобятся [Rojo](https://rojo.space/) версии из [rokit.toml](rokit.toml) и [Luau CLI](https://github.com/luau-lang/luau). Для мобильного прогона нужны macOS, Roblox Studio и Python 3.
-
-```sh
-rojo build -o 'dist/Blackout Freight Progression Preview.rbxl'
-luau-compile --null src tests
-for test in tests/*.test.luau; do luau "$test" || exit 1; done
-python3 scripts/run-mobile-studio-qa.py
-```
-
-| Путь | Содержимое |
-| --- | --- |
-| [src/client](src/client) | HUD, журнал, шкафчик и аудио |
-| [src/server](src/server) | Смены, депо, сохранения и проверка владения пропусками |
-| [src/shared](src/shared) | Правила игры, маршруты, контракты и конфигурация |
-| [tests](tests) | Проверки правил, сохранений и сценарии Studio |
-| [dist](dist) | Сборка Roblox Studio и материалы для карточки игры |
-
-## Публикация
-
-Обновляй существующее [стартовое место Blackout Freight](https://create.roblox.com/dashboard/creations/experiences/10775560304/places/111633787401180/configure) через Studio. После публикации проверь историю версий, доступ **Playtesters** и лимит в четыре игрока. Скрипт [publish-closed-test.py](scripts/publish-closed-test.py) без аргументов сверяет локальный файл и показывает его SHA-256. С флагом `--publish` он публикует сборку через Open Cloud после ввода ключа.
-
-[План закрытого теста](docs/closed-test.md) · [Дизайн главы](docs/last-signal.md) · [Аудио](docs/audio-design.md) · [Рынок и монетизация](docs/market-and-monetization.md)
+- [Руководство игрока](docs/game-guide.md) — первая смена, управление, финалы, роли и прогрессия.
+- [Руководство разработчика](docs/development.md) — установка на Windows и macOS, сборка из Git, архитектура, тесты и развёртывание в Roblox.
+- [Чек-лист закрытого теста](docs/playtest/live-checklist.md) · [Отчёт по версии 24](docs/portfolio-release-2026-11-16.md) · [Дизайн главы](docs/last-signal.md) · [Аудио](docs/audio-design.md) · [Рынок и монетизация](docs/market-and-monetization.md).
 
 ## Дальнейшая разработка
 
@@ -78,7 +59,7 @@ python3 scripts/run-mobile-studio-qa.py
 
 [Отчёт QA от 13 ноября](docs/release-qa-2026-11-13.md) · [Комплект внешнего теста и Share Links](docs/playtest/README.md) · [Проверка DevEx](docs/devex-review-2026-11-13.md).
 
-Полный локальный прогон запускается командой `python3 scripts/run-release-qa.py`. Он последовательно запускает Studio и сохраняет результаты в `.tools/release-qa-*`. Ветка разработки — `codex/expansion-foundation`.
+Полный локальный прогон запускается командой `python3 scripts/run-release-qa.py`. Он последовательно запускает Studio и сохраняет результаты в `.tools/release-qa-*`.
 
 Перед публикацией: `python3 scripts/check-release.py`. Проверка требует точного совпадения файла с текущим production-проектом Rojo и отклоняет QA-копии. [Отчёт публикации](docs/expansion-publication-2026-11-13.md).
 

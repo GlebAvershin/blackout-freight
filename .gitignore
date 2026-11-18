@@ -6,3 +6,6 @@
 __pycache__/
 .ipynb_checkpoints/
 analysis/.venv/
+
+# Local Studio backups
+/dist/Studio Place1 Backup *.rbxl
