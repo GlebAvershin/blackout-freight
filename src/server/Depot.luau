@@ -212,10 +212,18 @@ function Depot.build()
 	sign(decoyBeacon, "DECOY", Depot.Cyan, Enum.NormalId.Back)
 	local terminal = box("Delivery console", 0, 1.65, 65, 8.4, 3.3, 2.6, steel, Enum.Material.Metal, true)
 	box("Console rim", 0, 3.38, 65, 8.5, 0.24, 2.8, ink, Enum.Material.Metal)
-	local chargeLights = {}
-	for i = -2, 2 do
-		table.insert(chargeLights, box("Charge status", i * 1.27, 3.53, 64.7, 1.08, 0.13, 1.5, steel))
+	local receiver = require(script.Parent.ReceiverGeometry)
+	local rack = Instance.new("Model")
+	rack.Name = "Charge receiver"
+	for _, shape in receiver.parts do
+		local rgb = receiver.palette[shape.paint]
+		local detail = Depot.part(rack, shape.name, Vector3.new(table.unpack(shape.size)),
+			CFrame.new(0, 3.5, 65.1) * CFrame.new(table.unpack(shape.center)),
+			Color3.fromRGB(table.unpack(rgb)), if shape.paint == "amber" then neon else Enum.Material.Metal)
+		detail.CanQuery = false
 	end
+	rack:SetAttribute("Travel", receiver.travel)
+	rack.Parent = terminal
 	sign(terminal, "DELIVER CELLS", Depot.Amber)
 	local outputs, consoles = {}, {}
 	for _, route in {
@@ -302,10 +310,7 @@ function Depot.build()
 	drone.Parent = world
 	world.Parent = workspace
 	return world, terminal, positions, drone, consoles, function(count, routing, ending)
-		for i, lamp in chargeLights do
-			lamp.Color = i <= count and Depot.Cyan or steel
-			lamp.Material = i <= count and neon or Enum.Material.Metal
-		end
+		rack:SetAttribute("Charge", count)
 		for route, output in outputs do
 			local selected = route == ending
 			output.strip.Material = (routing or selected) and neon or Enum.Material.SmoothPlastic

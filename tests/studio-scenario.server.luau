@@ -208,6 +208,7 @@ local pulse = assert(world:FindFirstChild("Delivery pulse"), "missing delivery e
 assert(pulse.Color == Color3.fromRGB(215, 127, 255), "Aurora delivery effect must be violet")
 winner:SetAttribute("Aurora", false)
 print("LAST SIGNAL QA PASS: Aurora delivery effect")
+assert(world["Delivery console"]["Charge receiver"]:GetAttribute("Charge") == 1, "receiver must show accepted delivery")
 assert(winner:GetAttribute("FirstDelivery") == true)
 assert(winner:GetAttribute("ShiftDeliveries") == 1 and (not other or other:GetAttribute("ShiftDeliveries") == 0))
 press(winner, deliver)

@@ -62,5 +62,31 @@ player:SetAttribute("ShiftDeliveries", 0)
 state:SetAttribute("Phase", "live")
 waitFor(function() return guide.Enabled end, "next shift shows marker despite lifetime first delivery")
 assert(player:GetAttribute("FirstDelivery") == true)
+local terminal = assert(game:GetService("CollectionService"):GetTagged("FreightDelivery")[1])
+local rack = terminal:WaitForChild("Charge receiver", 5)
+local base = rack.Slot1.Position
+for _, count in {1, 4, 5, 0} do
+	rack:SetAttribute("Charge", count)
+	waitFor(function()
+		for index = 1, 5 do
+			local slot = rack["Slot" .. index]
+			local charged = index <= count
+			local expectedY = base.Y + (charged and rack:GetAttribute("Travel") or 0)
+			if (slot.Material == Enum.Material.Neon) ~= charged or math.abs(slot.Position.Y - expectedY) > 0.01 then return false end
+			assert(not slot.CanCollide and not slot.CanQuery and not slot.CanTouch)
+		end
+		return true
+	end, "receiver count " .. count)
+end
+print("RECEIVER QA PASS: first delivery, batched updates, full rack and reset")
+local cue = game:GetService("SoundService"):WaitForChild("FreightDeliveryCue", 5)
+player:SetAttribute("Aurora", true)
+for index, finish in {"Standard", "Aurora", "Standard"} do
+	player:SetAttribute("CellFinish", finish)
+	player:SetAttribute("ShiftDeliveries", index)
+	local expectedSpeed = if finish == "Aurora" then 1.16 else 0.92
+	waitFor(function() return math.abs(cue.PlaybackSpeed - expectedSpeed) < 0.001 end, "cue for " .. finish)
+end
+print("AUDIO QA PASS: owned Aurora follows equipped finish")
 print("GUIDANCE QA PASS: compass/control, pickup, airlock, handoff, recovery, loss and next shift")
 game:GetService("ReplicatedStorage"):WaitForChild("GuidanceResult"):FireServer()

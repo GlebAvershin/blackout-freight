@@ -1,0 +1,29 @@
+{
+  "palette": {"frame": [31, 45, 61], "metal": [67, 89, 106], "rubber": [15, 25, 36], "amber": [255, 184, 66], "idle": [70, 87, 96], "charged": [46, 230, 233]},
+  "travel": 0.31,
+  "parts": [
+    {"name": "Plinth", "paint": "frame", "center": [0, 0.18, 0.1], "size": [7.85, 0.36, 1.68]},
+    {"name": "Rear armor", "paint": "metal", "center": [0, 1.05, 0.66], "size": [7.54, 1.9, 0.38]},
+    {"name": "Socket bed", "paint": "rubber", "center": [0, 1.09, 0.41], "size": [6.75, 1.64, 0.18]},
+    {"name": "Upper rail", "paint": "frame", "center": [0, 2.05, 0.5], "size": [7.85, 0.25, 0.85]},
+    {"name": "End cap -1", "paint": "frame", "center": [-3.68, 1, 0.08], "size": [0.37, 1.86, 1.07]},
+    {"name": "Guide -1", "paint": "amber", "center": [-3.68, 1.18, -0.47], "size": [0.12, 1.34, 0.08]},
+    {"name": "End cap 1", "paint": "frame", "center": [3.68, 1, 0.08], "size": [0.37, 1.86, 1.07]},
+    {"name": "Guide 1", "paint": "amber", "center": [3.68, 1.18, -0.47], "size": [0.12, 1.34, 0.08]},
+    {"name": "Sleeve1", "paint": "metal", "center": [-2.62, 0.97, 0.18], "size": [0.98, 1.58, 0.34]},
+    {"name": "Slot1", "paint": "idle", "center": [-2.62, 0.88, -0.045], "size": [0.66, 1.05, 0.18]},
+    {"name": "Contact1", "paint": "amber", "center": [-2.62, 0.405, -0.2], "size": [0.73, 0.09, 0.18]},
+    {"name": "Sleeve2", "paint": "metal", "center": [-1.31, 0.97, 0.18], "size": [0.98, 1.58, 0.34]},
+    {"name": "Slot2", "paint": "idle", "center": [-1.31, 0.88, -0.045], "size": [0.66, 1.05, 0.18]},
+    {"name": "Contact2", "paint": "amber", "center": [-1.31, 0.405, -0.2], "size": [0.73, 0.09, 0.18]},
+    {"name": "Sleeve3", "paint": "metal", "center": [0.0, 0.97, 0.18], "size": [0.98, 1.58, 0.34]},
+    {"name": "Slot3", "paint": "idle", "center": [0.0, 0.88, -0.045], "size": [0.66, 1.05, 0.18]},
+    {"name": "Contact3", "paint": "amber", "center": [0.0, 0.405, -0.2], "size": [0.73, 0.09, 0.18]},
+    {"name": "Sleeve4", "paint": "metal", "center": [1.31, 0.97, 0.18], "size": [0.98, 1.58, 0.34]},
+    {"name": "Slot4", "paint": "idle", "center": [1.31, 0.88, -0.045], "size": [0.66, 1.05, 0.18]},
+    {"name": "Contact4", "paint": "amber", "center": [1.31, 0.405, -0.2], "size": [0.73, 0.09, 0.18]},
+    {"name": "Sleeve5", "paint": "metal", "center": [2.62, 0.97, 0.18], "size": [0.98, 1.58, 0.34]},
+    {"name": "Slot5", "paint": "idle", "center": [2.62, 0.88, -0.045], "size": [0.66, 1.05, 0.18]},
+    {"name": "Contact5", "paint": "amber", "center": [2.62, 0.405, -0.2], "size": [0.73, 0.09, 0.18]}
+  ]
+}

@@ -39,6 +39,7 @@ ambience.Looped, tension.Looped = true, true
 ambience:Play()
 tension:Play()
 
+local powerCell = require(ReplicatedStorage.Freight.PowerCell)
 local delivery = sound("FreightDeliveryCue", "rbxasset://sounds/volume_slider.ogg", effects, 0.28, SoundService)
 local blackBoxRecovered = sound("FreightBlackBoxCue", "rbxasset://sounds/volume_slider.ogg", effects, 0.36, SoundService)
 blackBoxRecovered.PlaybackSpeed = 0.68
@@ -122,7 +123,7 @@ local previousDeliveries = player:GetAttribute("ShiftDeliveries") or 0
 player:GetAttributeChangedSignal("ShiftDeliveries"):Connect(function()
 	local deliveries = player:GetAttribute("ShiftDeliveries") or 0
 	if deliveries > previousDeliveries then
-		delivery.PlaybackSpeed = player:GetAttribute("Aurora") and 1.16 or 0.92
+		delivery.PlaybackSpeed = powerCell.equipped(player) == "Aurora" and 1.16 or 0.92
 		delivery:Play()
 		duck(0.5)
 	end
