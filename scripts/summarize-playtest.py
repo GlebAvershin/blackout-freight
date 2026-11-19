@@ -80,6 +80,14 @@ def summarize(rows):
                 if not math.isfinite(seconds) or seconds < 0:
                     raise ValueError(f'Line {line}: invalid {field}')
                 row[field] = seconds
+        pickup, delivery = row['pickup_seconds'], row['delivery_seconds']
+        if pickup is not None and delivery is not None and delivery < pickup:
+            raise ValueError(f'Line {line}: a delivery requires a preceding pickup')
+        duration = row['session_seconds']
+        if duration is not None and any(
+            event is not None and math.isfinite(event) and event > duration for event in (pickup, delivery)
+        ):
+            raise ValueError(f'Line {line}: observed action exceeds session duration')
         players.append({**row, 'entry_channel': entry_channel})
 
     channels = {}

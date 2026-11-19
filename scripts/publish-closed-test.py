@@ -8,6 +8,8 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
+from release_artifact import LOCAL_ROJO, verify
+
 
 PLACE = Path(__file__).resolve().parents[1] / "dist" / "Blackout Freight Closed Test.rbxl"
 URL = (
@@ -24,12 +26,14 @@ class NoRedirect(HTTPRedirectHandler):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--publish", action="store_true", help="Upload after prompting for a scoped key")
+    parser.add_argument("--rojo", default=LOCAL_ROJO, help="Rojo executable for build verification")
     args = parser.parse_args()
     payload = PLACE.read_bytes()
     if not payload.startswith(b"<roblox!\x89\xff\r\n\x1a\n") or len(payload) > 100 * 1024**2:
         parser.error("Expected a Roblox binary place of at most 100 MB")
     print(f"{PLACE.name} · {len(payload)} bytes · SHA-256 {hashlib.sha256(payload).hexdigest()}")
     print("Target: Blackout Freight · universe 10775560304 · start place 111633787401180")
+    verify(payload, args.rojo)
     if not args.publish:
         return 0
     if not sys.stdin.isatty():

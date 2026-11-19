@@ -74,3 +74,17 @@ py -3 scripts/check-release.py --artifact "dist/Blackout Freight.rbxl" --rojo ro
 - [publish-closed-test.py](../scripts/publish-closed-test.py) без `--publish` выводит размер, SHA-256 и назначение файла. С `--publish` отправляет файл в основное место и запрашивает ключ Open Cloud. Для тестового experience используй Studio и выбери его явно. [Публикация через Open Cloud](https://create.roblox.com/docs/cloud/guides/usage-place-publishing)
 
 Исходники хранятся в Git. Если обновляешь релиз, собери из той же версии Rojo все три отслеживаемых файла в `dist/`: Closed Test, Progression Preview и Portfolio Preview. Проверь их через `check-release.py`, запиши номер опубликованной версии и SHA-256, затем отправь коммит на GitHub. [Пример отчёта о выпуске](portfolio-release-2026-11-16.md) · [Чек-лист живого теста](playtest/live-checklist.md)
+
+## Ассет шлюза и пререлиз
+
+Палитра, размеры в studs и координаты деталей задаются в [ReceiverGeometry.json](../src/server/ReceiverGeometry.json). Сервер строит стойку, а [клиентский скрипт](../src/client/ChargeReceiver.client.luau) показывает принятый заряд. Для рендера из тех же размеров запусти из корня проекта `blender --background --python-exit-code 1 --python assets/airlock-receiver/render.py`. Проверена версия Blender 4.5.16 LTS.
+
+Для следующего GitHub-пререлиза создай файл `docs/releases/<тег>.md`, обнови три сборки и README, выполни проверки, затем отправь тег вида `v25-rc.2` на проверенном коммите. GitHub Actions собирает игру из источников, сравнивает файлы, тестирует аналитику и выпускает Studio-пакет с контрольными суммами. Публикация на серверах Roblox выполняется отдельно.
+
+При переносе проекта на другой путь пересоздай исполняемые точки входа локального Python-окружения командой `uv sync --project analysis --locked --group notebook --reinstall`. Для Tableau из корня запусти:
+
+```sh
+uv run --project analysis --locked --group tableau python analysis/export_tableau.py analysis/synthetic_compass_counts.csv FirstShiftCompass-synthetic.hyper --source synthetic
+```
+
+Открой файл как источник данных в Tableau Desktop. Поля `segment` и `variant` задают группу, `event` — этап, `events` — число событий. Для доли доставок раздели число `delivered_90` на `exposed` в той же группе. Экспортёр проверяет исходные агрегаты и повторно открывает созданный файл. [Tableau Hyper API](https://tableau.github.io/hyper-db/docs/)

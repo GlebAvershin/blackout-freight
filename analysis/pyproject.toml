@@ -13,3 +13,6 @@ dependencies = [
 
 [dependency-groups]
 notebook = ["ipykernel>=6,<8", "nbconvert>=7,<8", "matplotlib>=3.10,<4"]
+tableau = [
+    "tableauhyperapi==0.0.26479",
+]
