@@ -2,7 +2,7 @@
 
 Blackout Freight is a 1–4 player co-op Roblox game. Recover batteries from Depot 07 while evading a security drone, then decide where to send the last of the depot’s power.
 
-**Studio preview v25-rc.1** · The airlock now shows each accepted battery in a five-slot mechanical receiver. The GitHub prerelease includes the playable place, checksums and a synthetic Tableau extract. [Download the release](https://github.com/GlebAvershin/blackout-freight/releases/tag/v25-rc.1) · [Read the system audit](docs/audit-2026-11-20.md)
+**Roblox closed test v25 · v25-rc.1** · The airlock now shows each accepted battery in a five-slot mechanical receiver. The GitHub prerelease includes the playable place, checksums and a synthetic Tableau extract. [Download the release](https://github.com/GlebAvershin/blackout-freight/releases/tag/v25-rc.1) · [Read the system audit](docs/audit-2026-11-20.md)
 
 **Portfolio case study** · I shipped a first-shift compass to the Roblox closed test and instrumented a randomized experiment around the first delivery. In v24, Roblox Analytics received all four event stages for each variant during internal QA. The public notebook demonstrates the analysis on synthetic data.
 
@@ -41,7 +41,7 @@ Blackout Freight is a 1–4 player co-op Roblox game. Recover batteries from Dep
 3. Следуй за бирюзовой меткой к батарее. На ПК взаимодействие выполняется клавишей **E**, на телефоне — нажатием игровой подсказки. Сдай батарею в янтарном шлюзе. Журнал открывается экранной кнопкой или клавишей **J**.
 4. Для кооператива используй **Server & Clients**. Для телефона включи **Device Simulator** и проверь обе ориентации.
 
-Последняя подтверждённая версия закрытого теста Roblox — v24 с компасом первой смены. Версия v25-rc.1 доступна для локального запуска в Studio. Сборки Closed Test, Progression Preview и Portfolio Preview в `dist/` совпадают с проектом Rojo. В локальном тесте журнал хранится до остановки сервера, а приглашения Roblox доступны в опубликованной игре. [Отчёт по версии 24](docs/portfolio-release-2026-11-16.md) · [Сценарий живой проверки](docs/playtest/live-checklist.md)
+20 ноября в закрытом тесте Roblox опубликована v25 из тега v25-rc.1. В десктопном Player подтверждена первая кассета. В Studio проверены все пять и выбор Broadcast. [Результаты проверки](docs/releases/v25-rc.1.md) Сборки Closed Test, Progression Preview и Portfolio Preview в `dist/` совпадают с проектом Rojo. В локальном тесте журнал хранится до остановки сервера, а приглашения Roblox доступны в опубликованной игре. [Отчёт по версии 24](docs/portfolio-release-2026-11-16.md) · [Сценарий живой проверки](docs/playtest/live-checklist.md)
 
 ## Документация
 
