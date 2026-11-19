@@ -16,7 +16,7 @@ Creator Hub recorded place version 25 on 20 November 2026 at 00:41 MSK. Before p
 
 | Environment | Observed result |
 | --- | --- |
-| Roblox Player on macOS, closed server | After an ordinary battery pickup and delivery, the HUD read 1/5 and the receiver showed one raised cyan cassette alongside four idle cassettes. A full five-delivery Player run is still open. |
+| Roblox Player on macOS, closed server | In one solo Depot 07 shift, each of five deliveries raised one cyan cassette. After the fifth, the HUD displayed both routes. Approaching each console showed `Send recording` and `Power shelter`, respectively. With five seconds left, the player activated Shelter. The victory screen showed `Shelter powered` and a personal best of 2:10. [Screenshots of all five deliveries, both prompts and victory](../playtest/v25-receiver.jpg) |
 | Studio, one server and one client | The test positioned the avatar at the prompts and invoked the normal pickup and delivery handlers five times. After every delivery, the client checked the material and height of each of the five cassettes. Both route prompts stayed disabled through delivery four, then enabled on delivery five. Choosing Broadcast ended the shift in victory. |
 
 [Original system audit](../audit-2026-11-20.md)
