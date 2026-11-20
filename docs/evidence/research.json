@@ -1,0 +1,74 @@
+{
+  "game": "Blackout Freight",
+  "revision": "bb29a8b662d57be3a3d3fe7f127d82b77069a2fa",
+  "source_sha256": {
+    "analysis/synthetic_compass_counts.csv": "b1d4b7c2107b982a2c6ec89a45c54ff8d2d2b57e5a720c4796ab47907ed30cb0",
+    "studio/research/study.py": "753c6c01822355bff12b70415f71e74e71bfcf107794d19586c555992c431dec",
+    "studio/research/metrics.sql": "b37f755a3be09cf6d59ee424ace5fefd4106f0846b35dbe8e3847d3a4a809eb5"
+  },
+  "query_sha256": "e865b7a6145b7ec78d5679264632514ef5ce21d484606d8bcf992ae87084161e",
+  "input_rows": 8,
+  "cases": [
+    {
+      "scenario": "assignment_defect",
+      "metrics": {
+        "max_imbalance_bp": 3314,
+        "solo_heavy_lift_bp": 770,
+        "crew_heavy_lift_bp": 453
+      },
+      "rule": "investigate_assignment",
+      "model_answer": "investigate_assignment",
+      "agreement": true,
+      "tokens": 102,
+      "receipts": [
+        {
+          "service": "amplitude",
+          "phase": "ingestion_acknowledged",
+          "http_status": 200,
+          "event_id": "76dfd57e405859a6a640735864fcb8f9",
+          "timestamp_utc": "2026-11-20T20:03:54.183193+00:00"
+        },
+        {
+          "service": "sentry",
+          "phase": "ingestion_acknowledged",
+          "http_status": 200,
+          "event_id": "8e5c336d4b0357588f3c0c766fd18b3f",
+          "timestamp_utc": "2026-11-20T20:03:54.894043+00:00"
+        }
+      ]
+    },
+    {
+      "scenario": "fixture",
+      "metrics": {
+        "max_imbalance_bp": 22,
+        "solo_heavy_lift_bp": 774,
+        "crew_heavy_lift_bp": 471
+      },
+      "rule": "collect_player_data",
+      "model_answer": "investigate_assignment",
+      "agreement": false,
+      "tokens": 100,
+      "receipts": [
+        {
+          "service": "amplitude",
+          "phase": "ingestion_acknowledged",
+          "http_status": 200,
+          "event_id": "a40ed0a925fd596a871fdd60c0a26fa8",
+          "timestamp_utc": "2026-11-20T20:03:56.176651+00:00"
+        },
+        {
+          "service": "sentry",
+          "phase": "ingestion_acknowledged",
+          "http_status": 200,
+          "event_id": "acff0d96ba07575695a2f0acd1806fe5",
+          "timestamp_utc": "2026-11-20T20:03:56.396059+00:00"
+        }
+      ]
+    }
+  ],
+  "databricks": "SQL Statement Execution / SQLite parity",
+  "aws_plan": "FREE / ACTIVE",
+  "model": "qwen.qwen3-coder-30b-a3b-instruct",
+  "region": "eu-north-1",
+  "utc": "2026-11-20T20:03:52.360985+00:00"
+}

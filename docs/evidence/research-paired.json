@@ -1,0 +1,37 @@
+{
+  "model": "qwen.qwen3-coder-30b-a3b-instruct",
+  "baseline_sha256": "f8787262ab8653ef37c5a939f5c7a07257a6565814f42917c05c03f118efc3df",
+  "features_sha256": "d69c2f051c3576bec869d91edd43e4cdc552a513902f1b5678b7640ab9f0f248",
+  "cases": [
+    {
+      "scenario": "assignment_defect",
+      "facts": {
+        "assignment_gap_percent": 33.14,
+        "investigation_threshold_percent": 5,
+        "data_source": "synthetic fixture"
+      },
+      "rule": "investigate_assignment",
+      "model_answer": "investigate_assignment",
+      "strict_before": true,
+      "strict_after": true,
+      "first_line_before": true,
+      "first_line_after": true,
+      "tokens": 102
+    },
+    {
+      "scenario": "fixture",
+      "facts": {
+        "assignment_gap_percent": 0.22,
+        "investigation_threshold_percent": 5,
+        "data_source": "synthetic fixture"
+      },
+      "rule": "collect_player_data",
+      "model_answer": "collect_player_data",
+      "strict_before": false,
+      "strict_after": true,
+      "first_line_before": false,
+      "first_line_after": true,
+      "tokens": 101
+    }
+  ]
+}
