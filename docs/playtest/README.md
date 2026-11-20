@@ -30,7 +30,11 @@ EN: Grab a battery. The drone hunts whoever carries it. Deliver five cells with 
 
 В отдельном запуске QA от TestVicu журнал Custom Events в Creator Hub показал `FirstShiftCompassV1` с этапами `exposed`, `pickup_90`, `caught_90` и `delivered_90`. Сегмент `qa_solo` исключается из продуктовых отчётов. В момент запуска семидневная воронка Onboarding ещё не показывала агрегированных результатов. [Журнал событий](v28-public-qa-events.jpg).
 
-[Объявление на BloxStack](https://bloxstack.app/playtests/r6pycf-blackout-freight-v28-try-the-public-16-game-and-find-your-fi) обновлено для публичного запуска. Одно место относится к добровольному опросу. По ссылке на Roblox может самостоятельно зайти любой подходящий игрок. В журнале первой наблюдаемой сессии указываем источник `BloxStack`, если участник пришёл по этому объявлению.
+[Объявление на BloxStack](https://bloxstack.app/playtests/r6pycf-blackout-freight-bring-a-crewmate-for-the-five-battery-run-n) открыто на 20 добровольцев. Две общие смены намечены на 21 и 22 ноября 2026 года с 18:00 до 18:20 UTC (21:00–21:20 МСК). В обоих случаях вход через публичную страницу Roblox. Игроки могут самостоятельно собраться в экипажи до четырёх человек. Число мест означает вместимость набора. Перед обновлением объявления BloxStack показывал 2 открытия и 0 заявок. [Опубликованное расписание](november-crew-bloxstack.jpg)
+
+Первый [Shorts с погоней](https://youtube.com/shorts/0kzOtm_4vSI) опубликован 20 ноября на Gleb Ramsey. В описании указан канал привлечения Freight Test E. В поиске Roblox игру можно найти по названию Blackout Freight. Монтаж использует архивный геймплей и кадр Sentinel, звук синтезирован для ролика. [Подтверждение YouTube](november-crew-short.jpg) · [Второй монтаж о выборе экипажа](../../dist/blackout-freight-short-fifth-cell.mp4)
+
+В журнале наблюдений перед первой волной — 0 подтверждённых внешних первых сессий. Для BloxStack источник указывается по ответу игрока. Для Shorts число переходов и новых игроков берём из Creator Hub по Freight Test E. Ввод названия вручную может отображаться как поиск Roblox. Продажи учитываются после подтверждения Roblox, отдельно от просмотров Shorts, регистраций BloxStack и открытия окна оплаты.
 
 1. Предложить новичку одну смену без вознаграждения или обязательной покупки. Если Roblox отказал до запуска смены, отдельно записать устройство и текст ошибки.
 2. Дать только ссылку. Не объяснять, где батарея, маяк и шлюз. Фиксировать самостоятельные действия.
@@ -59,7 +63,7 @@ EN: Grab a battery. The drone hunts whoever carries it. Deliver five cells with 
 
 ## Share Links
 
-Созданы четыре нативные ссылки в Creator Hub 13 ноября 2026. Custom LaunchData выключен. Каждая ссылка ведёт на одно и то же место. Для публичной v28 действуют возрастные и региональные условия Roblox.
+Кампании A–D созданы 13 ноября 2026. Кампания E создана для собственного YouTube-канала 20 ноября. Custom LaunchData выключен. Каждая ссылка ведёт на одно и то же место. Для публичной v28 действуют возрастные и региональные условия Roblox.
 
 | Кампания в кабинете | Назначение | Ссылка |
 | --- | --- | --- |
@@ -67,8 +71,9 @@ EN: Grab a battery. The drone hunts whoever carries it. Deliver five cells with 
 | Freight Test B | Discord, обложка B | https://www.roblox.com/join/14x43 |
 | Freight Test C | Telegram, обложка A | https://www.roblox.com/join/78219 |
 | Freight Test D | Авторы роликов, обложка A | https://www.roblox.com/join/ctykn |
+| Freight Test E | Shorts канала Gleb Ramsey | https://www.roblox.com/join/b5ajh |
 
-Канал закрепляется этой таблицей: исходные длинные имена отклонил фильтр Roblox. Не смешивать разные каналы в одной ссылке. Ссылки созданы, но ещё не распространялись и не проверялись внешними участниками. Сообщения в сообщества от имени владельца не отправлялись.
+Канал закрепляется этой таблицей: исходные длинные имена отклонил фильтр Roblox. Не смешивать разные каналы в одной ссылке. Размещение ссылки E подтверждено в описании ролика. Для ссылки C приглашение отправлено в Telegram, но модерация ограничила публикацию. Доступность сообщения участникам не подтверждена. [Ссылка E в Creator Hub](november-crew-share.jpg)
 
 [Подтверждение из кабинета](share-links.jpg) · [Официальное руководство Roblox](https://create.roblox.com/docs/production/promotion/share-links).
 
