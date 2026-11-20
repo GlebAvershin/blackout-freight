@@ -2,7 +2,7 @@
 
 Blackout Freight is a 1–4 player co-op Roblox game. Recover batteries from Depot 07 while evading a security drone, then decide where to send the last of the depot’s power.
 
-**Roblox closed test v25 · v25-rc.1** · The airlock now shows each accepted battery in a five-slot mechanical receiver. The GitHub prerelease includes the playable place, checksums and a synthetic Tableau extract. [Download the release](https://github.com/GlebAvershin/blackout-freight/releases/tag/v25-rc.1) · [Read the system audit](docs/audit-2026-11-20.md)
+**Roblox closed test · place version 28** · Sentinel patrols Depot 07 with twin ducted fans and a moving optical head. The airlock has a five-slot receiver and an illuminated canopy. [Studio build](dist/Blackout%20Freight%20Closed%20Test.rbxl) · [In-game patrol](dist/Blackout%20Freight%20Patrol.jpg) · [Blender model](assets/sentinel/Sentinel.blend)
 
 **Portfolio case study** · I shipped a first-shift compass to the Roblox closed test and instrumented a randomized experiment around the first delivery. In v24, Roblox Analytics received all four event stages for each variant during internal QA. The public notebook demonstrates the analysis on synthetic data.
 
@@ -17,6 +17,16 @@ Blackout Freight is a 1–4 player co-op Roblox game. Recover batteries from Dep
 ![Blackout Freight — погоня в Депо 07](dist/blackout-freight-chase-cover.jpg)
 
 [Страница игры в Roblox](https://www.roblox.com/games/111633787401180/Blackout-Freight) · [Сборка для Studio](dist/Blackout%20Freight%20Closed%20Test.rbxl) · [Игровой ролик](dist/blackout-freight-chase-gameplay.mp4)
+
+## Депо и Sentinel в Studio
+
+У Sentinel два канальных вентилятора и поворотный оптический блок. Во время патруля янтарный луч проходит по полу и контейнерам. В погоне оптика направляется вперёд, пятно сужается и краснеет. Голубой цвет показывает, что сработала приманка. Вариант Tracker использует фиолетовую оптику при поиске.
+
+![Sentinel в Депо 07, кадр из Roblox Studio](dist/Blackout%20Freight%20Sentinel.jpg)
+
+Над погрузочными рядами появились остеклённые фонари и мостовой кран, над шлюзом — навес с рабочим светом. Пять индикаторов в HUD, на табло и на механическом приёмнике показывают заряд в одном порядке.
+
+[Открыть сборку в Studio](dist/Blackout%20Freight%20Design%20Preview.rbxl) · [Кадр патруля](dist/Blackout%20Freight%20Patrol.jpg) · [Модель Sentinel для Blender](assets/sentinel/Sentinel.blend)
 
 ## Компас первой смены
 

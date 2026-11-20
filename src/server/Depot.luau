@@ -2,13 +2,15 @@ local Lighting = game:GetService("Lighting")
 local PowerCell = require(game:GetService("ReplicatedStorage"):WaitForChild("Freight").PowerCell)
 local SectorBlackout = require(game:GetService("ReplicatedStorage").Freight.SectorBlackout)
 
+local Architecture = require(script.Parent.DepotArchitecture)
+
 local Depot = {}
 Depot.Cyan = PowerCell.Cyan
 Depot.Amber = Color3.fromRGB(255, 191, 74)
 Depot.Red = Color3.fromRGB(255, 76, 72)
 Depot.Shelter = Color3.fromRGB(255, 176, 111)
-local ink = Color3.fromRGB(16, 25, 38)
-local steel = Color3.fromRGB(40, 57, 76)
+local ink = Color3.fromRGB(22, 34, 39)
+local steel = Color3.fromRGB(48, 66, 72)
 local neon = Enum.Material.Neon
 
 function Depot.part(parent, name, size, cf, color, material, solid)
@@ -43,10 +45,12 @@ local function sign(part, title, color, face)
 	local board = Instance.new("SurfaceGui")
 	board.Face = face or Enum.NormalId.Front
 	board.LightInfluence = 0
-	board.CanvasSize = Vector2.new(840, 130)
+	board.SizingMode = Enum.SurfaceGuiSizingMode.FixedSize
+	board.CanvasSize = Vector2.new(math.round(part.Size.X * 48), math.round(part.Size.Y * 48))
 	board.Parent = part
 	local label = Instance.new("TextLabel")
-	label.Size = UDim2.fromScale(1, 1)
+	label.Position = UDim2.fromScale(0.04, 0.08)
+	label.Size = UDim2.fromScale(0.92, 0.84)
 	label.BackgroundTransparency = 1
 	label.TextScaled = true
 	label.Font = Enum.Font.GothamBold
@@ -145,7 +149,7 @@ function Depot.build()
 	for z = -74, 74, 148 do
 		box("Bulkhead", 0, 7, z, 140, 14, 2, steel, nil, true)
 	end
-	local paints = {Color3.fromRGB(44, 70, 81), Color3.fromRGB(50, 67, 90), Color3.fromRGB(64, 72, 85)}
+	local paints = {Color3.fromRGB(56, 87, 87), Color3.fromRGB(88, 65, 55), Color3.fromRGB(72, 82, 87)}
 	for row, x in {-47, -17, 17, 47} do
 		for sector, z in {-48, -15, 19, 47} do
 			box("Cargo container", x, 2, z, 12, 4, 8, paints[(row + sector) % #paints + 1], Enum.Material.Metal, true)
@@ -164,11 +168,14 @@ function Depot.build()
 			box("Lane dash", x, 0.05, z, 0.16, 0.05, 2.7, Color3.fromRGB(113, 133, 148))
 		end
 	end
+	Architecture.transferCrane(world, Depot.part)
+	Architecture.clerestories(world, Depot.part)
+	Architecture.airlockCanopy(world, Depot.part)
 	local sectors = {
-		{z = 36, title = "01 / RECEIVING", color = Color3.fromRGB(116, 199, 214)},
-		{z = 5, title = "02 / SWITCHYARD", color = Color3.fromRGB(234, 163, 102), blackout = true},
-		{z = -27, title = "03 / COLD STORAGE", color = Color3.fromRGB(147, 173, 237)},
-		{z = -55, title = "04 / RELAY CORE", color = Color3.fromRGB(168, 207, 182)},
+		{z = 36, number = "01", title = "RECEIVING", color = Color3.fromRGB(116, 199, 214)},
+		{z = 5, number = "02", title = "SWITCHYARD", color = Color3.fromRGB(234, 163, 102), blackout = true},
+		{z = -27, number = "03", title = "COLD STORAGE", color = Color3.fromRGB(147, 173, 237)},
+		{z = -55, number = "04", title = "RELAY CORE", color = Color3.fromRGB(168, 207, 182)},
 	}
 	for _, sector in sectors do
 		local z, accent = sector.z, sector.color
@@ -178,9 +185,8 @@ function Depot.build()
 			local edge = box("Gantry edge", x, 11.5, z, 16, 0.1, 0.24, accent, neon)
 			if sector.blackout then edge:AddTag(SectorBlackout.FixtureTag) end
 		end
-		local board = box("Sector wayfinding", 0, 10.6, z, 17, 1.8, 0.36, ink, Enum.Material.Metal)
-		sign(board, sector.title, accent, Enum.NormalId.Back)
-		sign(board, sector.title, accent)
+		local board = box("Sector wayfinding", 0, 10.4, z, 17, 2.26, 0.36, ink, Enum.Material.Metal)
+		Architecture.sectorSign(board, sector.number, sector.title, accent)
 		for _, x in {-42, 0, 42} do
 			local fixture = box("Aisle light", x, 11.45, z, 4.5, 0.18, 0.5, accent, neon)
 			light(fixture, accent, 24, 0.85)
@@ -205,7 +211,7 @@ function Depot.build()
 		end
 	end
 	sign(box("Airlock sign", 0, 5.3, 72.8, 13, 1.4, 0.6, ink), "07  /  AIRLOCK", Depot.Amber)
-	sign(box("Back wall sign", 0, 8.4, 72.8, 37, 4, 0.6, ink), "BLACKOUT FREIGHT", Depot.Cyan)
+
 	local decoyBeacon = box("Decoy beacon", 8, 1.5, 45, 2.2, 3, 2.2, steel, Enum.Material.Metal, true)
 	local beaconLamp = box("Decoy lamp", 8, 3.2, 45, 1.8, 0.45, 1.8, Depot.Cyan)
 	local beaconLight = light(beaconLamp, Depot.Cyan, 22, 0)
@@ -215,10 +221,15 @@ function Depot.build()
 	local receiver = require(script.Parent.ReceiverGeometry)
 	local rack = Instance.new("Model")
 	rack.Name = "Charge receiver"
+	local wallPanel = Depot.part(rack, "Bank display", Vector3.new(30.4, 5.8, 0.6),
+		CFrame.new(0, 9.5, 72.6), ink, Enum.Material.Metal)
+	wallPanel.CanQuery = false
 	for _, shape in receiver.parts do
 		local rgb = receiver.palette[shape.paint]
+		local x, y, z = table.unpack(shape.center)
 		local detail = Depot.part(rack, shape.name, Vector3.new(table.unpack(shape.size)),
-			CFrame.new(0, 3.5, 65.1) * CFrame.new(table.unpack(shape.center)),
+			-- A player approaching the north face sees world +X on the left.
+			CFrame.new(-x, 3.5 + y, 65.1 + z),
 			Color3.fromRGB(table.unpack(rgb)), if shape.paint == "amber" then neon else Enum.Material.Metal)
 		detail.CanQuery = false
 	end
@@ -251,7 +262,7 @@ function Depot.build()
 	outputs.broadcast.beacon = beacon
 	outputs.broadcast.relay = light(beacon, Depot.Cyan, 36, 0)
 	sign(box("Relay plate", 0, 6, mast.Position.Z + 1.4, 8, 1.1, 0.16, ink), "RELAY 07", Depot.Cyan)
-	local shelter = box("Shelter light", 13, 7, 70.5, 7.5, 0.22, 0.7, Depot.Shelter)
+	local shelter = box("Shelter light", 13, 6.05, 71.9, 7.5, 0.22, 0.7, Depot.Shelter)
 	outputs.shelter.beacon = shelter
 	outputs.shelter.relay = light(shelter, Depot.Shelter, 31, 0)
 	local spawn = Instance.new("SpawnLocation")
@@ -280,6 +291,7 @@ function Depot.build()
 
 	local drone = Instance.new("Model")
 	drone.Name = "Sentinel"
+	drone:AddTag("FreightSentinelRig")
 	local core = Depot.part(drone, "Body", Vector3.new(4.3, 2, 3.2), CFrame.new(), ink, Enum.Material.Metal)
 	Depot.part(drone, "Eye", Vector3.new(2.75, 0.38, 0.23), CFrame.new(0, 0.2, -1.67), Depot.Red, neon)
 	for _, x in {-2.75, 2.75} do

@@ -32,11 +32,22 @@
 | --- | --- |
 | Смены, доставка и выбор финала | [Shift.server.luau](../src/server/Shift.server.luau), [Round.luau](../src/shared/Round.luau) |
 | Геометрия и поведение дронов | [Depot.luau](../src/server/Depot.luau), [FreightYard.luau](../src/server/FreightYard.luau), [SentinelController.luau](../src/server/SentinelController.luau) |
+| Корпус, оптика и движение вентиляторов Sentinel | [Sentinel.blend](../assets/sentinel/Sentinel.blend), [экспортёр Blender](../assets/sentinel/build.py), [SentinelPresentation.client.luau](../src/client/SentinelPresentation.client.luau) |
 | HUD, журнал и первая доставка | [Hud.client.luau](../src/client/Hud.client.luau), [JournalPanel.luau](../src/client/JournalPanel.luau), [FirstShiftCompass.luau](../src/client/FirstShiftCompass.luau) |
 | Профиль, рейтинг и пропуска | [ProfileService.luau](../src/server/ProfileService.luau), [HallOfFame.luau](../src/server/HallOfFame.luau), [CommerceService.luau](../src/server/CommerceService.luau) |
 | Баланс и подключённые функции | [Config.luau](../src/shared/Config.luau), [CrewChallenges.luau](../src/shared/CrewChallenges.luau), [Roles.luau](../src/shared/Roles.luau) |
 
 [default.project.json](../default.project.json) размещает `src/shared` в `ReplicatedStorage.Freight`, `src/server` в `ServerScriptService.Freight`, а `src/client` — в `StarterPlayerScripts.Freight`. Клиент показывает состояние и отправляет действия. Сервер проверяет их, начисляет награды и сохраняет профиль. Поэтому изменения правил начинай на сервере, а общий чистый расчёт выноси в `src/shared`.
+
+### Графика Sentinel
+
+В Blender корпус, вентиляторы и оптика собраны в координатах единого шасси. У деталей есть свойства `primitive` и `group`. После изменения положения, ориентации или размеров деталей сохрани сцену и из корня проекта выполни экспорт.
+
+```sh
+blender -b assets/sentinel/Sentinel.blend --python assets/sentinel/build.py -- --export
+```
+
+Экспортёр обновит [SentinelRig.json](../src/client/SentinelRig.json). При запуске клиент строит из этих данных обычные детали Roblox, привязывает их к серверному корпусу и меняет оптику при переходах между режимами. При включённом уменьшении движения вентиляторы останавливаются и оптика перестаёт сканировать из стороны в сторону. Сценарий `scripts/run-guidance-studio-qa.py` проверяет сборку корпуса, движение вентилятора, попадание луча в поверхность и смену цветов.
 
 ## Проверки перед отправкой изменений
 

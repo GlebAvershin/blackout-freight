@@ -12,7 +12,7 @@ local storeName = "FreightDailyWeekly_v1"
 function Hall.new(world, depot, state)
 	if not Config.WeeklyRankingEnabled then return setmetatable({}, Hall) end
 	local board = depot.part(world, "Weekly Hall of Fame", Vector3.new(19, 7, 0.4),
-		CFrame.new(16, 5.5, 70), Color3.fromRGB(13, 21, 32), Enum.Material.Metal)
+		CFrame.new(46, 5.5, 72.65), Color3.fromRGB(13, 21, 32), Enum.Material.Metal)
 	local surface = Instance.new("SurfaceGui")
 	surface.CanvasSize = Vector2.new(720, 336)
 	surface.LightInfluence = 0

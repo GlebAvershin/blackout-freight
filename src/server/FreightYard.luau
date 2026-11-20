@@ -2,7 +2,7 @@ local Rail = require(game:GetService("ReplicatedStorage").Freight.RailCycle)
 local Yard = {}
 local hiddenNames = {
 	["Cargo container"]=true, ["Container lid"]=true, ["Cargo rib"]=true, ["Cargo reflector"]=true, ["Freight ID"]=true,
-	["Service gantry"]=true, ["Overhead service duct"]=true, ["Gantry edge"]=true, ["Sector wayfinding"]=true,
+	["Depot clerestories"]=true, ["Transfer crane"]=true, ["Service gantry"]=true, ["Overhead service duct"]=true, ["Gantry edge"]=true, ["Sector wayfinding"]=true,
 	["Aisle light"]=true, ["Cell socket"]=true, ["Socket ring"]=true, ["Guide rail"]=true, ["Rail tie"]=true, ["Lane dash"]=true,
 }
 function Yard.build(world, Depot)

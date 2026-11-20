@@ -11,8 +11,11 @@ for index = 1, 5 do
 	slots[index] = {part = part, rest = part.Position, idle = part.Color}
 end
 
+local updateDisplay = require(script.Parent.ReceiverDisplay).mount(rack:WaitForChild("Bank display"), #slots, PowerCell.Cyan)
+
 local function update(animate)
 	local count = rack:GetAttribute("Charge") or 0
+	updateDisplay(count)
 	for index, slot in slots do
 		local charged = index <= count
 		if animate and slot.charged == charged then continue end

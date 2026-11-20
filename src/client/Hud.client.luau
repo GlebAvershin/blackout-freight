@@ -30,12 +30,12 @@ local function localized(lines)
 end
 
 local colors = {
-	ink = Color3.fromRGB(13, 21, 32),
-	slate = Color3.fromRGB(39, 53, 68),
-	paper = Color3.fromRGB(239, 249, 255),
-	muted = Color3.fromRGB(170, 192, 208),
-	cyan = Color3.fromRGB(64, 232, 234),
-	amber = Color3.fromRGB(255, 195, 80),
+	ink = Color3.fromRGB(20, 30, 32),
+	slate = Color3.fromRGB(54, 72, 74),
+	paper = Color3.fromRGB(247, 245, 225),
+	muted = Color3.fromRGB(189, 206, 202),
+	cyan = Color3.fromRGB(84, 230, 220),
+	amber = Color3.fromRGB(255, 193, 91),
 	red = Color3.fromRGB(255, 121, 117),
 	aurora = Color3.fromRGB(215, 127, 255),
 }
@@ -63,11 +63,28 @@ task.spawn(function()
 end)
 local card = add("Frame", gui, {
 	Name = "ShiftCard", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 6),
-	Size = UDim2.new(1, -16, 0, 108), BackgroundColor3 = colors.ink, BackgroundTransparency = 0.16, BorderSizePixel = 0,
+	Size = UDim2.new(1, -16, 0, 108), BackgroundColor3 = colors.ink, BackgroundTransparency = 0.04, BorderSizePixel = 0,
 })
 local cardLimit = add("UISizeConstraint", card, {MaxSize = Vector2.new(320, 108)})
-add("UICorner", card, {CornerRadius = UDim.new(0, 5)})
+add("UICorner", card, {CornerRadius = UDim.new(0, 3)})
 local cardStroke = add("UIStroke", card, {Color = colors.slate, Thickness = 1})
+local masthead = add("Frame", card, {
+	Name = "DispatchMasthead", Position = UDim2.fromOffset(1, 1), Size = UDim2.new(1, -2, 0, 18),
+	BackgroundColor3 = Color3.fromRGB(39, 56, 58), BorderSizePixel = 0,
+})
+-- The paired rail marks also appear on the depot's suspended sector signs.
+for _, x in {9, 14} do
+	add("Frame", masthead, {Position = UDim2.fromOffset(x, 5), Size = UDim2.fromOffset(3, 8),
+		Rotation = 19, BackgroundColor3 = colors.amber, BorderSizePixel = 0})
+end
+local clockBed = add("Frame", card, {
+	Name = "ClockWell", AnchorPoint = Vector2.new(1, 0), Size = UDim2.fromOffset(57, 20),
+	BackgroundColor3 = Color3.fromRGB(9, 18, 20), BorderSizePixel = 0,
+})
+local radioBed = add("Frame", card, {
+	Name = "RadioChannel", Position = UDim2.fromOffset(1, 77), Size = UDim2.new(1, -2, 0, 30),
+	BackgroundColor3 = Color3.fromRGB(28, 42, 44), BorderSizePixel = 0,
+})
 local pulse = add("Frame", card, {
 	Name = "DeliveryPulse", Position = UDim2.new(0, 5, 0, 0), Size = UDim2.new(1, -10, 0, 2),
 	BackgroundColor3 = colors.cyan, BackgroundTransparency = 1, BorderSizePixel = 0,
@@ -84,8 +101,13 @@ player:GetAttributeChangedSignal("ShiftDeliveries"):Connect(function()
 		end
 		needsRecoveryGuide = false
 		fade:Cancel()
-		pulse.BackgroundTransparency = 0
-		fade:Play()
+		pulse.BackgroundColor3 = PowerCell.Finishes[PowerCell.equipped(player)] or colors.cyan
+		if not GuiService.ReducedMotionEnabled then
+			pulse.BackgroundTransparency = 0
+			fade:Play()
+		else
+			pulse.BackgroundTransparency = 1
+		end
 	end
 	previousDeliveries = deliveries
 end)
@@ -98,7 +120,8 @@ local function label(parent, name, x, y, width, height, px, color, heavy)
 	})
 end
 
-local brand = label(card, "Brand", 10, 3, nil, 14, 10, colors.muted, true)
+local brand = label(card, "Brand", 23, 2, nil, 16, 11, colors.paper, true)
+brand.Font = Enum.Font.RobotoMono
 local objective = label(card, "Objective", 10, 20, nil, 22, 16, colors.paper, true)
 objective.Size = UDim2.new(1, -79, 0, 22)
 local timer = label(card, "Timer", 0, 20, 59, 22, 18, colors.cyan, true)
@@ -107,15 +130,9 @@ timer.TextXAlignment = Enum.TextXAlignment.Right
 timer.Font = Enum.Font.RobotoMono
 
 local rail = add("Frame", card, {
-	Size = UDim2.new(1, -20, 0, 3), BackgroundTransparency = 1,
+	Name = "ChargeRail", Size = UDim2.new(1, -16, 0, 5), BackgroundTransparency = 1,
 })
-local segments = {}
-for i = 1, Config.Target do
-	segments[i] = add("Frame", rail, {
-		Position = UDim2.fromScale((i - 1) / Config.Target, 0),
-		Size = UDim2.new(1 / Config.Target, -4, 1, 0), BorderSizePixel = 0, BackgroundColor3 = colors.slate,
-	})
-end
+local updateChargeBank = require(script.Parent.ChargeBank).mount(rail, Config.Target, 4, colors.slate, colors.cyan)
 local hint = label(card, "Hint", 10, 50, nil, 28, 12, colors.paper, true)
 hint.TextWrapped = true
 hint.TextTruncate = Enum.TextTruncate.None
@@ -127,11 +144,18 @@ local marker = add("BillboardGui", gui, {
 	Name = "FirstDeliveryGuide", Size = UDim2.fromOffset(138, 30), StudsOffsetWorldSpace = Vector3.new(0, 3, 0),
 	AlwaysOnTop = true, MaxDistance = 90, Enabled = false,
 })
-local markerText = label(marker, "Waypoint", 0, 0, 138, 30, 14, colors.cyan, true)
-markerText.TextXAlignment = Enum.TextXAlignment.Center
-markerText.BackgroundColor3 = colors.ink
-markerText.BackgroundTransparency = 0.14
-add("UICorner", markerText, {CornerRadius = UDim.new(0, 5)})
+local tag = add("Frame", marker, {
+	Name = "RouteTag", Size = UDim2.fromScale(1, 1), BorderSizePixel = 0,
+	BackgroundColor3 = colors.ink, BackgroundTransparency = 0.05,
+})
+add("UICorner", tag, {CornerRadius = UDim.new(0, 3)})
+local tagBorder = add("UIStroke", tag, {Color = colors.cyan, Transparency = 0.22})
+local markerText = label(tag, "Waypoint", 8, 0, 95, 30, 13, colors.cyan, true)
+local distanceText = label(tag, "Distance", 99, 3, 36, 24, 13, colors.paper, true)
+distanceText.TextXAlignment = Enum.TextXAlignment.Center
+distanceText.Font = Enum.Font.RobotoMono
+distanceText.BackgroundTransparency = 0
+distanceText.BackgroundColor3 = colors.slate
 
 local function dockButton(name, color)
 	local button = add("TextButton", gui, {
@@ -216,6 +240,10 @@ local function drawGuide(phase, carrying, route, findNext)
 	-- Let the native interaction prompt take over once the player reaches the marker.
 	marker.Enabled = passage ~= nil or (nearest ~= nil and nearest > 8)
 	markerText.TextColor3 = carrying and colors.amber or colors.cyan
+	tagBorder.Color = markerText.TextColor3
+	if marker.Enabled then
+		distanceText.Text = tostring(math.round((marker.Adornee.Position - root.Position).Magnitude))
+	end
 	markerText.Text = passage and t("▼  PASSAGE", "▼  ПРОХОД")
 		or carrying and t("▼  AIRLOCK", "▼  ШЛЮЗ") or t("▼  BATTERY", "▼  БАТАРЕЯ")
 	return marker.Enabled and not passage and target or nil
@@ -339,6 +367,15 @@ end
 journalPanel:GetPropertyChangedSignal("Visible"):Connect(updatePanelVisibility)
 preview:GetPropertyChangedSignal("Visible"):Connect(updatePanelVisibility)
 
+local function alignDesktopDock()
+	if compact then return end
+	local y = journalButton.Position.Y
+	local hasLocker = shop.Visible
+	journalButton.Position = UDim2.new(UDim.new(0.5, hasLocker and -146 or -68), y)
+	invite.Position = UDim2.new(UDim.new(0.5, hasLocker and -8 or 68), y)
+end
+shop:GetPropertyChangedSignal("Visible"):Connect(alignDesktopDock)
+
 local function layout()
 	compact = UserInputService.TouchEnabled or gui.AbsoluteSize.Y < 420
 	local portrait = gui.AbsoluteSize.X < gui.AbsoluteSize.Y
@@ -358,14 +395,19 @@ local function layout()
 		end
 	end
 	card.Position = UDim2.new(0.5, 0, 0, top)
+	masthead.Visible = not compact
 	brand.Visible = not compact
+	radioBed.Visible = not compact or detailsExpanded
+	radioBed.Position = UDim2.fromOffset(1, compact and 53 or 77)
+	radioBed.Size = UDim2.new(1, -2, 0, compact and 26 or 30)
 	detailsToggle.Visible = compact
 	detailsArrow.Text = detailsExpanded and "⌃" or "⌄"
 	hint.Visible = not compact or detailsExpanded
 	radio.Visible = hint.Visible
 	objective.Size = UDim2.new(1, compact and -94 or -79, 0, 22)
 	objective.TextSize = compact and 13 or 16
-	rail.Position = UDim2.fromOffset(10, compact and 23 or 44)
+	rail.Position = UDim2.fromOffset(8, compact and 24 or 44)
+	rail.Size = UDim2.new(1, -16, 0, compact and 3 or 5)
 	hint.Position = UDim2.fromOffset(10, compact and 27 or 49)
 	radio.Position = UDim2.fromOffset(10, compact and 53 or 77)
 	hint.Size = UDim2.new(1, -20, 0, compact and 26 or 28)
@@ -375,6 +417,8 @@ local function layout()
 	objective.Position = UDim2.fromOffset(10, compact and 1 or 20)
 	timer.Position = UDim2.new(1, compact and -26 or -10, 0, compact and 1 or 20)
 	timer.TextSize = compact and 14 or 18
+	clockBed.Position = UDim2.new(1, compact and -23 or -6, 0, compact and 3 or 21)
+	clockBed.Size = UDim2.fromOffset(compact and 45 or 57, compact and 17 or 20)
 	local dockY = compact and UDim.new(1, -dockBottom) or UDim.new(0, top + height + 7)
 	local buttonWidth = math.clamp(math.floor((gui.AbsoluteSize.X - 36) / 3), 44, portrait and 82 or 94)
 	local spacing = buttonWidth + 6
@@ -392,6 +436,7 @@ local function layout()
 	local sideLocker = compact and not portrait and gui.AbsoluteSize.X >= 620
 	previewLimit.MaxSize = Vector2.new(sideLocker and 292 or 326, 164)
 	preview.AnchorPoint = sideLocker and Vector2.new(1, 0.5) or Vector2.new(0.5, 0)
+	alignDesktopDock()
 	preview.Position = if sideLocker then UDim2.new(1, -12, 0.5, 0)
 		elseif compact and portrait then UDim2.new(0.5, 0, 1, -220)
 		elseif compact then UDim2.new(0.5, 0, 0.5, -82)
@@ -477,9 +522,7 @@ local function draw()
 	timer.TextColor3 = (phase == "routing" or (phase == "live" and remaining <= 20)) and colors.amber or colors.cyan
 	cardStroke.Color = tracked and colors.red or colors.slate
 	objective.TextColor3 = compact and tracked and colors.red or colors.paper
-	for i, segment in segments do
-		segment.BackgroundColor3 = i <= count and colors.cyan or colors.slate
-	end
+	updateChargeBank(count)
 	hint.TextColor3 = colors.paper
 	if phase == "live" then
 		objective.Text = if compact and tracked then t("RUN!", "БЕГИ!")
