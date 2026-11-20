@@ -226,7 +226,9 @@ function Depot.build()
 	local beaconLight = light(beaconLamp, Depot.Cyan, 22, 0)
 	sign(decoyBeacon, "DECOY", Depot.Cyan, Enum.NormalId.Back)
 	local terminal = box("Delivery console", 0, 1.65, 65, 8.4, 3.3, 2.6, steel, Enum.Material.Metal, true)
-	scenery("Console rim", 0, 3.38, 65, 8.5, 0.24, 2.8, ink, Enum.Material.Metal)
+	terminal:AddTag("FreightReceiverBody")
+	local rim = box("Console rim", 0, 3.38, 65, 8.5, 0.24, 2.8, ink, Enum.Material.Metal)
+	rim:AddTag("FreightReceiverBody")
 	local receiver = require(script.Parent.ReceiverGeometry)
 	local rack = Instance.new("Model")
 	rack.Name = "Charge receiver"
@@ -236,10 +238,11 @@ function Depot.build()
 	for _, shape in receiver.parts do
 		local rgb = receiver.palette[shape.paint]
 		local x, y, z = table.unpack(shape.center)
-		local detail = Depot.scenery(rack, shape.name, Vector3.new(table.unpack(shape.size)),
+		local detail = Depot.part(rack, shape.name, Vector3.new(table.unpack(shape.size)),
 			-- A player approaching the north face sees world +X on the left.
 			CFrame.new(-x, 3.5 + y, 65.1 + z),
 			Color3.fromRGB(table.unpack(rgb)), if shape.paint == "amber" then neon else Enum.Material.Metal)
+		detail:AddTag("FreightReceiverBody")
 		detail.CanQuery = false
 	end
 	rack:SetAttribute("Travel", receiver.travel)

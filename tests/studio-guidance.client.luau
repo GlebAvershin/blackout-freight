@@ -133,6 +133,29 @@ waitFor(function() return board.LocalTransparencyModifier == 1 and not display.E
 assert(not board.CanQuery and not board.CanCollide)
 lookFrom(Vector3.new(0, 7, 56))
 waitFor(function() return board.LocalTransparencyModifier == 0 and display.Enabled end, "receiver readable again")
+rack:SetAttribute("Charge", 1)
+local function receiverVisible(expected)
+	local modifier = if expected then 0 else 1
+	if terminal.LocalTransparencyModifier ~= modifier or depot["Console rim"].LocalTransparencyModifier ~= modifier then return false end
+	for _, part in rack:GetChildren() do
+		if part:IsA("BasePart") and part ~= board and part.LocalTransparencyModifier ~= modifier then return false end
+	end
+	return terminal.SurfaceGui.Enabled == expected
+end
+for _, rear in {Vector3.new(0, 5.5, 71), Vector3.new(3, 6, 87)} do
+	lookFrom(rear)
+	waitFor(function() return receiverVisible(false) end, "housing and every cassette clear the avatar together")
+	assert(terminal.CanCollide and display.Enabled and rack:GetAttribute("Charge") == 1)
+	lookFrom(Vector3.new(0, 7, 56))
+	waitFor(function() return receiverVisible(true) end, "housing and charged cassette restored in front")
+end
+-- Even at contact with the console, turning to look at it shows the charged rack.
+root.CFrame = CFrame.new(0, 3, 63.35)
+lookFrom(Vector3.new(0, 5.8, 70))
+waitFor(function() return receiverVisible(false) end, "close delivery angle clears")
+lookFrom(Vector3.new(0, 6, 54))
+waitFor(function() return receiverVisible(true) end, "close front angle restores")
+root.CFrame = CFrame.new(0, 4, 62)
 local header = depot["Airlock header"]
 lookFrom(header.Position + Vector3.new(0, 0, -1.2))
 waitFor(function() return header.LocalTransparencyModifier == 1 end, "gate obstructs camera")
