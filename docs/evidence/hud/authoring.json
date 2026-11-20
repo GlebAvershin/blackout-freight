@@ -1,0 +1,49 @@
+{
+  "project": "Blackout Freight",
+  "screen": "First shift",
+  "route": "llama",
+  "requested_model": "qwen",
+  "game_revision": "95c813d89f103552c266587f6a6df7b991aff353",
+  "brief_sha256": "3890c5e7cba49ce9611fc22685f55b9ec6db7212541b2df9187fc494c00cd732",
+  "bindings": {
+    "headline": "compass",
+    "stage": "airlock",
+    "action": "role"
+  },
+  "negative_control": {
+    "headline": "airlock",
+    "stage": "role",
+    "action": "compass"
+  },
+  "rejected_control_regions": [
+    "headline",
+    "stage",
+    "action"
+  ],
+  "trace": [
+    {
+      "region": "headline",
+      "component": "compass",
+      "origin": "inference",
+      "tokens": 158,
+      "accepted": true
+    },
+    {
+      "region": "stage",
+      "component": "airlock",
+      "origin": "inference",
+      "tokens": 144,
+      "accepted": true
+    },
+    {
+      "region": "action",
+      "component": "role",
+      "origin": "elimination",
+      "tokens": 0,
+      "accepted": true
+    }
+  ],
+  "model_calls": 2,
+  "inference_tokens": 302,
+  "authoring_ms": 1422
+}

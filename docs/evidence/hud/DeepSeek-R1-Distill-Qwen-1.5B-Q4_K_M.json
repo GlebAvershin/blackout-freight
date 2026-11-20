@@ -1,0 +1,57 @@
+{
+  "project": "Blackout Freight",
+  "model": "DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M",
+  "weights_sha256": "1741e5b2d062b07acf048bf0d2c514dadf2a48f94e2b4aa0cfe069af3838ee2f",
+  "expected": {
+    "headline": "compass",
+    "stage": "airlock",
+    "action": "role"
+  },
+  "cases_sha256": "07f8afbb929004feb8c93dda0aad31a49680684c9ebcd932e887c6d04b5bc484",
+  "rows": [
+    {
+      "instructions": {
+        "headline": "Which way is the next battery?",
+        "stage": "Show where the crew must deliver their cargo.",
+        "action": "Trigger the skill assigned to my crew member."
+      },
+      "baseline": {
+        "headline": "compass",
+        "stage": "airlock",
+        "action": "role"
+      },
+      "model": {
+        "headline": "role",
+        "stage": "airlock",
+        "action": "role"
+      },
+      "baseline_correct": 3,
+      "model_correct": 2,
+      "baseline_us": 162,
+      "model_ms": 3494,
+      "tokens": 400
+    },
+    {
+      "instructions": {
+        "headline": "Put my navigation readout first.",
+        "stage": "Give the evacuation receiver the main panel.",
+        "action": "Keep the specialist ability in reach."
+      },
+      "baseline": {
+        "headline": "airlock",
+        "stage": "compass",
+        "action": "role"
+      },
+      "model": {
+        "headline": "role",
+        "stage": "role",
+        "action": "role"
+      },
+      "baseline_correct": 1,
+      "model_correct": 1,
+      "baseline_us": 84,
+      "model_ms": 3022,
+      "tokens": 397
+    }
+  ]
+}
