@@ -3,9 +3,21 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['studio/hud-brief.json', 'studio/hud/**', '.github/actions/author-hud/**', '.github/workflows/hud-proof.yml']
+    paths:
+      - studio/hud-brief.json
+      - studio/hud-evaluation.json
+      - .github/workflows/hud-proof.yml
+      - assets/airlock-receiver/receiver.png
+      - src/client/FirstShiftCompass.luau
+      - src/client/Hud.client.luau
   pull_request:
-    paths: ['studio/hud-brief.json', 'studio/hud/**', '.github/actions/author-hud/**', '.github/workflows/hud-proof.yml']
+    paths:
+      - studio/hud-brief.json
+      - studio/hud-evaluation.json
+      - .github/workflows/hud-proof.yml
+      - assets/airlock-receiver/receiver.png
+      - src/client/FirstShiftCompass.luau
+      - src/client/Hud.client.luau
 permissions:
   contents: read
 jobs:
@@ -14,4 +26,4 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
-      - uses: GlebAvershin/lantern-atlas/.github/actions/author-hud@0032934be712eaa7a47721bb61bc40839de9c1c1
+      - uses: GlebAvershin/lantern-atlas/.github/actions/author-hud@ccd3c0badebff30f1757621698fa6d6bdbd327ca

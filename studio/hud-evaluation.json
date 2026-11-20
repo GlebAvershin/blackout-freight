@@ -1,0 +1,12 @@
+[
+  {
+    "headline": "Which way is the next battery?",
+    "stage": "Show where the crew must deliver their cargo.",
+    "action": "Trigger the skill assigned to my crew member."
+  },
+  {
+    "headline": "Put my navigation readout first.",
+    "stage": "Give the evacuation receiver the main panel.",
+    "action": "Keep the specialist ability in reach."
+  }
+]

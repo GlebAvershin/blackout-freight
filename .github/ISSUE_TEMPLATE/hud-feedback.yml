@@ -1,0 +1,33 @@
+name: HUD authoring feedback
+description: Report a component assignment or review step that slowed down a design handoff.
+title: "HUD handoff feedback"
+body:
+  - type: input
+    id: revision
+    attributes:
+      label: Game revision or public Actions run
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: What did the design ask for? Which region and component did you expect?
+      description: Include a short reproducible brief. Use public game context only.
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: What did the agent return? What did you have to correct?
+    validations:
+      required: true
+  - type: textarea
+    id: time
+    attributes:
+      label: Optional paired times and retry counts
+      description: Give manual and assisted seconds, task order and prior familiarity if you measured both.
+  - type: textarea
+    id: retest
+    attributes:
+      label: Retest on a fresh brief
+      description: The maintainer can link a regression case, corrective commit and follow-up observation here.
