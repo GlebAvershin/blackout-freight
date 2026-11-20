@@ -22,6 +22,14 @@ Creator Hub recorded place version 25 on 20 November 2026 at 00:41 MSK. Before p
 
 ### TestVicu access check, 20 November 2026
 
-The last confirmed journal for TestVicu contained Broadcast (1/2). For the v25 retest the owner granted **Playtest**, and Creator Hub confirmed the permission. After the grant, Roblox Player still refused entry with error 524. The playability API for the signed-in TestVicu account returned `InsufficientPermissionEditorsOnly` and `isPlayable: false`. The early tester invitation also led to an unavailable Play button. This attempt ended before the game loaded. A first Shelter unlock, the change from 1/2 to 2/2, and persistence on a second server remain unverified for TestVicu. [Earlier journal observation](../playtest/live-checklist.md)
+The last confirmed journal for TestVicu contained Broadcast (1/2). For the v25 retest the owner granted **Playtest**, and Creator Hub confirmed the permission. After the grant, Roblox Player still refused entry with error 524. The playability API for the signed-in TestVicu account returned `InsufficientPermissionEditorsOnly` and `isPlayable: false`. The early tester invitation also led to an unavailable Play button. This attempt ended before the game loaded. The first attempt therefore could not verify a new unlock. [Earlier journal observation](../playtest/live-checklist.md)
+
+### TestVicu first Shelter unlock and server change
+
+With temporary Edit permission on this experience, TestVicu entered the published v25 in the desktop Roblox Player on macOS. On server `c42dd9bc` the journal showed a check beside **Evidence on air** and an empty circle beside **Shelter powered**. TestVicu delivered five batteries in one solo shift and activated the Shelter console. The victory HUD showed **Shelter powered** and a new personal best of **2:34**.
+
+After exiting to the Roblox menu and joining again, the Player log recorded server `c6d7e438` for the same place. The newly loaded journal showed checkmarks beside both endings. The separate **Mira’s Archive 0/2** counter tracked special-route recordings. The test cost 0 Robux. [Initial journal, Shelter victory, and second-server journal](../playtest/v25-testvicu-shelter.jpg)
+
+After the run, the owner removed the temporary Edit grant. Roblox Studio rejected re-adding TestVicu before the Playtest selector appeared, citing an unsupported location. Creator Hub showed no collaborators after the removal.
 
 [Original system audit](../audit-2026-11-20.md)
