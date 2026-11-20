@@ -18,23 +18,13 @@ EN: Grab a battery. The drone hunts whoever carries it. Deliver five cells with 
 
 ## Протокол
 
-На 20 ноября `Manage audience` показывает закрытый доступ. В окне `Invite early testers` занято 0 из 10 мест, для TestVicu указано `Can't invite`. Первый вход проверяем с другом владельца, которого кабинет разрешит пригласить. Участник принимает приглашение и запускает v28 в Roblox Player с правами игрока. Сбой входа записываем отдельно от первой игровой сессии. После успешного входа используем ссылку соответствующего канала для набора. [Управление аудиторией](https://create.roblox.com/dashboard/creations/experiences/10775560304/manage-audience).
+20 ноября Roblox открыл v28 для игроков с подтверждённым возрастом 16+ в поддерживаемых регионах. Обычная [страница игры](https://www.roblox.com/games/111633787401180/Blackout-Freight) ведёт в десктопный Player. TestVicu вошёл в смену по кнопке Play без приглашения и прав редактора. [Статус публикации](v28-public-16plus.jpg) · [TestVicu в Депо 07](v28-public-player.jpg).
 
-Текст для приглашения после выдачи доступа: «Привет! Тестируем Blackout Freight, короткую кооперативную игру в Roblox. Сыграй одну смену самостоятельно или с напарником. После неё расскажи, что было понятно и в какой момент ты потерялся. Участие бесплатное, покупки по желанию».
+В отдельном запуске QA от TestVicu журнал Custom Events в Creator Hub показал `FirstShiftCompassV1` с этапами `exposed`, `pickup_90`, `caught_90` и `delivered_90`. Сегмент `qa_solo` исключается из продуктовых отчётов. В момент запуска семидневная воронка Onboarding ещё не показывала агрегированных результатов. [Журнал событий](v28-public-qa-events.jpg).
 
-### Первый внешний вход в v28
+[Объявление на BloxStack](https://bloxstack.app/playtests/r6pycf-blackout-freight-v28-try-the-public-16-game-and-find-your-fi) обновлено для публичного запуска. Одно место относится к добровольному опросу. По ссылке на Roblox может самостоятельно зайти любой подходящий игрок. В журнале первой наблюдаемой сессии указываем источник `BloxStack`, если участник пришёл по этому объявлению.
 
-Для набора одного добровольца подходит [BloxStack Playtests](https://bloxstack.app/playtests). В форме [Host a playtest](https://bloxstack.app/playtests/post) для объявления требуется вход через Roblox. Используем набор на одно место с заявкой. Объявление предназначено для человека, который впервые играет в Blackout Freight.
-
-20 ноября 2026 от `vicusiuss` опубликовано [объявление о тесте v28](https://bloxstack.app/playtests/r6pycf-blackout-freight-v28-can-you-join-our-private-roblox-playtes). Одно бесплатное место, PC или телефон, время свободное. На момент открытия в [списке заявок](https://bloxstack.app/playtests/manage/r6pycf) было 0 заявок и 0 выданных мест. [Снимок при открытии](v28-bloxstack-roster.jpg).
-
-**Blackout Freight v28 — one volunteer for a five-minute private playtest**
-
-> Can you get into Depot 07 and find your way through the opening minute? Blackout Freight is a co-op game about carrying batteries past a patrol drone. Solo play works. Apply here with the Roblox username you'd like invited. Once we connect on Roblox, I'll send an early-tester invitation if your account is eligible. Open it in Roblox Player and reply here with the first objective you saw, or the exact error if entry failed. PC or mobile is fine. This is unpaid, and all gameplay in this test is free. Please skip purchases.
-
-Для проверки выдаём участнику только доступ Early tester. Сохраняем отдельно факт выдачи доступа и результат запуска. Подтверждением входа служит отзыв о цели, показанной в смене, или кадр из Депо 07 с согласия участника. Открытие страницы, заявка, принятие приглашения и рост общего счётчика посещений сами по себе вход не подтверждают. Источник первой реальной сессии в журнале — `BloxStack`.
-
-1. Пригласить на одну короткую сессию без обещания награды или покупки. Участник должен иметь право доступа к тесту. Ссылку на непубличную игру сначала проверить с разрешённого аккаунта.
+1. Предложить новичку одну смену без вознаграждения или обязательной покупки. Если Roblox отказал до запуска смены, отдельно записать устройство и текст ошибки.
 2. Дать только ссылку. Не объяснять, где батарея, маяк и шлюз. Фиксировать самостоятельные действия.
 3. Отметить время первого взятия, первой доставки, начало второй смены и общую длительность. Технические сбои записывать отдельно.
 4. После игры спросить: «Что нужно было сделать?», «Где впервые стало непонятно?», «Захотелось ли ещё смену и почему?»
@@ -48,6 +38,8 @@ EN: Grab a battery. The drone hunts whoever carries it. Deliver five cells with 
 
 На 20 ноября Roblox выставил на продажу Aurora Lens за 99 Robux и «Экипаж Депо 07» за 199 Robux. Клиент запрашивает цену своего предложения у Roblox. В первой группе фиксируем, сколько новичков дошли до победы. Затем в Creator Analytics смотрим последовательность `Aurora Lens Locker` от показа входа в шкафчик до выбора Aurora и вызова окна оплаты. Третий шаг означает успешный вызов API, даже если окно не отобразилось. Завершённую покупку отмечает отдельное серверное событие `AuroraPassPurchased` (для комплекта — `CrewPassPurchased`). Фактические продажи за тот же период сверяем с аналитикой пропусков. Первые 15–20 участников нужны для поиска проблем входа и показа предложения, прогноз выручки потребует большей аудитории. [Аналитика воронок](https://create.roblox.com/dashboard/creations/experiences/10775560304/analytics/funnels) · [Пропуска игры](https://create.roblox.com/dashboard/creations/experiences/10775560304/monetization/passes).
 
+В добровольном наблюдении за первой сессией отмечайте устройство в `device` (desktop, phone, tablet, console или vr), победу в `first_session_win` и открытие предпросмотра Aurora после победы в `post_win_aurora_preview`. Для исходов 1 означает да, 0 — наблюдаемое отсутствие, пустая ячейка — неизвестно. Сводка выводит победы среди всех новичков и открытия предпросмотра среди победителей, в том числе по устройствам и каналам. Это показатели опрошенной группы. Для всей игры используйте события Roblox, а для дохода — фактические продажи пропусков.
+
 ## Рабочие пороги исходного плана
 
 - 7/10 самостоятельно берут батарею за 45 с.
@@ -59,7 +51,7 @@ EN: Grab a battery. The drone hunts whoever carries it. Deliver five cells with 
 
 ## Share Links
 
-Созданы четыре нативные ссылки в Creator Hub 13 ноября 2026. Custom LaunchData выключен. Каждая ссылка ведёт на одно и то же место. Доступ к закрытому тесту выдаётся отдельно.
+Созданы четыре нативные ссылки в Creator Hub 13 ноября 2026. Custom LaunchData выключен. Каждая ссылка ведёт на одно и то же место. Для публичной v28 действуют возрастные и региональные условия Roblox.
 
 | Кампания в кабинете | Назначение | Ссылка |
 | --- | --- | --- |

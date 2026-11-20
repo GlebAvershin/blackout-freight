@@ -42,6 +42,9 @@ def summarize(rows):
         if any(row.get(field) is None for field in FIELDS):
             raise ValueError(f'Line {line}: missing column value; use an empty cell for unknown')
         entry_channel = (row.get('entry_channel') or '').strip()
+        device = (row.get('device') or '').strip().lower() or 'unknown'
+        commerce = {field: (row.get(field) or '').strip()
+                    for field in ('first_session_win', 'post_win_aurora_preview')}
         row = {field: row[field].strip() for field in FIELDS}
         if row['is_test'] not in ('0', '1'):
             raise ValueError(f'Line {line}: is_test must be 0 or 1')
@@ -63,9 +66,16 @@ def summarize(rows):
         if user_id is not None:
             seen_users.add(user_id)
 
-        for field in ('second_shift_started', 'returned_d1', 'returned_d7'):
+        if device not in ('desktop', 'phone', 'tablet', 'console', 'vr', 'unknown'):
+            raise ValueError(f'Line {line}: unrecognized device category')
+        row.update(commerce)
+        for field in ('second_shift_started', 'returned_d1', 'returned_d7', *commerce):
             if row[field] not in ('', '0', '1'):
                 raise ValueError(f'Line {line}: {field} must be blank, 0 or 1')
+        if row['post_win_aurora_preview'] == '1':
+            if row['first_session_win'] == '0':
+                raise ValueError(f'Line {line}: post-win preview requires a win in this session')
+            row['first_session_win'] = '1'
         for field in ('pickup_seconds', 'delivery_seconds', 'session_seconds'):
             value = row[field]
             if value == 'never' and field != 'session_seconds':
@@ -88,7 +98,7 @@ def summarize(rows):
             event is not None and math.isfinite(event) and event > duration for event in (pickup, delivery)
         ):
             raise ValueError(f'Line {line}: observed action exceeds session duration')
-        players.append({**row, 'entry_channel': entry_channel})
+        players.append({**row, 'entry_channel': entry_channel, 'device': device})
 
     channels = {}
     unknown_channel = []
@@ -105,6 +115,10 @@ def summarize(rows):
         for channel in sorted(channels)
     }
     report['unknownEntryChannel'] = session_metrics(unknown_channel, include_thresholds=False)
+    report['byDevice'] = {
+        device: session_metrics([p for p in players if p['device'] == device], include_thresholds=False)
+        for device in sorted({p['device'] for p in players})
+    }
     return report
 
 
@@ -136,6 +150,10 @@ def session_metrics(players, *, include_thresholds=True):
         'pickupWithin45': pickup,
         'deliveryWithin90': delivery,
         'secondShiftAmongPickups': {**repeat, 'unknownPickup': len(unknown_pickup)},
+        'firstSessionWin': binary('first_session_win', players),
+        'postWinAuroraPreviewAmongWinners': binary('post_win_aurora_preview', [
+            row for row in players if row['first_session_win'] == '1'
+        ]),
         'd1': binary('returned_d1', players),
         'd7': binary('returned_d7', players),
     }

@@ -25,3 +25,16 @@ class PlaytestChronology(unittest.TestCase):
                 result = report["summarize"]([self.row(pickup, delivery, "90")])
                 self.assertEqual(result["deliveryWithin90"]["success"], count)
                 self.assertEqual(result["pickupWithin45"]["unknown"], int(pickup == ""))
+
+    def test_preview_denominator_only_counts_winners_and_keeps_missing_data(self):
+        base = self.row("", "", "")
+        rows = [dict(base, participant_code=str(i), device="phone", first_session_win=win,
+                     post_win_aurora_preview=preview)
+                for i, (win, preview) in enumerate([("", "1"), ("1", ""), ("0", "0")])]
+        result = report["summarize"]([base, *rows])
+        self.assertEqual(result["byDevice"]["unknown"]["firstSessionWin"]["unknown"], 1)
+        self.assertEqual(result["firstSessionWin"], {"observed": 3, "unknown": 1, "success": 2})
+        self.assertEqual(result["byDevice"]["phone"]["postWinAuroraPreviewAmongWinners"],
+                         {"observed": 1, "unknown": 1, "success": 1})
+        with self.assertRaises(ValueError):
+            report["summarize"]([dict(base, first_session_win="0", post_win_aurora_preview="1")])
