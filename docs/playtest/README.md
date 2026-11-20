@@ -22,6 +22,16 @@ EN: Grab a battery. The drone hunts whoever carries it. Deliver five cells with 
 
 Текст для приглашения после выдачи доступа: «Привет! Тестируем Blackout Freight, короткую кооперативную игру в Roblox. Сыграй одну смену самостоятельно или с напарником. После неё расскажи, что было понятно и в какой момент ты потерялся. Участие бесплатное, покупки по желанию».
 
+### Первый внешний вход в v28
+
+Для набора одного добровольца подходит [BloxStack Playtests](https://bloxstack.app/playtests). В форме [Host a playtest](https://bloxstack.app/playtests/post) для объявления требуется вход через Roblox. Используем набор на одно место с заявкой. Объявление предназначено для человека, который впервые играет в Blackout Freight.
+
+**Blackout Freight v28 — one volunteer for a five-minute private playtest**
+
+> Can you get into Depot 07 and find your way through the opening minute? Blackout Freight is a co-op game about carrying batteries past a patrol drone. Solo play works. Apply here with the Roblox username you'd like invited. Once we connect on Roblox, I'll send an early-tester invitation if your account is eligible. Open it in Roblox Player and reply here with the first objective you saw, or the exact error if entry failed. PC or mobile is fine. This is unpaid, and all gameplay in this test is free. Please skip purchases.
+
+Для проверки выдаём участнику только доступ Early tester. Сохраняем отдельно факт выдачи доступа и результат запуска. Подтверждением входа служит отзыв о цели, показанной в смене, или кадр из Депо 07 с согласия участника. Открытие страницы, заявка, принятие приглашения и рост общего счётчика посещений сами по себе вход не подтверждают. Источник первой реальной сессии в журнале — `BloxStack`.
+
 1. Пригласить на одну короткую сессию без обещания награды или покупки. Участник должен иметь право доступа к тесту. Ссылку на непубличную игру сначала проверить с разрешённого аккаунта.
 2. Дать только ссылку. Не объяснять, где батарея, маяк и шлюз. Фиксировать самостоятельные действия.
 3. Отметить время первого взятия, первой доставки, начало второй смены и общую длительность. Технические сбои записывать отдельно.
