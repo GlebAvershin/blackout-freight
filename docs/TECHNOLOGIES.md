@@ -40,3 +40,22 @@ Qwen сначала предложил раскатить компас. Инст
 **Как повторить.** В разделе Actions этого репозитория выбрать *Game review agents → Run workflow → main*. Стандартный раннер поднимет временный кластер и PostgreSQL, загрузит веса с проверкой SHA-256 и сохранит артефакт `game-agent-evidence`. В нём есть ответы до и после перезапуска, события SDK и текст ревью. Прогон работает также при открытии PR. Постоянный сервис и платный аккаунт модели для проверки не требуются. [Сценарий нагрузки](https://github.com/GlebAvershin/lantern-atlas/blob/4103603adde3dd325d511a2a2df66db834757f13/studio/agents/probe.py) · [Запуск и остановка кластера](https://github.com/GlebAvershin/lantern-atlas/blob/4103603adde3dd325d511a2a2df66db834757f13/studio/agents/cloud.sh)
 
 **Связь с вакансиями.** Практический опыт этого проекта охватывает инструменты для игровой команды, контекст MCP, маршрутизацию LLM, учёт времени и токенов, кеш и облачное выполнение. Конкретная среда измерений — GitHub Actions и открытые веса. Amazon Bedrock, Databricks AI Gateway и коммерческие модели перечислены в стеке Playrix. Боевые аккаунты этих сервисов и внешние аккаунты Sentry/Amplitude в данном прогоне не использовались. Источник требований — три карточки вакансий, сверенные 20 ноября 2026 года. [Game](https://playrix.com/job/open/ai/ai-engineer-game) · [Cross-product](https://playrix.com/job/open/ai/ai-engineer-cross-product) · [Platform](https://playrix.com/job/open/ai/ai-engineer-platform)
+
+## Проверка через подписки разработчика
+
+Каждая модель определила, какой вывод допустим по синтетическим данным компаса. Валидатор заново вычислил решение из CSV и проверил источник данных. Один и тот же MCP-бриф передан Codex CLI через вход ChatGPT и Gemini через Google Antigravity CLI. Обе команды запущены на Mac. Инференс выполняли сервисы провайдеров.
+
+| Маршрут | Запрошенная модель | Выбор | Вердикт игрового инструмента |
+| --- | --- | --- | --- |
+| Codex | gpt-6.2-sol | `report_simulation` | Принято |
+| Google Antigravity | gemini-3.8-flash-low | `report_simulation` | Принято |
+
+В протоколе сохранены обоснования моделей, версия исходников, хеш брифа и независимые вердикты. Это по одному завершённому решению на маршрут. Скрипт использует локальные сеансы CLI, для Gemini отключает расход дополнительных AI-кредитов и передаёт ответы существующему MCP-инструменту. Облачный нагрузочный тест выше использует отдельные серверы Qwen и SmolLM2. [Протокол](evidence/subscription-review.json) · [Скрипт](https://github.com/GlebAvershin/lantern-atlas/blob/main/studio/agents/subscription_review.py) · [Вход ChatGPT](https://learn.chatgpt.com/docs/auth) · [Вход Google](https://antigravity.google/docs/install)
+
+Для повторения из корня этого репозитория используйте Python-окружение проекта Lantern Atlas (`uv sync --project studio --locked --python 3.12` из его корня). Для Blackout Freight также выполните `uv sync --project analysis --locked --python 3.12`. После входа в официальные CLI выполните:
+
+```sh
+platform="../Lantern Atlas"
+"$platform/studio/.venv/bin/python" "$platform/studio/agents/subscription_review.py" --game freight --game-root . --provider codex
+"$platform/studio/.venv/bin/python" "$platform/studio/agents/subscription_review.py" --game freight --game-root . --provider gemini
+```
