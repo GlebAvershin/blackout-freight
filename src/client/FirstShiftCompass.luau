@@ -1,5 +1,7 @@
 local RunService = game:GetService("RunService")
 
+local showArrow = require(script.Parent.CompassVisibility)
+
 local Compass = {}
 
 function Compass.mount(card, colors, add, label, t)
@@ -26,12 +28,10 @@ function Compass.mount(card, colors, add, label, t)
 
 		local waypoint, onScreen = camera:WorldToViewportPoint(target.Position + Vector3.new(0, 3, 0))
 		local size = camera.ViewportSize
-		local visibleMarker = onScreen and waypoint.X > 72 and waypoint.X < size.X - 72
-			and waypoint.Y > size.Y * 0.24 and waypoint.Y < size.Y * 0.86
 		local offset = target.Position - root.Position
 		local flat = Vector3.new(offset.X, 0, offset.Z)
 		local distance = flat.Magnitude
-		if visibleMarker or distance <= 8 then
+		if distance <= 8 or not showArrow(chip.Visible, onScreen, waypoint.X, waypoint.Y, size.X, size.Y) then
 			chip.Visible = false
 			return
 		end
@@ -50,6 +50,7 @@ function Compass.mount(card, colors, add, label, t)
 	card.Destroying:Once(function() render:Disconnect() end)
 
 	return function(nextTarget, nextRoot, hasCargo, compact)
+		if target ~= nextTarget or root ~= nextRoot then chip.Visible = false end
 		target, root, carrying = nextTarget, nextRoot, hasCargo
 		chip.Position = UDim2.new(0.5, 0, 1, compact and 6 or 49)
 	end

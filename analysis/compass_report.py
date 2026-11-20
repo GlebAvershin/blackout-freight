@@ -73,6 +73,12 @@ def build_report(counts, source):
         infer = segment == "solo" and source != "production"
         srm = binomtest(nt, nc + nt, p=0.5).pvalue if infer and nc + nt else None
         report[segment] = {"by_variant": by_variant, "srm_p_value": srm}
+        total = nc + nt
+        gap = abs(nt - nc)
+        report[segment]["assignment"] = {
+            "gap_percent": 100 * gap / total if total else None,
+            "needs_review": 20 * gap > total if total else None,
+        }
         for metric, count in (("delivery", "deliveries"), ("catch", "catches")):
             lift, interval = None, None
             if nc and nt:
@@ -83,13 +89,15 @@ def build_report(counts, source):
                     )]
             report[segment][metric] = {"lift_pp": lift, "ci95_pp": interval}
 
+    flagged = [segment for segment in SEGMENTS if report[segment]["assignment"]["needs_review"]]
+    report["assignment_review_segments"] = flagged
     solo = report["solo"]
     delivery, catch = solo["delivery"], solo["catch"]
     if source == "synthetic":
         decision = "simulation_only"
     elif source == "production":
         decision = "descriptive_only"
-    elif solo["srm_p_value"] is not None and solo["srm_p_value"] < SRM_ALPHA:
+    elif flagged or (solo["srm_p_value"] is not None and solo["srm_p_value"] < SRM_ALPHA):
         decision = "check_assignment"
     elif min(variant["exposed"] for variant in solo["by_variant"].values()) < TARGET_PER_ARM:
         decision = "insufficient_sample"

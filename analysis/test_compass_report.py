@@ -33,6 +33,18 @@ class ExperimentReportTests(unittest.TestCase):
         rows["solo", "compass", "caught_90"] = 350
         self.assertEqual(build_report(rows, "playtest")["decision"], "keep_control")
 
+    def test_crew_assignment_threshold_uses_exact_counts(self):
+        rows = read_counts(FIXTURE)
+        for control, compass, flagged in [(105000, 95000, False), (105001, 94999, True), (450, 0, True)]:
+            for arm, exposed in (("control", control), ("compass", compass)):
+                for key in rows:
+                    if key[:2] == ("crew", arm):
+                        rows[key] = exposed if key[2] == "exposed" else 0
+            report = build_report(rows, "playtest")
+            self.assertEqual(report["assignment_review_segments"], ["crew"] if flagged else [])
+            self.assertEqual(report["decision"], "check_assignment" if flagged else "rollout_candidate")
+            self.assertEqual(build_report(rows, "synthetic")["decision"], "simulation_only")
+
     def test_invalid_grain_and_impossible_funnels_are_rejected(self):
         with FIXTURE.open(newline="", encoding="utf-8") as stream:
             rows = list(csv.reader(stream))
@@ -48,6 +60,7 @@ class ExperimentReportTests(unittest.TestCase):
         rows = {key: 0 for key in read_counts(FIXTURE)}
         report = build_report(rows, "playtest")
         self.assertEqual(report["decision"], "insufficient_sample")
+        self.assertIsNone(report["crew"]["assignment"]["needs_review"])
         self.assertIsNone(report["solo"]["delivery"]["lift_pp"])
         self.assertIsNone(report["solo"]["delivery"]["ci95_pp"])
 
