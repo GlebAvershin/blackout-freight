@@ -1,17 +1,18 @@
 {
   "game": "Blackout Freight",
-  "revision": "bb29a8b662d57be3a3d3fe7f127d82b77069a2fa",
+  "revision": "7f6cf3ccede84e31650e563fde111ec23400c23a",
   "source_sha256": {
     "analysis/synthetic_compass_counts.csv": "b1d4b7c2107b982a2c6ec89a45c54ff8d2d2b57e5a720c4796ab47907ed30cb0",
-    "studio/research/study.py": "753c6c01822355bff12b70415f71e74e71bfcf107794d19586c555992c431dec",
-    "studio/research/metrics.sql": "b37f755a3be09cf6d59ee424ace5fefd4106f0846b35dbe8e3847d3a4a809eb5"
+    "studio/research/study.py": "b78610f190f21d2e8f1fb24ad4882d663aecffbc6c37f98ffd5681869cee2d0b",
+    "studio/research/metrics.sql": "9c421f3efc3dd0e4ff6a3c3d06d3fa90cea23ed5f77119ba2d491cf0d04537e8"
   },
-  "query_sha256": "e865b7a6145b7ec78d5679264632514ef5ce21d484606d8bcf992ae87084161e",
-  "input_rows": 8,
+  "query_sha256": "f422c453d0b2b8a827a30e751b5e396d7808e53ecf8fbf1a4a4e8e2f6e3d1b43",
+  "input_rows": 16,
   "cases": [
     {
       "scenario": "assignment_defect",
       "metrics": {
+        "assignment_flag": 1,
         "max_imbalance_bp": 3314,
         "solo_heavy_lift_bp": 770,
         "crew_heavy_lift_bp": 453
@@ -19,27 +20,57 @@
       "rule": "investigate_assignment",
       "model_answer": "investigate_assignment",
       "agreement": true,
-      "tokens": 102,
+      "tokens": 116,
       "receipts": [
         {
           "service": "amplitude",
           "phase": "ingestion_acknowledged",
           "http_status": 200,
-          "event_id": "76dfd57e405859a6a640735864fcb8f9",
-          "timestamp_utc": "2026-11-20T20:03:54.183193+00:00"
+          "event_id": "f1603ab2b90050e5b488efde8ed4c08d",
+          "timestamp_utc": "2026-11-20T20:34:07.052554+00:00"
         },
         {
           "service": "sentry",
           "phase": "ingestion_acknowledged",
           "http_status": 200,
-          "event_id": "8e5c336d4b0357588f3c0c766fd18b3f",
-          "timestamp_utc": "2026-11-20T20:03:54.894043+00:00"
+          "event_id": "4628bff05bb454ceb93e859fbfbaaeda",
+          "timestamp_utc": "2026-11-20T20:34:07.760174+00:00"
+        }
+      ]
+    },
+    {
+      "scenario": "at_threshold",
+      "metrics": {
+        "assignment_flag": 0,
+        "max_imbalance_bp": 500,
+        "solo_heavy_lift_bp": 774,
+        "crew_heavy_lift_bp": 471
+      },
+      "rule": "collect_player_data",
+      "model_answer": "investigate_assignment",
+      "agreement": false,
+      "tokens": 115,
+      "receipts": [
+        {
+          "service": "amplitude",
+          "phase": "ingestion_acknowledged",
+          "http_status": 200,
+          "event_id": "816d5f135a22520c80568b4d95e2d9a0",
+          "timestamp_utc": "2026-11-20T20:34:08.630594+00:00"
+        },
+        {
+          "service": "sentry",
+          "phase": "ingestion_acknowledged",
+          "http_status": 200,
+          "event_id": "a1424a7d224954ca90e34c42b291ce28",
+          "timestamp_utc": "2026-11-20T20:34:08.854962+00:00"
         }
       ]
     },
     {
       "scenario": "fixture",
       "metrics": {
+        "assignment_flag": 0,
         "max_imbalance_bp": 22,
         "solo_heavy_lift_bp": 774,
         "crew_heavy_lift_bp": 471
@@ -47,21 +78,43 @@
       "rule": "collect_player_data",
       "model_answer": "investigate_assignment",
       "agreement": false,
-      "tokens": 100,
+      "tokens": 114,
       "receipts": [
         {
           "service": "amplitude",
           "phase": "ingestion_acknowledged",
           "http_status": 200,
-          "event_id": "a40ed0a925fd596a871fdd60c0a26fa8",
-          "timestamp_utc": "2026-11-20T20:03:56.176651+00:00"
+          "event_id": "f0a20e6aec4e505b95bda0af1f0da22c",
+          "timestamp_utc": "2026-11-20T20:34:09.469029+00:00"
         },
         {
           "service": "sentry",
           "phase": "ingestion_acknowledged",
           "http_status": 200,
-          "event_id": "acff0d96ba07575695a2f0acd1806fe5",
-          "timestamp_utc": "2026-11-20T20:03:56.396059+00:00"
+          "event_id": "afa06faafa5b5b88aaf68a979e993659",
+          "timestamp_utc": "2026-11-20T20:34:09.683905+00:00"
+        }
+      ]
+    },
+    {
+      "scenario": "just_over_threshold",
+      "metrics": {
+        "assignment_flag": 1,
+        "max_imbalance_bp": 500,
+        "solo_heavy_lift_bp": 774,
+        "crew_heavy_lift_bp": 471
+      },
+      "rule": "investigate_assignment",
+      "model_answer": "investigate_assignment",
+      "agreement": true,
+      "tokens": 115,
+      "receipts": [
+        {
+          "service": "amplitude",
+          "phase": "ingestion_acknowledged",
+          "http_status": 200,
+          "event_id": "af107b9b90d458d5af1e09e825671d85",
+          "timestamp_utc": "2026-11-20T20:34:10.288677+00:00"
         }
       ]
     }
@@ -70,5 +123,5 @@
   "aws_plan": "FREE / ACTIVE",
   "model": "qwen.qwen3-coder-30b-a3b-instruct",
   "region": "eu-north-1",
-  "utc": "2026-11-20T20:03:52.360985+00:00"
+  "utc": "2026-11-20T20:34:06.402441+00:00"
 }

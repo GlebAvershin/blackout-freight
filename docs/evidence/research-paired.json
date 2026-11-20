@@ -1,13 +1,13 @@
 {
   "model": "qwen.qwen3-coder-30b-a3b-instruct",
-  "baseline_sha256": "f8787262ab8653ef37c5a939f5c7a07257a6565814f42917c05c03f118efc3df",
-  "features_sha256": "d69c2f051c3576bec869d91edd43e4cdc552a513902f1b5678b7640ab9f0f248",
+  "baseline_sha256": "bd237fc06ed795cfefa00a0bb04aa86b166e32485f522da1f22e06524e16b84a",
+  "features_sha256": "652fce7d3cfd371c4f9188c87ed1922f45bc91d10b6cb1e9cf2a6803796eaab7",
   "cases": [
     {
       "scenario": "assignment_defect",
       "facts": {
-        "assignment_gap_percent": 33.14,
-        "investigation_threshold_percent": 5,
+        "assignment_above_five_percent_before_rounding": true,
+        "rounded_gap_percent": 33.14,
         "data_source": "synthetic fixture"
       },
       "rule": "investigate_assignment",
@@ -16,13 +16,13 @@
       "strict_after": true,
       "first_line_before": true,
       "first_line_after": true,
-      "tokens": 102
+      "tokens": 111
     },
     {
-      "scenario": "fixture",
+      "scenario": "at_threshold",
       "facts": {
-        "assignment_gap_percent": 0.22,
-        "investigation_threshold_percent": 5,
+        "assignment_above_five_percent_before_rounding": false,
+        "rounded_gap_percent": 5.0,
         "data_source": "synthetic fixture"
       },
       "rule": "collect_player_data",
@@ -31,7 +31,37 @@
       "strict_after": true,
       "first_line_before": false,
       "first_line_after": true,
-      "tokens": 101
+      "tokens": 109
+    },
+    {
+      "scenario": "fixture",
+      "facts": {
+        "assignment_above_five_percent_before_rounding": false,
+        "rounded_gap_percent": 0.22,
+        "data_source": "synthetic fixture"
+      },
+      "rule": "collect_player_data",
+      "model_answer": "collect_player_data",
+      "strict_before": false,
+      "strict_after": true,
+      "first_line_before": false,
+      "first_line_after": true,
+      "tokens": 110
+    },
+    {
+      "scenario": "just_over_threshold",
+      "facts": {
+        "assignment_above_five_percent_before_rounding": true,
+        "rounded_gap_percent": 5.0,
+        "data_source": "synthetic fixture"
+      },
+      "rule": "investigate_assignment",
+      "model_answer": "investigate_assignment",
+      "strict_before": true,
+      "strict_after": true,
+      "first_line_before": true,
+      "first_line_after": true,
+      "tokens": 109
     }
   ]
 }

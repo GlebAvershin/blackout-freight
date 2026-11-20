@@ -30,7 +30,7 @@ The published closed test accepts explicit QA launches from its two internal acc
 
 Use a 50:50 allocation, two-sided 95% Newcombe intervals for absolute rate differences, and an exact binomial sample-ratio check at 0.01. The planned minimum is 1,200 solo participants per arm. At a baseline of 60%, 80% power and two-sided alpha 0.05, a change to 68% requires roughly 564 per arm. A 25% baseline catch rate and 5-point noninferiority margin require about 1,178 per arm using a normal approximation at 80% power and a 97.5% one-sided bound. The planned sample uses the larger requirement, rounded up. These figures are design assumptions.
 
-At the fixed look, consider rollout if the solo estimate is at least +8 percentage points, the lower delivery bound is above zero, and the upper catch bound is at most +5 points. Investigate assignment when the sample-ratio check fails. A smaller sample is inconclusive. The crew segment and pickup rate are exploratory.
+At the fixed look, consider rollout if the solo estimate is at least +8 percentage points, the lower delivery bound is above zero, and the upper catch bound is at most +5 points. Investigate assignment when the solo sample-ratio check fails or when the absolute exposure count difference divided by total exposures exceeds 5% in either segment. The latter is a descriptive instrumentation check applied before rounding. A segment with no exposures has no measured gap. Keep release windows distinct when comparing compass implementations. A smaller sample is inconclusive. The crew segment and pickup rate are exploratory.
 
 ```sh
 uv sync --project analysis --locked --python 3.12 --group notebook
