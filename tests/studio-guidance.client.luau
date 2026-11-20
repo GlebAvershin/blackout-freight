@@ -116,5 +116,34 @@ for index, finish in {"Standard", "Aurora", "Standard"} do
 	waitFor(function() return math.abs(cue.PlaybackSpeed - expectedSpeed) < 0.001 end, "cue for " .. finish)
 end
 print("AUDIO QA PASS: owned Aurora follows equipped finish")
+
+-- Orbit through the rear face of the sign, as when leaving the delivery console.
+local depot = terminal.Parent
+local board = rack["Bank display"]
+local head = player.Character.Head
+local saved = root.CFrame
+root.CFrame = CFrame.new(0, 4, 62)
+camera.CameraType = Enum.CameraType.Scriptable
+local function lookFrom(position)
+	camera.CFrame = CFrame.lookAt(position, head.Position)
+	camera.Focus = CFrame.new(head.Position)
+end
+lookFrom(board.Position + Vector3.new(0, 0, 0.6))
+waitFor(function() return board.LocalTransparencyModifier == 1 and not display.Enabled end, "receiver obstructs camera")
+assert(not board.CanQuery and not board.CanCollide)
+lookFrom(Vector3.new(0, 7, 56))
+waitFor(function() return board.LocalTransparencyModifier == 0 and display.Enabled end, "receiver readable again")
+local header = depot["Airlock header"]
+lookFrom(header.Position + Vector3.new(0, 0, -1.2))
+waitFor(function() return header.LocalTransparencyModifier == 1 end, "gate obstructs camera")
+local canopy = depot["Transfer station soffit"]
+lookFrom(canopy.Position + Vector3.new(0, .8, 0))
+waitFor(function() return canopy.LocalTransparencyModifier == 1 end, "canopy obstructs camera")
+lookFrom(Vector3.new(0, 7, 58))
+waitFor(function() return canopy.LocalTransparencyModifier == 0 and header.LocalTransparencyModifier == 0 end, "orbit clears structures")
+assert(depot.Bulkhead.LocalTransparencyModifier == 0 and terminal.CanCollide)
+root.CFrame = saved
+camera.CameraType = Enum.CameraType.Custom
+print("CAMERA QA PASS: receiver, signage, header and canopy clear and restore")
 print("GUIDANCE QA PASS: compass/control, pickup, airlock, handoff, recovery, loss and next shift")
 game:GetService("ReplicatedStorage"):WaitForChild("GuidanceResult"):FireServer()

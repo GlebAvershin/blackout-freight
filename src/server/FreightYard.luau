@@ -51,6 +51,7 @@ function Yard.build(world, Depot)
 	end
 	local beam = part("Yard crane",Vector3.new(120,1,2),Vector3.new(0,19,-40),steel,false)
 	for _, x in {-60,60} do part("Crane tower",Vector3.new(2,19,2),Vector3.new(x,9.5,-40),steel,true) end
+	beam:AddTag("FreightCameraCutaway")
 	local sign = Instance.new("SurfaceGui",beam)
 	sign.Face = Enum.NormalId.Back
 	sign.CanvasSize = Vector2.new(1400,70)

@@ -11,6 +11,7 @@ board.Size = Vector3.new(12, 9.3, .18)
 board.Position = Vector3.new(26, 6.7, 72.7)
 board.Material = Enum.Material.Metal
 board.Color = Color3.fromHex("283936")
+board:AddTag("FreightCameraCutaway")
 board.Parent = world
 
 local gui = Instance.new("SurfaceGui")
