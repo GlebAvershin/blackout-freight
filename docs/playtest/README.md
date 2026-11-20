@@ -26,6 +26,8 @@ EN: Grab a battery. The drone hunts whoever carries it. Deliver five cells with 
 
 Для набора одного добровольца подходит [BloxStack Playtests](https://bloxstack.app/playtests). В форме [Host a playtest](https://bloxstack.app/playtests/post) для объявления требуется вход через Roblox. Используем набор на одно место с заявкой. Объявление предназначено для человека, который впервые играет в Blackout Freight.
 
+20 ноября 2026 от `vicusiuss` опубликовано [объявление о тесте v28](https://bloxstack.app/playtests/r6pycf-blackout-freight-v28-can-you-join-our-private-roblox-playtes). Одно бесплатное место, PC или телефон, время свободное. На момент открытия в [списке заявок](https://bloxstack.app/playtests/manage/r6pycf) было 0 заявок и 0 выданных мест. [Снимок при открытии](v28-bloxstack-roster.jpg).
+
 **Blackout Freight v28 — one volunteer for a five-minute private playtest**
 
 > Can you get into Depot 07 and find your way through the opening minute? Blackout Freight is a co-op game about carrying batteries past a patrol drone. Solo play works. Apply here with the Roblox username you'd like invited. Once we connect on Roblox, I'll send an early-tester invitation if your account is eligible. Open it in Roblox Player and reply here with the first objective you saw, or the exact error if entry failed. PC or mobile is fine. This is unpaid, and all gameplay in this test is free. Please skip purchases.
