@@ -1,0 +1,793 @@
+{
+  "run": "https://github.com/GlebAvershin/blackout-freight/actions/runs/44771405268",
+  "head_sha": "f7df883f7d59d53d83e05beb5c5002f13de72ef7",
+  "requests": {
+    "project": "freight",
+    "unauthorized_status": 401,
+    "negative_control": {
+      "choice": "report_live_lift",
+      "verdict": {
+        "accepted": false,
+        "decision": "simulation_only",
+        "source": "synthetic"
+      }
+    },
+    "fresh": {
+      "cache": {
+        "miss": 2,
+        "hit": 6
+      },
+      "tokens": 873,
+      "model_calls": 3,
+      "p50_ms": 1787.5149999999999,
+      "p95_ms": 2614.54,
+      "responses": [
+        {
+          "result": {
+            "choice": "report_simulation",
+            "history": [
+              {
+                "choice": "propose_rollout",
+                "verdict": {
+                  "accepted": false,
+                  "decision": "simulation_only",
+                  "source": "synthetic"
+                }
+              },
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "accepted": true,
+                  "decision": "simulation_only",
+                  "source": "synthetic"
+                }
+              }
+            ],
+            "tokens": 576
+          },
+          "cache": "miss",
+          "inference_tokens": 576,
+          "model": "qwen",
+          "worker": "game-review-5d68c4557b-f5brd",
+          "client_ms": 2610.29
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 576,
+            "history": [
+              {
+                "choice": "propose_rollout",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": false,
+                  "decision": "simulation_only"
+                }
+              },
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "qwen",
+          "worker": "game-review-5d68c4557b-kkgnv",
+          "client_ms": 2614.54
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 297,
+            "history": [
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "smol",
+          "worker": "game-review-5d68c4557b-f5brd",
+          "client_ms": 961.77
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 297,
+            "history": [
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "smol",
+          "worker": "game-review-5d68c4557b-kkgnv",
+          "client_ms": 961.11
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 576,
+            "history": [
+              {
+                "choice": "propose_rollout",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": false,
+                  "decision": "simulation_only"
+                }
+              },
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "qwen",
+          "worker": "game-review-5d68c4557b-f5brd",
+          "client_ms": 2610.67
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 576,
+            "history": [
+              {
+                "choice": "propose_rollout",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": false,
+                  "decision": "simulation_only"
+                }
+              },
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "qwen",
+          "worker": "game-review-5d68c4557b-kkgnv",
+          "client_ms": 2611.6
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 297,
+            "history": [
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "smol",
+          "worker": "game-review-5d68c4557b-f5brd",
+          "client_ms": 964.74
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "history": [
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "accepted": true,
+                  "decision": "simulation_only",
+                  "source": "synthetic"
+                }
+              }
+            ],
+            "tokens": 297
+          },
+          "cache": "miss",
+          "inference_tokens": 297,
+          "model": "smol",
+          "worker": "game-review-5d68c4557b-kkgnv",
+          "client_ms": 955.47
+        }
+      ]
+    },
+    "repeat": {
+      "cache": {
+        "hit": 8
+      },
+      "tokens": 0,
+      "model_calls": 0,
+      "p50_ms": 25.775,
+      "p95_ms": 31.24,
+      "responses": [
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 576,
+            "history": [
+              {
+                "choice": "propose_rollout",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": false,
+                  "decision": "simulation_only"
+                }
+              },
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "qwen",
+          "worker": "game-review-5d68c4557b-f5brd",
+          "client_ms": 29.47
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 576,
+            "history": [
+              {
+                "choice": "propose_rollout",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": false,
+                  "decision": "simulation_only"
+                }
+              },
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "qwen",
+          "worker": "game-review-5d68c4557b-kkgnv",
+          "client_ms": 23.69
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 297,
+            "history": [
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "smol",
+          "worker": "game-review-5d68c4557b-f5brd",
+          "client_ms": 25.82
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 297,
+            "history": [
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "smol",
+          "worker": "game-review-5d68c4557b-kkgnv",
+          "client_ms": 24.17
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 576,
+            "history": [
+              {
+                "choice": "propose_rollout",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": false,
+                  "decision": "simulation_only"
+                }
+              },
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "qwen",
+          "worker": "game-review-5d68c4557b-f5brd",
+          "client_ms": 31.24
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 576,
+            "history": [
+              {
+                "choice": "propose_rollout",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": false,
+                  "decision": "simulation_only"
+                }
+              },
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "qwen",
+          "worker": "game-review-5d68c4557b-kkgnv",
+          "client_ms": 25.73
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 297,
+            "history": [
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "smol",
+          "worker": "game-review-5d68c4557b-f5brd",
+          "client_ms": 28.47
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 297,
+            "history": [
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "smol",
+          "worker": "game-review-5d68c4557b-kkgnv",
+          "client_ms": 22.19
+        }
+      ]
+    },
+    "other_team": {
+      "result": {
+        "choice": "report_simulation",
+        "history": [
+          {
+            "choice": "propose_rollout",
+            "verdict": {
+              "accepted": false,
+              "decision": "simulation_only",
+              "source": "synthetic"
+            }
+          },
+          {
+            "choice": "report_simulation",
+            "verdict": {
+              "accepted": true,
+              "decision": "simulation_only",
+              "source": "synthetic"
+            }
+          }
+        ],
+        "tokens": 576
+      },
+      "cache": "miss",
+      "inference_tokens": 576,
+      "model": "qwen",
+      "worker": "game-review-5d68c4557b-kkgnv",
+      "client_ms": 1223.39
+    }
+  },
+  "restored": {
+    "project": "freight",
+    "unauthorized_status": 401,
+    "negative_control": {
+      "choice": "report_live_lift",
+      "verdict": {
+        "accepted": false,
+        "decision": "simulation_only",
+        "source": "synthetic"
+      }
+    },
+    "restored": {
+      "cache": {
+        "hit": 8
+      },
+      "tokens": 0,
+      "model_calls": 0,
+      "p50_ms": 34.43,
+      "p95_ms": 38.49,
+      "responses": [
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 576,
+            "history": [
+              {
+                "choice": "propose_rollout",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": false,
+                  "decision": "simulation_only"
+                }
+              },
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "qwen",
+          "worker": "game-review-5466f96646-8j7zl",
+          "client_ms": 27.32
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 576,
+            "history": [
+              {
+                "choice": "propose_rollout",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": false,
+                  "decision": "simulation_only"
+                }
+              },
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "qwen",
+          "worker": "game-review-5466f96646-lfv6f",
+          "client_ms": 31.98
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 297,
+            "history": [
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "smol",
+          "worker": "game-review-5466f96646-8j7zl",
+          "client_ms": 38.49
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 297,
+            "history": [
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "smol",
+          "worker": "game-review-5466f96646-lfv6f",
+          "client_ms": 34.02
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 576,
+            "history": [
+              {
+                "choice": "propose_rollout",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": false,
+                  "decision": "simulation_only"
+                }
+              },
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "qwen",
+          "worker": "game-review-5466f96646-8j7zl",
+          "client_ms": 34.61
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 576,
+            "history": [
+              {
+                "choice": "propose_rollout",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": false,
+                  "decision": "simulation_only"
+                }
+              },
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "qwen",
+          "worker": "game-review-5466f96646-lfv6f",
+          "client_ms": 36.48
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 297,
+            "history": [
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "smol",
+          "worker": "game-review-5466f96646-8j7zl",
+          "client_ms": 38.42
+        },
+        {
+          "result": {
+            "choice": "report_simulation",
+            "tokens": 297,
+            "history": [
+              {
+                "choice": "report_simulation",
+                "verdict": {
+                  "source": "synthetic",
+                  "accepted": true,
+                  "decision": "simulation_only"
+                }
+              }
+            ]
+          },
+          "cache": "hit",
+          "inference_tokens": 0,
+          "model": "smol",
+          "worker": "game-review-5466f96646-lfv6f",
+          "client_ms": 34.25
+        }
+      ]
+    },
+    "other_team": {
+      "result": {
+        "choice": "report_simulation",
+        "tokens": 576,
+        "history": [
+          {
+            "choice": "propose_rollout",
+            "verdict": {
+              "source": "synthetic",
+              "accepted": false,
+              "decision": "simulation_only"
+            }
+          },
+          {
+            "choice": "report_simulation",
+            "verdict": {
+              "source": "synthetic",
+              "accepted": true,
+              "decision": "simulation_only"
+            }
+          }
+        ]
+      },
+      "cache": "hit",
+      "inference_tokens": 0,
+      "model": "qwen",
+      "worker": "game-review-5466f96646-lfv6f",
+      "client_ms": 7.7
+    }
+  },
+  "sdk": {
+    "destination": "local SDK receiver",
+    "sentry_envelopes": [
+      {
+        "message": "freight: verifier rejected report_live_lift",
+        "level": "info",
+        "release": "9a28e606cdc6d67b71bb2fbc913ea5bfad4207fc"
+      }
+    ],
+    "amplitude_events": [
+      {
+        "event": "game.review_accepted",
+        "properties": {
+          "choice": "report_simulation",
+          "model": "qwen",
+          "project": "freight",
+          "tokens": 576
+        }
+      },
+      {
+        "event": "game.review_accepted",
+        "properties": {
+          "choice": "report_simulation",
+          "model": "smol",
+          "project": "freight",
+          "tokens": 297
+        }
+      }
+    ]
+  },
+  "pr-review": {
+    "github": {
+      "commit": "9a28e606cdc6d67b71bb2fbc913ea5bfad4207fc",
+      "pull_request": "https://github.com/GlebAvershin/blackout-freight/pull/1",
+      "head": "f7df883f7d59d53d83e05beb5c5002f13de72ef7",
+      "file": "analysis/agent_review.py",
+      "source": "\"\"\"Review evidence from FirstShiftCompassV1 without exposing player records.\"\"\"\nfrom typing import Any\nfrom mcp.server.fastmcp import FastMCP\nfrom compass_report import FIXTURE, build_report, read_counts\n\nserver = FastMCP(\"First-shift decision review\")\nOPTIONS = {\n    \"report_simulation\": \"Report the exercise as a synthetic funnel analysis.\",\n    \"propose_rollout\": \"Use these results to propose rolling out the compass.\",\n    \"report_live_lift\": \"Present the delivery change as an observed player outcome.\",\n}\n\n\n@server.resource(\"studio://review/brief\")\ndef brief() -> dict:\n    report = build_report(read_counts(FIXTURE), \"synthetic\")\n    return {\n        \"instruction\": \"Choose the conclusion that this experiment's data can support.\",\n        \"options\": OPTIONS,\n        \"facts\": {\"experiment\": report[\"experiment\"], \"source\": report[\"source\"],\n                  \"solo_delivery\": report[\"solo\"][\"delivery\"], \"solo_catch\": report[\"solo\"][\"catch\"]},\n    }\n\n\n@server.resource(\"studio://review/negative-control\")\ndef negative_control() -> str:\n    return \"report_live_lift\"\n\n\n@server.tool(structured_output=True)\ndef verify_choice(choice: str) -> dict[str, Any]:\n    result = build_report(read_counts(FIXTURE), \"synthetic\")\n    accepted = result[\"decision\"] == \"simulation_only\" and choice == \"report_simulation\"\n    return {\"accepted\": accepted, \"decision\": result[\"decision\"], \"source\": result[\"source\"]}\n\n\nif __name__ == \"__main__\":\n    server.run()\n"
+    },
+    "diagnostics": {
+      "destination": "local SDK receiver",
+      "sentry_envelopes": [
+        {
+          "message": "freight: verifier rejected report_live_lift",
+          "level": "info",
+          "release": "9a28e606cdc6d67b71bb2fbc913ea5bfad4207fc"
+        }
+      ],
+      "amplitude_events": [
+        {
+          "event": "game.review_accepted",
+          "properties": {
+            "choice": "report_simulation",
+            "model": "qwen",
+            "project": "freight",
+            "tokens": 576
+          }
+        },
+        {
+          "event": "game.review_accepted",
+          "properties": {
+            "choice": "report_simulation",
+            "model": "smol",
+            "project": "freight",
+            "tokens": 297
+          }
+        }
+      ]
+    },
+    "model": "qwen",
+    "suggestion": "One specific missing edge-case test for the Python game verifier could be:\n\n1. **Invalid Input for `brief` Function**: The `brief` function is designed to return a dictionary with the options, facts, and decision. However, it does not handle invalid input gracefully. For example, if the `report_simulation` option is not provided, the function should return an error message or a default value.\n\n2. **Missing Validation for `negative_control` Function**: The `negative_control` function is designed to return a string with the decision. However, it does not validate the input to ensure that the `report_live_lift` option is provided. If the `report_live_lift` option is not provided, the function should return an error message or a default value.\n\n3. **Missing Validation for",
+    "tokens": 673,
+    "finish_reason": "length"
+  }
+}

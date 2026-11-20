@@ -1,5 +1,7 @@
 # Blackout Freight
 
+[Технологии игры, AI-инструменты и результаты облачных проверок](docs/TECHNOLOGIES.md)
+
 Blackout Freight is a 1–4 player co-op Roblox game. Recover batteries from Depot 07 while evading a security drone, then decide where to send the last of the depot’s power.
 
 **Roblox closed test · place version 28** · Sentinel patrols Depot 07 with twin ducted fans and a moving optical head. The airlock has a five-slot receiver and an illuminated canopy. [Studio build](dist/Blackout%20Freight%20Closed%20Test.rbxl) · [In-game patrol](dist/Blackout%20Freight%20Patrol.jpg) · [Blender model](assets/sentinel/Sentinel.blend)

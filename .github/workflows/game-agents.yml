@@ -1,0 +1,19 @@
+name: Game review agents
+on: [pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          repository: GlebAvershin/lantern-atlas
+          ref: 4103603adde3dd325d511a2a2df66db834757f13
+          path: review-platform
+          persist-credentials: false
+      - uses: ./review-platform/.github/actions/review-agents
+        with:
+          project: freight
