@@ -1,0 +1,42 @@
+{
+  "project": "Blackout Freight",
+  "screen": "First shift",
+  "colors": [
+    "142c34",
+    "fcc259"
+  ],
+  "art": "assets/airlock-receiver/receiver.png",
+  "design": {
+    "headline": "Show the bearing and distance before the play area.",
+    "stage": "Reserve the largest area for the destination in the world.",
+    "action": "Keep the crew ability within thumb reach."
+  },
+  "components": [
+    {
+      "id": "airlock",
+      "title": "Airlock receiver",
+      "description": "The delivery destination in the world.",
+      "source": "src/client/Hud.client.luau",
+      "symbol": "FirstDeliveryGuide"
+    },
+    {
+      "id": "compass",
+      "title": "Delivery compass",
+      "description": "Distance and bearing to the battery or airlock.",
+      "source": "src/client/FirstShiftCompass.luau",
+      "symbol": "FirstShiftCompass"
+    },
+    {
+      "id": "role",
+      "title": "Crew action",
+      "description": "Activate the current crew ability.",
+      "source": "src/client/Hud.client.luau",
+      "symbol": "RoleAction"
+    }
+  ],
+  "acceptance": {
+    "headline": "compass",
+    "stage": "airlock",
+    "action": "role"
+  }
+}

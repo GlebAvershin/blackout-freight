@@ -1,0 +1,17 @@
+name: Responsive HUD handoff
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['studio/hud-brief.json', 'studio/hud/**', '.github/actions/author-hud/**', '.github/workflows/hud-proof.yml']
+  pull_request:
+    paths: ['studio/hud-brief.json', 'studio/hud/**', '.github/actions/author-hud/**', '.github/workflows/hud-proof.yml']
+permissions:
+  contents: read
+jobs:
+  handoff:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: GlebAvershin/lantern-atlas/.github/actions/author-hud@0032934be712eaa7a47721bb61bc40839de9c1c1
