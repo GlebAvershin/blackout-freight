@@ -1,0 +1,85 @@
+{
+  "game": "Blackout Freight",
+  "client": "Codex app-server",
+  "amplitude": {
+    "tool": "query_amplitude_data",
+    "chart": {
+      "kind": "segmentation",
+      "events": [
+        {
+          "event": "game.study_evaluated",
+          "where": [
+            {
+              "property": "game",
+              "op": "is",
+              "values": [
+                "Blackout Freight"
+              ],
+              "scope": "event"
+            }
+          ]
+        }
+      ],
+      "measured_as": {
+        "as": "event_totals"
+      },
+      "date_range": {
+        "start": 1795132800,
+        "end": 1795219199,
+        "timezone": "UTC"
+      }
+    },
+    "event_total": 6,
+    "request_id": "req_1795211858262_43iw96p5q"
+  },
+  "sentry": {
+    "tool": "get_issue_details",
+    "event_id": "4628bff05bb454ceb93e859fbfbaaeda",
+    "issue": "PYTHON-5",
+    "title": "Blackout Freight research check: assignment_defect / investigate_assignment",
+    "matches_research_receipt": true
+  },
+  "databricks": {
+    "service": "system.ai.dbsql",
+    "tool": "execute_sql",
+    "statement_id": "01f1e52d-bc98-1284-b72e-1356f3598574",
+    "columns": [
+      "scenario",
+      "assignment_flag",
+      "max_imbalance_bp",
+      "solo_heavy_lift_bp",
+      "crew_heavy_lift_bp"
+    ],
+    "rows": [
+      [
+        "assignment_defect",
+        "1",
+        "3314",
+        "770",
+        "453"
+      ],
+      [
+        "at_threshold",
+        "0",
+        "500",
+        "774",
+        "471"
+      ],
+      [
+        "fixture",
+        "0",
+        "22",
+        "774",
+        "471"
+      ],
+      [
+        "just_over_threshold",
+        "1",
+        "500",
+        "774",
+        "471"
+      ]
+    ],
+    "sqlite_match": true
+  }
+}
