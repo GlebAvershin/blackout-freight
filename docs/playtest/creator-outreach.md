@@ -10,9 +10,9 @@
 
 | Кандидат | Что связывает автора с игрой | Статус на 20 ноября |
 | --- | --- | --- |
-| [BigVictor](https://devforum.roblox.com/t/looking-for-small-roblox-games-to-feature-in-my-youtube-review-series/4145829) | Набирал небольшие Roblox-игры в серию обзоров | Указанный канал связи — Discord, bigvictoronyt. Запрос не отправлен |
-| [asadrith](https://www.youtube.com/watch?v=Y055f-Y7UMA) | Проводил стримы с играми зрителей, указал канал для заявок playing-your-games | Перед отправкой сверить актуальность канала и расписания |
-| [ItsZebraTV](https://itszebra.tv/developers/) | Прямо запрашивает короткие хорроры про ночные смены | Принимает по электронной почте. Запрос не отправлен |
+| [BigVictor](https://devforum.roblox.com/t/looking-for-small-roblox-games-to-feature-in-my-youtube-review-series/4145829) | Принимает небольшие Roblox-игры через тему DevForum или Discord | После входа кнопка ответа в теме недоступна. Приглашение не отправлено |
+| [asadrith](https://www.youtube.com/watch?v=Y055f-Y7UMA) | Указал канал Discord playing-your-games для заявок | Эту рассылку проводим без Discord. Приглашение пропущено |
+| [ItsZebraTV](https://itszebra.tv/developers/) | Запрашивает короткие хорроры про ночные смены | 20 ноября отправлено письмо со ссылкой для авторов, вторым Shorts и приглашением на обе смены. Участие пока не подтверждено |
 | [SmartyRBX](https://www.smartyrbx.com/review) | Бесплатная очередь на разбор Roblox-игр со стрима | Сайт требует разместить сторонний код в публичном описании игры для подтверждения владельца. Заявка не отправлена |
 | [C6MediaMashup](https://www.youtube.com/watch?v=RHHt0v48iKc) | Записывали Pressure вдвоём. Предложить обменяться ролями носильщика и отвлекающего | Канал подачи предложений не подтверждён |
 | [Solidarity – Roblox](https://www.youtube.com/watch?v=JhW_Bse2jKA) | Кооперативный Roblox-хоррор с KatherineElizabeth | Канал подачи предложений не подтверждён |
