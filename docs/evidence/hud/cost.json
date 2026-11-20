@@ -1,0 +1,19 @@
+{
+  "scope": "One completed responsive HUD job, including setup and QA. Model trace covers canonical handoff only.",
+  "job": "https://github.com/GlebAvershin/blackout-freight/actions/runs/44798032011/job/136502601633",
+  "runner_labels": [
+    "ubuntu-24.04"
+  ],
+  "runner_started": "2026-11-20T19:00:14Z",
+  "runner_finished": "2026-11-20T19:01:56Z",
+  "runner_elapsed_seconds": 102.0,
+  "canonical_model_calls": 2,
+  "canonical_inference_tokens": 302,
+  "authoring_report_sha256": "701a8f16ff2516311ac14b46f2959be5fbc9a453670f55283ad8d65b78116275",
+  "incremental_charges_usd": {
+    "standard_public_runner_minutes": 0,
+    "external_model_api": 0
+  },
+  "basis": "Published public standard-runner tariff and self-hosted GGUF inference. Excludes storage, subscriptions and developer time.",
+  "tariff": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners"
+}

@@ -1,0 +1,44 @@
+{
+  "client": "Google Antigravity CLI",
+  "client_version": "1.5.13",
+  "additional_credits_enabled": false,
+  "requested_model": "claude-sonnet-4-6",
+  "origin": "account_inference",
+  "brief_sha256": "4767000120779002a8ed0994f0bee4e32dd968c9f32559ec58c7909f613b7b0a",
+  "elapsed_ms": 42809,
+  "answer": {
+    "choice": "compass-airlock-role",
+    "reason": "It is the only option where headline=compass (bearing/distance first), stage=airlock (largest area for the world destination), and action=role (crew ability at thumb reach)."
+  },
+  "bindings": {
+    "headline": "compass",
+    "stage": "airlock",
+    "action": "role"
+  },
+  "mcp_acceptance": {
+    "headline": true,
+    "stage": true,
+    "action": true
+  },
+  "attempts": [
+    {
+      "origin": "account_inference",
+      "brief_sha256": "4767000120779002a8ed0994f0bee4e32dd968c9f32559ec58c7909f613b7b0a",
+      "elapsed_ms": 42809,
+      "answer": {
+        "choice": "compass-airlock-role",
+        "reason": "It is the only option where headline=compass (bearing/distance first), stage=airlock (largest area for the world destination), and action=role (crew ability at thumb reach)."
+      },
+      "bindings": {
+        "headline": "compass",
+        "stage": "airlock",
+        "action": "role"
+      },
+      "mcp_acceptance": {
+        "headline": true,
+        "stage": true,
+        "action": true
+      }
+    }
+  ]
+}

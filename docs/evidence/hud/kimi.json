@@ -1,0 +1,111 @@
+{
+  "run": "https://github.com/GlebAvershin/lantern-atlas/actions/runs/44799346971",
+  "server_slots": 2,
+  "games_submitted_concurrently": 4,
+  "benchmark": {
+    "project": "Blackout Freight",
+    "model": "Kimi-VL-A3B-Instruct.Q3_K_S",
+    "weights_sha256": "ac24c61aa01cee11cb0cfab8b497bd0f14276ec9b16601022a7b581ca8c4516a",
+    "expected": {
+      "headline": "compass",
+      "stage": "airlock",
+      "action": "role"
+    },
+    "cases_sha256": "07f8afbb929004feb8c93dda0aad31a49680684c9ebcd932e887c6d04b5bc484",
+    "rows": [
+      {
+        "instructions": {
+          "headline": "Which way is the next battery?",
+          "stage": "Show where the crew must deliver their cargo.",
+          "action": "Trigger the skill assigned to my crew member."
+        },
+        "baseline": {
+          "headline": "compass",
+          "stage": "airlock",
+          "action": "role"
+        },
+        "model": {
+          "headline": "compass",
+          "stage": "airlock",
+          "action": "role"
+        },
+        "baseline_correct": 3,
+        "model_correct": 3,
+        "baseline_us": 181,
+        "model_ms": 27297,
+        "tokens": 404
+      },
+      {
+        "instructions": {
+          "headline": "Put my navigation readout first.",
+          "stage": "Give the evacuation receiver the main panel.",
+          "action": "Keep the specialist ability in reach."
+        },
+        "baseline": {
+          "headline": "airlock",
+          "stage": "compass",
+          "action": "role"
+        },
+        "model": {
+          "headline": "compass",
+          "stage": "airlock",
+          "action": "compass"
+        },
+        "baseline_correct": 1,
+        "model_correct": 2,
+        "baseline_us": 142,
+        "model_ms": 35335,
+        "tokens": 401
+      }
+    ]
+  },
+  "handoff": {
+    "project": "Blackout Freight",
+    "screen": "First shift",
+    "route": "llama",
+    "requested_model": "Kimi-VL-A3B-Instruct.Q3_K_S",
+    "game_revision": "01f7611b325555f936c97914d414cf95801efbfb",
+    "brief_sha256": "3890c5e7cba49ce9611fc22685f55b9ec6db7212541b2df9187fc494c00cd732",
+    "bindings": {
+      "headline": "compass",
+      "stage": "airlock",
+      "action": "role"
+    },
+    "negative_control": {
+      "headline": "airlock",
+      "stage": "role",
+      "action": "compass"
+    },
+    "rejected_control_regions": [
+      "headline",
+      "stage",
+      "action"
+    ],
+    "trace": [
+      {
+        "region": "headline",
+        "component": "compass",
+        "origin": "inference",
+        "tokens": 146,
+        "accepted": true
+      },
+      {
+        "region": "stage",
+        "component": "airlock",
+        "origin": "inference",
+        "tokens": 130,
+        "accepted": true
+      },
+      {
+        "region": "action",
+        "component": "role",
+        "origin": "elimination",
+        "tokens": 0,
+        "accepted": true
+      }
+    ],
+    "model_calls": 2,
+    "inference_tokens": 276,
+    "authoring_ms": 23675
+  }
+}

@@ -26,4 +26,4 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
-      - uses: GlebAvershin/lantern-atlas/.github/actions/author-hud@527cf6fb244e985b6187e34dc9554581cbc65b77
+      - uses: GlebAvershin/lantern-atlas/.github/actions/author-hud@fbc7ec0c0af1c4e1bcdd060e8cac1f3a7e107477
