@@ -1,0 +1,52 @@
+{
+  "project": "Blackout Freight",
+  "screen": "First shift",
+  "route": "bedrock-mantle",
+  "requested_model": "qwen.qwen3-coder-30b-a3b-instruct",
+  "game_revision": "003cdee2a1c004c2cfac48fece12e8b7da07cb7b",
+  "brief_sha256": "3890c5e7cba49ce9611fc22685f55b9ec6db7212541b2df9187fc494c00cd732",
+  "bindings": {
+    "headline": "compass",
+    "stage": "airlock",
+    "action": "role"
+  },
+  "negative_control": {
+    "headline": "airlock",
+    "stage": "role",
+    "action": "compass"
+  },
+  "rejected_control_regions": [
+    "headline",
+    "stage",
+    "action"
+  ],
+  "trace": [
+    {
+      "region": "headline",
+      "component": "compass",
+      "origin": "inference",
+      "tokens": 137,
+      "accepted": true
+    },
+    {
+      "region": "stage",
+      "component": "airlock",
+      "origin": "inference",
+      "tokens": 123,
+      "accepted": true
+    },
+    {
+      "region": "action",
+      "component": "role",
+      "origin": "elimination",
+      "tokens": 0,
+      "accepted": true
+    }
+  ],
+  "model_calls": 2,
+  "inference_tokens": 260,
+  "authoring_ms": 1344,
+  "region": "eu-north-1",
+  "account_plan_at_run": "FREE",
+  "account_plan_status": "ACTIVE"
+}

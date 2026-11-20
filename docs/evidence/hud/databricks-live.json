@@ -1,0 +1,60 @@
+{
+  "project": "Blackout Freight",
+  "screen": "First shift",
+  "route": "databricks",
+  "requested_model": "databricks-qwen3-next-80b-a3b-instruct",
+  "game_revision": "003cdee2a1c004c2cfac48fece12e8b7da07cb7b",
+  "brief_sha256": "3890c5e7cba49ce9611fc22685f55b9ec6db7212541b2df9187fc494c00cd732",
+  "bindings": {
+    "headline": "compass",
+    "stage": "airlock",
+    "action": "role"
+  },
+  "negative_control": {
+    "headline": "airlock",
+    "stage": "role",
+    "action": "compass"
+  },
+  "rejected_control_regions": [
+    "headline",
+    "stage",
+    "action"
+  ],
+  "trace": [
+    {
+      "region": "headline",
+      "component": "compass",
+      "origin": "inference",
+      "tokens": 112,
+      "accepted": true
+    },
+    {
+      "region": "stage",
+      "component": "airlock",
+      "origin": "inference",
+      "tokens": 99,
+      "accepted": true
+    },
+    {
+      "region": "action",
+      "component": "role",
+      "origin": "elimination",
+      "tokens": 0,
+      "accepted": true
+    }
+  ],
+  "model_calls": 2,
+  "inference_tokens": 211,
+  "authoring_ms": 3056,
+  "edition": "Free Edition",
+  "endpoint_observation": {
+    "endpoint": "databricks-qwen3-next-80b-a3b-instruct",
+    "observed_utc": "2026-11-20T19:54:19.046850+00:00",
+    "ai_gateway": {
+      "configuration_returned": true,
+      "usage_tracking": true,
+      "payload_logging": false,
+      "rate_limits": []
+    }
+  }
+}

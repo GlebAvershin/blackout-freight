@@ -1,0 +1,26 @@
+{
+  "mcp": {
+    "game": "Blackout Freight",
+    "revision": "003cdee2a1c004c2cfac48fece12e8b7da07cb7b",
+    "brief_sha256": "3890c5e7cba49ce9611fc22685f55b9ec6db7212541b2df9187fc494c00cd732",
+    "accepted_regions": 3,
+    "rejected_control_regions": 3,
+    "source": "developer_qa"
+  },
+  "receipts": [
+    {
+      "service": "sentry",
+      "phase": "ingestion_acknowledged",
+      "http_status": 200,
+      "event_id": "f808f692a4a158d4bdf0016c02bee0db",
+      "timestamp_utc": "2026-11-20T19:41:44.380763+00:00"
+    },
+    {
+      "service": "amplitude",
+      "phase": "ingestion_acknowledged",
+      "http_status": 200,
+      "event_id": "62dcbd373c435dbcbfcd326b1f4ee705",
+      "timestamp_utc": "2026-11-20T19:42:21.675609+00:00"
+    }
+  ]
+}
