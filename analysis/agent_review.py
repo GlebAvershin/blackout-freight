@@ -1,4 +1,5 @@
 """Review evidence from FirstShiftCompassV1 without exposing player records."""
+from typing import Any
 from mcp.server.fastmcp import FastMCP
 from compass_report import FIXTURE, build_report, read_counts
 
@@ -21,8 +22,13 @@ def brief() -> dict:
     }
 
 
+@server.resource("studio://review/negative-control")
+def negative_control() -> str:
+    return "report_live_lift"
+
+
 @server.tool(structured_output=True)
-def verify_choice(choice: str) -> dict:
+def verify_choice(choice: str) -> dict[str, Any]:
     result = build_report(read_counts(FIXTURE), "synthetic")
     accepted = result["decision"] == "simulation_only" and choice == "report_simulation"
     return {"accepted": accepted, "decision": result["decision"], "source": result["source"]}

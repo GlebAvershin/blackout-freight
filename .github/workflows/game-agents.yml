@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           repository: GlebAvershin/lantern-atlas
-          ref: 78cc3d176d4e76763e2092a180ffdd9ace3532d3
+          ref: 4e1d46be60e3c5fe42495f1a6cff11f41f838761
           path: review-platform
           persist-credentials: false
       - uses: ./review-platform/.github/actions/review-agents
