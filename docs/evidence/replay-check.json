@@ -1,0 +1,20 @@
+{
+  "game": "Blackout Freight",
+  "query_sha256": "f422c453d0b2b8a827a30e751b5e396d7808e53ecf8fbf1a4a4e8e2f6e3d1b43",
+  "research_cases": 4,
+  "research_receipts": 7,
+  "provider_bindings": {
+    "bedrock-mantle": {
+      "model": "qwen.qwen3-coder-30b-a3b-instruct",
+      "trace_sha256": "6ff9f484e9f5f6384048e43a8e3039e1068119b00c3c65e04dc97b7360c14dd4",
+      "accepted_regions": 3,
+      "rejected_control_regions": 3
+    },
+    "databricks": {
+      "model": "databricks-qwen3-next-80b-a3b-instruct",
+      "trace_sha256": "e5cd88714883c963fc3fc0fd1dad1238f844763795d10267c612a90536832e6c",
+      "accepted_regions": 3,
+      "rejected_control_regions": 3
+    }
+  }
+}

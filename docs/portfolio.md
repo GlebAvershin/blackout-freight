@@ -57,11 +57,3 @@ claude mcp add --transport stdio blackout-freight -- "$PWD/analysis/.venv/bin/py
 ```
 
 Ask the agent to read `freight://experiments/first-shift-compass-v1`, call `analyze_compass_demo`, and explain whether there is evidence to roll out. The test client verifies the resource, tool discovery, and the structured result over stdio. [MCP SDK](https://github.com/modelcontextprotocol/python-sdk) · [Claude Code MCP](https://code.claude.com/docs/en/mcp#option-3-add-a-local-stdio-server)
-
-## Project bullets for a CV
-
-**AI-Native Software Engineer.** Built Blackout Freight, a 1–4 player Roblox co-op game. Shipped persistent progression and live events to closed testing. Used Codex to develop a first-shift compass with server-owned experimentation, reusable agent skills, a Python MCP server and automated Luau/Studio verification.
-
-**Product Analyst.** Designed and instrumented a controlled Roblox onboarding experiment and verified event delivery for both variants in Roblox Analytics. Built a reproducible funnel and guardrail report with DuckDB SQL and Python in Jupyter, using synthetic data to demonstrate sample-ratio checks and confidence intervals.
-
-[AI-Native Software Engineer (Games)](https://playrix.com/job/open/ai/ai-engineer-game) · [Product Analyst (Game)](https://playrix.com/job/open/Analytics/product-analyst-game)
