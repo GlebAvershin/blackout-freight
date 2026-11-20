@@ -10,6 +10,14 @@ The demo shows the first-shift compass pointing back to the airlock while the pl
 
 The five-slot receiver exposes team progress directly in the depot. Its position and colour encode charge, and reduced-motion clients skip the insertion tween. The same geometry drives the Roblox asset and a Blender product render. The release pipeline validates every distributed place and exports a verified Tableau Hyper sample from the synthetic experiment data. [System audit](audit-2026-11-20.md) · [Release notes](releases/v25-rc.1.md) · [Blender render](../assets/airlock-receiver/receiver.png)
 
+## First-shift compass · engineering handoff
+
+**Game engineering.** A new player can lose sight of the airlock while carrying a battery. The treatment shows the bearing while the destination is off-screen and retires it after the first delivery. Codex assisted implementation. The server assigns the experiment arm and records accepted actions. The client computes the camera-relative direction. In v24, internal QA verified all four telemetry stages in both arms on a published closed server. For v25, the release report also documents a first Shelter unlock surviving a switch to another server. [Compass code](../src/client/FirstShiftCompass.luau) · [QA telemetry](portfolio-release-2026-11-16.md) · [Persistence evidence](releases/v25-rc.1.md)
+
+**Cross-product tooling.** An experiment-review skill tells a coding agent which contract to read and which function to run. The MCP resource and tool expose a small versioned interface. The response carries its data provenance. In the demo the decision is `simulation_only`. [Skill](../.agents/skills/freight-experiment/SKILL.md) · [Protocol test](../analysis/test_freight_mcp.py)
+
+**Platform engineering.** The Python MCP service exposes a read-only contract over stdio. On a GitHub-hosted runner two Kubernetes replicas used the game verifier with Qwen and SmolLM2. PostgreSQL kept accepted results scoped to each test team and available across a rolling restart. [Measured run](https://github.com/GlebAvershin/blackout-freight/actions/runs/44771405268). [Server](../analysis/freight_mcp.py) · [CI](../.github/workflows/verify.yml)
+
 ## Five-minute demo
 
 1. Open the Portfolio Preview in Roblox Studio and select **Play**. Turn away from the first battery to see the HUD compass, then turn back to the waypoint. Press **E** at the battery and follow the amber airlock bearing after pickup.
@@ -54,4 +62,4 @@ Ask the agent to read `freight://experiments/first-shift-compass-v1`, call `anal
 
 **Product Analyst.** Designed and instrumented a controlled Roblox onboarding experiment and verified event delivery for both variants in Roblox Analytics. Built a reproducible funnel and guardrail report with DuckDB SQL and Python in Jupyter, using synthetic data to demonstrate sample-ratio checks and confidence intervals.
 
-[AI-Native Software Engineer (Games)](https://playrix.com/job/open/c%2B%2B-development/ai-native-software-engineer-games) · [Product Analyst (Game)](https://playrix.com/job/open/Analytics/product-analyst-game)
+[AI-Native Software Engineer (Games)](https://playrix.com/job/open/ai/ai-engineer-game) · [Product Analyst (Game)](https://playrix.com/job/open/Analytics/product-analyst-game)

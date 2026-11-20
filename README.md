@@ -12,6 +12,8 @@ Blackout Freight is a 1–4 player co-op Roblox game. Recover batteries from Dep
 
 [![Gameplay from v24 showing the off-screen airlock bearing and the first successful battery delivery](dist/blackout-freight-v24-preview.gif)](dist/blackout-freight-v24-demo.mp4)
 
+**AI in the release and in later QA.** Codex helped implement the first-shift compass. After release, four models reviewed the conclusions supported by a synthetic dataset. The domain validator rejected a rollout recommendation. Internal QA separately verified that the published game delivered events in both experiment arms. [Release evidence](docs/portfolio-release-2026-11-16.md) · [Agent verdicts and technology](docs/TECHNOLOGIES.md)
+
 ## Об игре
 
 Кооперативная игра Roblox для 1–4 игроков. В ночном Депо 07 нужно пронести пять батарей мимо дрона Sentinel и выбрать, куда направить последний резерв энергии: передать доказательства в эфир или запитать укрытие.
