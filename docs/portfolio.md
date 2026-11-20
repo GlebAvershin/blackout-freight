@@ -6,6 +6,8 @@
 
 The demo shows the first-shift compass pointing back to the airlock while the player carries a battery. The bearing disappears after delivery and the depot’s power increases to 1/5. Version 24 was published on November 16, 2026. The hosted Roblox experience is available to approved playtesters. The Studio preview is available to anyone with Roblox Studio. [Roblox experience](https://www.roblox.com/games/111633787401180/Blackout-Freight) · [Release and live QA evidence](portfolio-release-2026-11-16.md)
 
+The shared HUD authoring workflow binds the compass, receiver and crew action to source components, runs on a cloud worker and checks the result in Chromium. The technology report includes the model comparison and backend measurements. [Technology report](TECHNOLOGIES.md)
+
 ## Airlock receiver · Studio release candidate
 
 The five-slot receiver exposes team progress directly in the depot. Its position and colour encode charge, and reduced-motion clients skip the insertion tween. The same geometry drives the Roblox asset and a Blender product render. The release pipeline validates every distributed place and exports a verified Tableau Hyper sample from the synthetic experiment data. [System audit](audit-2026-11-20.md) · [Release notes](releases/v25-rc.1.md) · [Blender render](../assets/airlock-receiver/receiver.png)

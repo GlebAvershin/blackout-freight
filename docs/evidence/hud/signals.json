@@ -1,0 +1,26 @@
+{
+  "live_github_mcp": {
+    "repository": "blackout-freight",
+    "run": 44798032011,
+    "revision": "95c813d89f103552c266587f6a6df7b991aff353",
+    "state": "completed",
+    "result": "success",
+    "event": "push"
+  },
+  "offline_telemetry_contracts": {
+    "source": "offline HTTP transport fixtures",
+    "sentry": {
+      "window": "24h",
+      "page_limit": 20,
+      "issues_on_page": 1,
+      "levels": {
+        "error": 1
+      }
+    },
+    "amplitude": {
+      "day": "2026-11-19",
+      "event": "game.review_accepted",
+      "events": 4
+    }
+  }
+}

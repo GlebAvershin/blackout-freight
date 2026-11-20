@@ -1,0 +1,91 @@
+{
+  "viewports": [
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "action_size": [
+        252,
+        48
+      ],
+      "layout": "stack",
+      "violations": []
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "action_size": [
+        322,
+        48
+      ],
+      "layout": "stack",
+      "violations": []
+    },
+    {
+      "viewport": [
+        768,
+        1024
+      ],
+      "action_size": [
+        677.9375,
+        48
+      ],
+      "layout": "stack",
+      "violations": []
+    },
+    {
+      "viewport": [
+        839,
+        600
+      ],
+      "action_size": [
+        744.6875,
+        48
+      ],
+      "layout": "stack",
+      "violations": []
+    },
+    {
+      "viewport": [
+        840,
+        600
+      ],
+      "action_size": [
+        191.640625,
+        48
+      ],
+      "layout": "rail",
+      "violations": []
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "action_size": [
+        294.1875,
+        48
+      ],
+      "layout": "rail",
+      "violations": []
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "action_size": [
+        221.078125,
+        48
+      ],
+      "layout": "rail",
+      "violations": []
+    }
+  ],
+  "injected_fault": [
+    "target"
+  ]
+}
