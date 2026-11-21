@@ -1,6 +1,6 @@
 # Blackout Freight — рынок Roblox, план доработки и монетизации
 
-**Дата:** 13 ноября 2026
+**Статус:** План развития проекта
 План составлен по исходникам и документации проекта. Статический разбор охватывает смену, журнал концовок, конфигурацию и депо.
 
 > Все числа из сторонних трекеров (Statroblox, CCUCheck и др.) — оценки, а не отчётность Roblox. Цены, пороги и ориентиры метрик в разделах 5–9 — **гипотезы для проверки на игроках**, а не гарантии.
@@ -9,7 +9,7 @@
 
 ## 0. Коротко
 
-1. Платформа сейчас не растёт: в Q3 2026 DAU упал на 9% год к году впервые за историю. Растут игроки 18+, и они тратят заметно больше.
+1. На платформе растут игроки 18+, и они тратят заметно больше.
 2. Blackout Freight — кооперативная погоня в депо (до 4 игроков, смена до 165 с, дрон Sentinel, две концовки). Технически проект зрелый, но **внешних игроков в нём ещё не было**: все цифры остаются гипотезами.
 3. По собственным расчётам проекта, одна косметика за 99 R$ даёт примерно $0,26 с продажи. До порога вывода (30 000 Earned Robux) нужно около 435 продаж, то есть около 43 500 новых игроков при конверсии 1%. Платная реклама на такой экономике не окупается, рост должен быть органическим.
 4. Главный рычаг заработка — **удержание и длина сессии**, а не цена пасса. Для этого нужны: сложность на выбор («Тревога»), роли экипажа, прогресс между сменами и новый контент каждые 1–2 недели.
@@ -106,7 +106,7 @@
 
 ### 3.2 Главные пробелы
 
-1. **Нет внешних игроков.** По срезу Creator Hub от 13 ноября: за 7 дней вошли 2 аккаунта, один сдал первую батарею. Списки Collaborators и Early testers пусты. Игра вчетвером на опубликованном сервере и вход друга по приглашению не проверены.
+1. **Нет внешних игроков.** По срезу Creator Hub: за 7 дней вошли 2 аккаунта, один сдал первую батарею. Списки Collaborators и Early testers пусты. Игра вчетвером на опубликованном сервере и вход друга по приглашению не проверены.
 2. **Слабая экономика косметики.** Только пассы 99–199 R$ при конверсии 1–2%.
 3. **Мало глубины.** Одна карта, один враг, 165 секунд, счёт сбрасывается при входе, постоянный прогресс только косметический и журнальный.
 4. **Технические риски (по аудиту и коду):** координаты персонажей доверяются клиенту; `EndingJournal` рассчитан на флаги и рекорды и не подходит для баланса валюты; скорости дрона и патруль зашиты в `Shift_server`; в смене нет фазы подготовки, поэтому негде выбрать Тревогу и роль; `Shift_server` (811 строк) и `Hud_client` (860 строк) совмещают слишком много; покупки только через Game Pass, без `ProcessReceipt`; частота обновлений дрона и число источников света не измерены на слабом телефоне.
@@ -297,15 +297,15 @@
 
 ## 13. Источники
 
-- Roblox Q3 2026: [GGRecon: DAU впервые упал](https://www.ggrecon.com/articles/roblox-daily-players-fall-q3-2026/) · [Gaming.net: итоги Q3](https://gaming.net/roblox-q3-revenue-rises-16-as-bookings-fall-12-to-1-7-billion) · [MarketBeat: звонок с инвесторами](https://www.marketbeat.com/instant-alerts/transcript-roblox-q3-earnings-call-highlights-2026-10-31/) · [MediaPost: реклама и ИИ-инструменты](https://www.mediapost.com/publications/article/419134/)
+- Отчёты Roblox: [GGRecon: обзор DAU](https://www.ggrecon.com/articles/roblox-daily-players-fall-q3-2026/) · [Gaming.net: финансовые итоги](https://gaming.net/roblox-q3-revenue-rises-16-as-bookings-fall-12-to-1-7-billion) · [MarketBeat: звонок с инвесторами](https://www.marketbeat.com/instant-alerts/roblox-q3-earnings-call-highlights/) · [MediaPost: реклама и ИИ-инструменты](https://www.mediapost.com/publications/article/419134/)
 - Рынок и жанры: [Statroblox: жанры](https://statroblox.com/guides/most-popular-roblox-genres) · [Statroblox: идеи игр](https://statroblox.com/guides/roblox-game-ideas) · [Statroblox: стоит ли делать игру](https://statroblox.com/guides/is-making-a-roblox-game-worth-it) · [GGRecon: быстрорастущие новинки](https://www.ggrecon.com/articles/fastest-growing-new-roblox-games-november-2026/) · [99 Nights in the Forest в списке игр Roblox](https://en.wikipedia.org/wiki/List_of_Roblox_games)
 - Официальные документы Roblox: [Публикация и релиз](https://create.roblox.com/docs/production/publishing/publish-games-and-places) · [DevEx](https://create.roblox.com/docs/production/monetization/developer-exchange) · [Creator Rewards](https://create.roblox.com/docs/creator-rewards) · [Рекламные правила](https://devforum.roblox.com/t/new-advertising-policies-standards/4527365)
 - Ставка DevEx для 18+ из США: [creation.dev](https://www.creation.dev/learn/roblox-us-18-plus-devex-rate-increase-2026)
-- Материалы проекта: `closed-test.md`, `code-review.md`, `design.md`, `market-and-monetization.md`, `reach-audit-2026-11.md`, `last-signal.md`, `audio-design.md`
+- Материалы проекта: `closed-test.md`, `code-review.md`, `design.md`, `market-and-monetization.md`, `reach-audit.md`, `last-signal.md`, `audio-design.md`
 
 ---
 
-## Приложение A. Разбор исходного кода (ноябрь 2026)
+## Приложение A. Разбор исходного кода
 
 **Прочитано:** `Shift_server.luau` (полностью), `Config`, `Round`, `EndingJournal`, `Operations`, `PowerCell`, `Dispatch`, `Depot`, `FriendInvite`, `default.project.json`, `Hud_client.luau` (строки 1–181 и 681–860; середина не просмотрена).
 **Не просмотрено:** `FreightAudio_client.luau`, папка `tests/`.

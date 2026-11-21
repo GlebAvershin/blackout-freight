@@ -1,6 +1,6 @@
 # Blackout Freight v24 · закрытый тест
 
-Версия **24** стартового места `111633787401180` опубликована 16 ноября 2026 в 01:52 МСК. Creator Hub показал её в истории с фильтром **Show published only**. Режим аудитории допускает владельца, участников проекта и тестировщиков. [История версий](https://create.roblox.com/dashboard/creations/experiences/10775560304/places/111633787401180/version-history) · [Аудитория](https://create.roblox.com/dashboard/creations/experiences/10775560304/manage-audience)
+Версия **24** стартового места `111633787401180` опубликована на платформе Roblox. Creator Hub показал её в истории с фильтром **Show published only**. Режим аудитории допускает владельца, участников проекта и тестировщиков. [История версий](https://create.roblox.com/dashboard/creations/experiences/10775560304/places/111633787401180/version-history) · [Аудитория](https://create.roblox.com/dashboard/creations/experiences/10775560304/manage-audience)
 
 Перед публикацией Studio сверила предыдущие скрипты с версией 23. Отдельный процесс Studio затем заново загрузил опубликованное место с Roblox и сравнил классы и исходники всех **43 скриптов** с локальным проектом. У всех трёх актуальных файлов в `dist/` один SHA-256: `1d86bdae524d3dc628eea9df36f134f9c95318b82fa0c4ca913460e7932d97da`.
 

@@ -12,7 +12,7 @@ Carry a battery back to the airlock. Each accepted delivery raises one cyan cass
 
 ## Roblox closed test
 
-Creator Hub recorded place version 25 on 20 November 2026 at 00:41 MSK. Before publication, 45 script and module sources were checked against the release candidate. Four differed from version 24 and were updated. [Place version history](https://create.roblox.com/dashboard/creations/experiences/10775560304/places/111633787401180/version-history)
+Creator Hub recorded place version 25. Before publication, 45 script and module sources were checked against the release candidate. Four differed from version 24 and were updated. [Place version history](https://create.roblox.com/dashboard/creations/experiences/10775560304/places/111633787401180/version-history)
 
 | Environment | Observed result |
 | --- | --- |
@@ -20,7 +20,7 @@ Creator Hub recorded place version 25 on 20 November 2026 at 00:41 MSK. Before p
 | Roblox Player on macOS, Broadcast and server change | In a separate solo Depot 07 shift the player delivered all five cells and activated `Send recording`. The victory HUD showed `Signal sent` and a new personal best of 2:00. After leaving and rejoining the same place, the Player log showed a different server (job IDs beginning `4a67ab4f` and `d615ad47`). The journal on the second server showed checkmarks for both `Evidence on air` and `Shelter powered`. The account already had both endings before the run. [Victory and journal screenshots](../playtest/v25-broadcast-journal.png) |
 | Studio, one server and one client | The test positioned the avatar at the prompts and invoked the normal pickup and delivery handlers five times. After every delivery, the client checked the material and height of each of the five cassettes. Both route prompts stayed disabled through delivery four, then enabled on delivery five. Choosing Broadcast ended the shift in victory. |
 
-### TestVicu access check, 20 November 2026
+### TestVicu access check
 
 The last confirmed journal for TestVicu contained Broadcast (1/2). For the v25 retest the owner granted **Playtest**, and Creator Hub confirmed the permission. After the grant, Roblox Player still refused entry with error 524. The playability API for the signed-in TestVicu account returned `InsufficientPermissionEditorsOnly` and `isPlayable: false`. The early tester invitation also led to an unavailable Play button. This attempt ended before the game loaded. The first attempt therefore could not verify a new unlock. [Earlier journal observation](../playtest/live-checklist.md)
 
@@ -32,4 +32,4 @@ After exiting to the Roblox menu and joining again, the Player log recorded serv
 
 After the run, the owner removed the temporary Edit grant. Roblox Studio rejected re-adding TestVicu before the Playtest selector appeared, citing an unsupported location. Creator Hub showed no collaborators after the removal.
 
-[Original system audit](../audit-2026-11-20.md)
+[Original system audit](../audit.md)

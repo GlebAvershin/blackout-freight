@@ -84,7 +84,7 @@ py -3 scripts/check-release.py --artifact "dist/Blackout Freight.rbxl" --rojo ro
 - Для обновления основного закрытого теста требуется доступ на публикацию к universe `10775560304`, стартовое место `111633787401180`. После проверки сборки публикуй в существующее место и сверь номер версии в Creator Hub. [История версий](https://create.roblox.com/dashboard/creations/experiences/10775560304/places/111633787401180/version-history)
 - [publish-closed-test.py](../scripts/publish-closed-test.py) без `--publish` выводит размер, SHA-256 и назначение файла. С `--publish` отправляет файл в основное место и запрашивает ключ Open Cloud. Для тестового experience используй Studio и выбери его явно. [Публикация через Open Cloud](https://create.roblox.com/docs/cloud/guides/usage-place-publishing)
 
-Исходники хранятся в Git. Если обновляешь релиз, собери из той же версии Rojo все три отслеживаемых файла в `dist/`: Closed Test, Progression Preview и Portfolio Preview. Проверь их через `check-release.py`, запиши номер опубликованной версии и SHA-256, затем отправь коммит на GitHub. [Пример отчёта о выпуске](portfolio-release-2026-11-16.md) · [Чек-лист живого теста](playtest/live-checklist.md)
+Исходники хранятся в Git. Если обновляешь релиз, собери из той же версии Rojo все три отслеживаемых файла в `dist/`: Closed Test, Progression Preview и Portfolio Preview. Проверь их через `check-release.py`, запиши номер опубликованной версии и SHA-256, затем отправь коммит на GitHub. [Пример отчёта о выпуске](portfolio-release.md) · [Чек-лист живого теста](playtest/live-checklist.md)
 
 ## Ассет шлюза и пререлиз
 

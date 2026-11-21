@@ -5,7 +5,7 @@
   <a href="TECHNOLOGIES.ru.md"><b>Русский</b></a>
 </p>
 
-Blackout Freight is a 1–4 player co-op tactical game built on Roblox. In the abandoned industrial Depot 07, players recover energy cells while avoiding the autonomous Sentinel drone, navigating blackout zones, and determining power routing. This technical dossier spans client-side 3D-to-2D projection, server-side randomized experiment allocation, DuckDB/SciPy statistical funnels, a 20,000-session Sample Ratio Mismatch (SRM) test, and a Bayesian Thompson Sampling Multi-Armed Bandit. [Play on Roblox](https://www.roblox.com/games/111633787401180/Blackout-Freight) · [Watch Gameplay Demo](../dist/blackout-freight-v24-demo.mp4) · [Closed Release QA](portfolio-release-2026-11-16.md)
+Blackout Freight is a 1–4 player co-op tactical game built on Roblox. In the abandoned industrial Depot 07, players recover energy cells while avoiding the autonomous Sentinel drone, navigating blackout zones, and determining power routing. This technical dossier spans client-side 3D-to-2D projection, server-side randomized experiment allocation, DuckDB/SciPy statistical funnels, a 20,000-session Sample Ratio Mismatch (SRM) test, and a Bayesian Thompson Sampling Multi-Armed Bandit. [Play on Roblox](https://www.roblox.com/games/111633787401180/Blackout-Freight) · [Watch Gameplay Demo](../dist/blackout-freight-v24-demo.mp4) · [Closed Release QA](portfolio-release.md)
 
 ---
 
@@ -22,7 +22,7 @@ Calculations were verified via the AWS Agent Toolkit managed MCP tool (`aws___ru
 
 ## ☁️ Cross-Service Verification via Cloud MCP Servers
 
-1. **Amplitude MCP:** Retrieved 6 `game.study_evaluated` events filtered by game ID for November 20, 2026 (UTC).
+1. **Amplitude MCP:** Retrieved 6 `game.study_evaluated` events filtered by game ID during research evaluation runs.
 2. **Sentry MCP:** Queried issue **PYTHON-5** by event ID, verifying the `assignment_defect` scenario and `investigate_assignment` action.
 3. **Databricks MCP (`system.ai.dbsql`):** Executed SQL experiment queries; all 4 rows matched local SQLite calculations byte-for-byte.
 

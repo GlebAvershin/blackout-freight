@@ -1,6 +1,6 @@
 # Новая концовка, Scrap и роль: сквозная проверка Studio
 
-13 ноября 2026, Roblox Studio 0.747.0.7471481, Mac. Два отдельных запуска `ExecuteMultiplayerTestAsync(1)` в двух процессах Studio. Сборка из текущих production-исходников e2f9787/dcc6d8b с изолированными тестовыми сценариями.
+Roblox Studio 0.747, Mac. Два отдельных запуска `ExecuteMultiplayerTestAsync(1)` в двух процессах Studio. Сборка из текущих production-исходников e2f9787/dcc6d8b с изолированными тестовыми сценариями.
 
 ## Результат — PASS
 
@@ -15,7 +15,7 @@
 | Новый процесс / сервер | После обычного входа тестового игрока восстановлены Broadcast, Scrap 50, XP 50, NextCrewRole и CrewRole = Technician |
 | Репликация | Тестовый LocalScript подтвердил концовку, баланс, выбранную и активную роли после восстановления |
 
-[Снимок данных](qa/persistence-2026-11-13/snapshot.json) · [Наблюдения Studio](qa/persistence-2026-11-13/observations.txt).
+[Снимок данных](qa/persistence/snapshot.json) · [Наблюдения Studio](qa/persistence/observations.txt).
 
 ## Что именно тестировалось
 

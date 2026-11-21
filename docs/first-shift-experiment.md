@@ -24,7 +24,7 @@ Studio verifies the preview; event ingestion requires an eligible account in a p
 
 Filter **CustomField03** to `solo` or `crew` before exporting counts. Transpose totals to `segment,variant,event,count`, one row for each combination. Include a zero after confirming the cohort/event was genuinely empty. The schema checks refuse missing, duplicate or inconsistent counts. Never add unique-user counts across days.
 
-The published closed test accepts explicit QA launches from its two internal accounts. Use the Roblox Player deep link `roblox://placeId=111633787401180&launchData=freight-qa-compass-v1` for treatment or replace `compass` with `control` for the baseline. A solo QA launch uses the standard Depot 07 map for its first eligible shift even when the account already has both endings. The experiment events keep their QA segment and ordinary analytics still excludes those accounts. [Verified live records](portfolio-release-2026-11-16.md)
+The published closed test accepts explicit QA launches from its two internal accounts. Use the Roblox Player deep link `roblox://placeId=111633787401180&launchData=freight-qa-compass-v1` for treatment or replace `compass` with `control` for the baseline. A solo QA launch uses the standard Depot 07 map for its first eligible shift even when the account already has both endings. The experiment events keep their QA segment and ordinary analytics still excludes those accounts. [Verified live records](portfolio-release.md)
 
 ## Analysis and decision rule
 

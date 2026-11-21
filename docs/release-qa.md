@@ -1,4 +1,4 @@
-# Проверка кандидата расширения — 13 ноября 2026
+# Проверка кандидата расширения
 
 Roblox Studio 0.747.0.7471481, macOS. Исходники ветки `codex/expansion-foundation`; сборка `dist/Blackout Freight Progression Preview.rbxl`.
 
