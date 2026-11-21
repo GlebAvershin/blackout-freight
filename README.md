@@ -25,7 +25,7 @@
 
 * 🕹️ **[Play on Roblox](https://www.roblox.com/games/111633787401180/Blackout-Freight)** — Public live experience (Place v32).
 * 📦 **[Download Roblox Studio Build (v25)](dist/Blackout%20Freight%20Closed%20Test.rbxl)** — Ready-to-play `.rbxl` place file.
-* 🎥 **[Watch v24 Gameplay Demo](dist/blackout-freight-v24-demo.mp4)** — Delivery loop and Sentinel evasion.
+* 🎥 **[Watch v24 Gameplay Demo (MP4)](https://raw.githubusercontent.com/GlebAvershin/blackout-freight/main/dist/blackout-freight-v24-demo.mp4)** — Delivery loop and Sentinel evasion.
 * 📓 **[Jupyter Experiment Notebook](analysis/first_shift_compass.ipynb)** — Synthetic data funnel and Wilson score calculation.
 * 📑 **[Engineering & AI Deep Dive](docs/TECHNOLOGIES.md)** — Comprehensive benchmarks, SRM tests, and telemetry receipts.
 

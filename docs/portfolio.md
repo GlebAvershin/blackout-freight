@@ -1,8 +1,13 @@
-# Blackout Freight · Portfolio
+# Blackout Freight · Product Case Study
 
-**Role** · Solo developer of a 1–4 player co-op Roblox game. The crew scavenges batteries under pressure, powers the depot, and chooses between broadcasting evidence and supplying a shelter.
+<p align="center">
+  <a href="portfolio.md"><b>English</b></a> •
+  <a href="portfolio.ru.md"><b>Русский</b></a>
+</p>
 
-[Watch the v24 gameplay demo](../dist/blackout-freight-v24-demo.mp4) · [Download the Studio preview](https://raw.githubusercontent.com/GlebAvershin/blackout-freight/main/dist/Blackout%20Freight%20Portfolio%20Preview.rbxl) · [Open the analysis notebook](../analysis/first_shift_compass.ipynb)
+**Overview** · Solo developer of a 1–4 player co-op Roblox game. The crew scavenges batteries under pressure, powers the depot, and chooses between broadcasting evidence and supplying a shelter.
+
+[Watch the v24 gameplay demo (MP4)](https://raw.githubusercontent.com/GlebAvershin/blackout-freight/main/dist/blackout-freight-v24-demo.mp4) · [Download the Studio preview](https://raw.githubusercontent.com/GlebAvershin/blackout-freight/main/dist/Blackout%20Freight%20Portfolio%20Preview.rbxl) · [Open the analysis notebook](../analysis/first_shift_compass.ipynb)
 
 The demo shows the first-shift compass pointing back to the airlock while the player carries a battery. The bearing disappears after delivery and the depot’s power increases to 1/5. Version 24 was published on November 16, 2026. The hosted Roblox experience is available to approved playtesters. The Studio preview is available to anyone with Roblox Studio. [Roblox experience](https://www.roblox.com/games/111633787401180/Blackout-Freight) · [Release and live QA evidence](portfolio-release-2026-11-16.md)
 
