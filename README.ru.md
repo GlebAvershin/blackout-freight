@@ -25,7 +25,7 @@
 
 * 🕹️ **[Играть в Roblox](https://www.roblox.com/games/111633787401180/Blackout-Freight)** — Публичная рабочая игра (плейс версии 32).
 * 📦 **[Скачать сборку для Roblox Studio (v25)](dist/Blackout%20Freight%20Closed%20Test.rbxl)** — Готовый файл `.rbxl` для локального запуска.
-* 🎥 **[Смотреть геймплейное видео v24 (MP4)](https://raw.githubusercontent.com/GlebAvershin/blackout-freight/main/dist/blackout-freight-v24-demo.mp4)** — Доставка батарей и уклонение от Sentinel.
+* 🎥 **[Смотреть геймплейное видео v24 (MP4)](dist/blackout-freight-v24-demo.mp4)** — Доставка батарей и уклонение от Sentinel.
 * 📓 **[Jupyter-ноутбук эксперимента](analysis/first_shift_compass.ipynb)** — Расчёт воронки и доверительных интервалов Уилсона.
 * 📑 **[Полный технический отчёт](docs/TECHNOLOGIES.ru.md)** — Метрики, SRM-тесты, байесовские бандиты и облачные квитанции.
 
