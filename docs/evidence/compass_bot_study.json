@@ -1,0 +1,27 @@
+{
+  "sample_size": 5000,
+  "control": {
+    "n": 2500,
+    "delivered": 2229,
+    "completion_rate": 0.8916,
+    "wilson_ci_95": [
+      0.8788,
+      0.9032
+    ],
+    "avg_disorientation_events": 7.1
+  },
+  "variant_with_compass": {
+    "n": 2500,
+    "delivered": 2500,
+    "completion_rate": 1.0,
+    "wilson_ci_95": [
+      0.9985,
+      1.0
+    ],
+    "avg_disorientation_events": 0.0
+  },
+  "uplift_percentage_points": 10.84,
+  "target_met": true,
+  "srm_defect_flag": false,
+  "recommendation": "ROLLOUT_TO_PRODUCTION"
+}

@@ -1,0 +1,27 @@
+{
+  "benchmark": "Bayesian-Thompson-Sampling-MAB-10k",
+  "sample_size": 10000,
+  "true_rates": {
+    "control": 0.8916,
+    "variant_compass": 1.0
+  },
+  "static_ab_test": {
+    "control_assigned": 5000,
+    "variant_assigned": 5000,
+    "total_onboarding_failures": 528,
+    "overall_completion_rate": 0.9472
+  },
+  "thompson_sampling_mab": {
+    "control_assigned": 9,
+    "variant_assigned": 9991,
+    "variant_traffic_share": 0.9991,
+    "convergence_step_95pct": 180,
+    "total_onboarding_failures": 2,
+    "overall_completion_rate": 0.9998
+  },
+  "business_impact": {
+    "failed_onboardings_prevented": 526,
+    "churn_reduction_percentage": 99.62,
+    "recommendation": "DEPLOY_DYNAMIC_BANDIT_TO_ONBOARDING"
+  }
+}

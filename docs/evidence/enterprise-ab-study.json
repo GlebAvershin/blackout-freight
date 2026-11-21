@@ -1,0 +1,29 @@
+{
+  "benchmark": "BlackoutFreight-Enterprise-20k-Experiment",
+  "sample_size": 20000,
+  "srm_check": {
+    "n_control": 10040,
+    "n_variant": 9960,
+    "chi2_stat": 0.32,
+    "p_value": 0.5716,
+    "srm_defect": false
+  },
+  "overall_results": {
+    "control_completion_rate": 0.9342,
+    "control_ci95": [
+      0.9291,
+      0.9389
+    ],
+    "variant_completion_rate": 1.0,
+    "variant_ci95": [
+      0.9996,
+      1.0
+    ],
+    "delivery_uplift_pp": 6.58
+  },
+  "segmented_uplift": {
+    "solo_heavy_lift_pp": 8.23,
+    "squad_heavy_lift_pp": 0.0
+  },
+  "guardrail_decision": "HOLD_RELEASE"
+}
