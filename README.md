@@ -25,7 +25,7 @@
 
 * 🕹️ **[Play on Roblox](https://www.roblox.com/games/111633787401180/Blackout-Freight)** — Public live experience (Place v32).
 * 📦 **[Download Roblox Studio Build (v25)](dist/Blackout%20Freight%20Closed%20Test.rbxl)** — Ready-to-play `.rbxl` place file.
-* 🎥 **[Watch v24 Gameplay Demo (MP4)](dist/blackout-freight-v24-demo.mp4)** — Delivery loop and Sentinel evasion.
+* 🎥 **[Watch Gameplay Video (In-Browser Player)](#-gameplay-preview)** — Delivery loop and Sentinel evasion.
 * 📓 **[Jupyter Experiment Notebook](analysis/first_shift_compass.ipynb)** — Synthetic data funnel and Wilson score calculation.
 * 📑 **[Engineering & AI Deep Dive](docs/TECHNOLOGIES.md)** — Comprehensive benchmarks, SRM tests, and telemetry receipts.
 
@@ -43,10 +43,13 @@ Beneath its tense stealth mechanics, Blackout Freight functions as an **enterpri
 
 ---
 
+## 🎥 Gameplay Preview
+
 <p align="center">
-  <a href="dist/blackout-freight-v24-demo.mp4">
-    <img src="dist/blackout-freight-v24-preview.gif" alt="Blackout Freight Gameplay Preview" width="85%" style="border-radius: 6px;" />
-  </a>
+  <img src="dist/blackout-freight-v24-preview.gif" alt="Blackout Freight Gameplay Preview" width="85%" style="border-radius: 6px;" />
+</p>
+<p align="center">
+  <sub><i>Roblox tactical co-op: battery delivery & Sentinel drone evasion in Depot 07 • Source video: <a href="dist/blackout-freight-v24-demo.mp4">blackout-freight-v24-demo.mp4</a></i></sub>
 </p>
 
 ---
