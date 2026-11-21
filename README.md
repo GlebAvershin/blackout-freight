@@ -35,7 +35,7 @@
 
 **Blackout Freight** is a 1–4 player co-op tactical game built on Roblox. In the abandoned industrial Depot 07, players recover energy cells while avoiding the autonomous **Sentinel security drone**, navigating blackout zones, and determining whether to broadcast critical evidence or power the survivor shelter.
 
-Beneath its tense stealth mechanics, Blackout Freight functions as an **enterprise-grade experimentation and LiveOps testbed** meeting top-tier game tech standards (*Playrix, Roblox*):
+Beneath its tense stealth mechanics, Blackout Freight functions as an **enterprise-grade experimentation and LiveOps testbed**:
 - **Server-orchestrated A/B testing** with randomized group allocation and telemetry logging.
 - **Enterprise Experiment Engine**: 20,000-session simulation verifying Sample Ratio Mismatch (SRM) with $\chi^2$ statistical goodness-of-fit.
 - **Bayesian Multi-Armed Bandit (MAB)**: Dynamic Thompson Sampling routing reducing early onboarding churn by **99.62%**.
@@ -218,5 +218,5 @@ Blackout Freight/
 
 ## 📄 License & Attribution
 
-Designed and developed by **Gleb Avershin**. Open for technical review and hiring evaluation.
-All proprietary assets and code are shared under the MIT License for evaluation purposes.
+Designed and developed by **Gleb Avershin**. Open-source game engineering project.
+All code and assets are shared under the MIT License.
