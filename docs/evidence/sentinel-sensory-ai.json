@@ -1,0 +1,62 @@
+{
+  "study_title": "Sentinel Drone Sensory Perception & Hierarchical Behavior Tree",
+  "total_simulated_encounters": 10000,
+  "execution_time_seconds": 0.009,
+  "behavior_tree_architecture": {
+    "root_selector": "Hierarchical Utility Priority",
+    "branches": [
+      {
+        "state": "PURSUE_INTERCEPT",
+        "priority": 1,
+        "condition": "Visual Line of Sight Acquired",
+        "speed": "7.5 m/s"
+      },
+      {
+        "state": "INVESTIGATE_ACOUSTIC",
+        "priority": 2,
+        "condition": "Decibel Threshold Exceeded (>= 20 dB)",
+        "speed": "4.5 m/s"
+      },
+      {
+        "state": "SWEEP_SECTOR",
+        "priority": 3,
+        "condition": "Arrival at Noise Origin (360 FOV scan)",
+        "duration": "4.0 s"
+      },
+      {
+        "state": "PATROL_DEPOT",
+        "priority": 4,
+        "condition": "Default Ambient Waypoint Tour",
+        "speed": "3.2 m/s"
+      }
+    ]
+  },
+  "archetype_evaluations": {
+    "Stealth Shadow (Crouch + No Lights)": {
+      "encounters_evaluated": 3333,
+      "evasion_success_rate_pct": 95.17,
+      "visual_detection_rate_pct": 2.76,
+      "acoustic_detection_rate_pct": 2.07,
+      "investigation_sweeps_provoked": 69
+    },
+    "Reckless Courier (Sprint + Flashlight)": {
+      "encounters_evaluated": 3333,
+      "evasion_success_rate_pct": 71.65,
+      "visual_detection_rate_pct": 17.34,
+      "acoustic_detection_rate_pct": 11.01,
+      "investigation_sweeps_provoked": 367
+    },
+    "Tactical Co-op (Coordinated Relays)": {
+      "encounters_evaluated": 3333,
+      "evasion_success_rate_pct": 90.19,
+      "visual_detection_rate_pct": 2.91,
+      "acoustic_detection_rate_pct": 6.9,
+      "investigation_sweeps_provoked": 230
+    }
+  },
+  "sensory_design_takeaways": [
+    "Flashlights expand Sentinel visual detection radius by 350% during blackout periods, making stealth flashlight discipline paramount.",
+    "Acoustic sensors permit tactical decoy play: throwing empty energy cells triggers INVESTIGATE_SOUND to draw Sentinel away from airlocks.",
+    "Crouching reduces visual signature by 35% and confines footstep acoustic emission to sub-3.0m radius."
+  ]
+}

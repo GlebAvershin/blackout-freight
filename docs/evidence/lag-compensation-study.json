@@ -1,0 +1,43 @@
+{
+  "study_title": "Lag-Compensated Spatial Perception & Authoritative Server Rewind",
+  "sample_size_trials": 5000,
+  "execution_time_seconds": 0.001,
+  "benchmark_summary": {
+    "total_uncompensated_false_kills": 1275,
+    "total_compensated_false_kills": 0,
+    "overall_false_death_reduction_pct": 100.0,
+    "max_server_rewind_window_ms": 250,
+    "history_buffer_tick_rate": 60
+  },
+  "network_profiles": {
+    "50ms_ping": {
+      "trials_evaluated": 1250,
+      "uncompensated_false_kill_rate_pct": 0.0,
+      "compensated_false_kill_rate_pct": 0.0,
+      "false_death_reduction_pct": 0.0
+    },
+    "150ms_ping": {
+      "trials_evaluated": 1250,
+      "uncompensated_false_kill_rate_pct": 12.0,
+      "compensated_false_kill_rate_pct": 0.0,
+      "false_death_reduction_pct": 100.0
+    },
+    "250ms_ping": {
+      "trials_evaluated": 1250,
+      "uncompensated_false_kill_rate_pct": 31.68,
+      "compensated_false_kill_rate_pct": 0.0,
+      "false_death_reduction_pct": 100.0
+    },
+    "400ms_ping": {
+      "trials_evaluated": 1250,
+      "uncompensated_false_kill_rate_pct": 58.32,
+      "compensated_false_kill_rate_pct": 0.0,
+      "false_death_reduction_pct": 100.0
+    }
+  },
+  "architectural_invariants": [
+    "60-tick ring buffer stores timestamped cover state and spatial coordinates for all active co-op players.",
+    "Sentinel visual raycasts rewind world state to client perception timestamp, preventing deaths behind cover.",
+    "Anti-abuse clamping caps maximum rewind at 250ms, neutralizing high-ping manipulation and peeker advantage."
+  ]
+}
