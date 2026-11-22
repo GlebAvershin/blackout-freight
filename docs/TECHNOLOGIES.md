@@ -173,3 +173,19 @@ When dodging behind heavy depot airlocks under high mobile latencies ($100\text{
 | **400 ms High-Jitter** | 89.6% of trials | **0.00%** | **100.0%** | 200 ms (Clamped) |
 
 [Lag Compensator (Luau)](../src/shared/LagCompensator.luau) · [Netcode Benchmark Script](../analysis/test_lag_compensation.py) · [Lag Study Dataset](evidence/lag-compensation-study.json)
+
+---
+
+## 📈 Cross-Game LiveOps & LinUCB Tactical Cosmetic Store Integration
+
+Blackout Freight connects directly to the shared multi-game backend via `src/shared/LiveOpsClient.luau`, delivering cross-game co-op objectives and contextual cosmetic rewards:
+
+### 1. Unified Seasonal Meta-Contracts
+* **Cross-Game Objectives:** Completing shared seasonal contracts (such as *Shadow & Glass* and *Grand Quad Master*) grants universal Battle Pass XP by rewarding squad coordination across Depot 07 and sister titles.
+* **ACID Progress Tracking:** Battery recoveries and stealth extractions sync reliably to the centralized database without incurring frame hitches or gameplay hitches during blackout encounters.
+
+### 2. Contextual LinUCB Tactical Store Personalization
+* **Playstyle-Aligned Cosmetics:** The LinUCB bandit dynamically highlights stealth chassis finishes (such as the Tactical Matte-Carbon Drone Skin and Amber Optic Filter) for methodical tactical players, yielding a **27.15% organic claim rate** across 2,000 simulated sessions.
+* **Zero Paywall Invariant:** All cosmetic skins are unlocked strictly via earned Battle Pass tokens without real-money microtransactions.
+
+[LiveOps Client (Luau)](../src/shared/LiveOpsClient.luau) · [Integration Test Script](../analysis/test_liveops_integration.py) · [LiveOps Evidence Data](evidence/cross-game-liveops.json)

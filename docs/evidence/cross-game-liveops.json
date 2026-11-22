@@ -1,0 +1,31 @@
+{
+  "study_title": "Cross-Game LiveOps & LinUCB Tactical Store Integration",
+  "client_title": "Blackout Freight",
+  "total_simulated_sessions": 2000,
+  "execution_time_seconds": 0.0,
+  "liveops_summary": {
+    "active_season": "Northern Expedition \u00b7 Cross-Game Frontier",
+    "cross_game_contracts_active": 2,
+    "mean_xp_per_session": 466.1,
+    "mean_tokens_per_session": 116.9,
+    "linucb_tactical_claim_rate_pct": 27.15
+  },
+  "supported_tactical_cosmetics": [
+    {
+      "arm_id": "freight_carbon_drone",
+      "type": "Drone Chassis",
+      "rarity": "Legendary",
+      "style": "Tactical"
+    },
+    {
+      "arm_id": "freight_amber_visor",
+      "type": "Optic Filter",
+      "rarity": "Rare",
+      "style": "Tactical"
+    }
+  ],
+  "compliance_notes": [
+    "All seasonal progression is earned organically through gameplay with 0 real-money purchase requirements.",
+    "Client SDK handles network timeouts gracefully with deterministic fallback catalogs."
+  ]
+}
